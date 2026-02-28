@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: techquiz_app
+    ports:
+      - "8000:8000"   # maps container port 8000 to localhost
+    volumes:
+      - .:/var/www    # sync your project folder with container
+    environment:
+      APP_ENV: local
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/www/database/database.sqlite
