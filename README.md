@@ -18,6 +18,7 @@ To create tables
 
 
 Test the reset.sh
+Windows (Git Bash)
 execute sh
 chmod +x scripts/db/reset.sh
 
