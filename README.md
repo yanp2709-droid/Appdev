@@ -16,3 +16,19 @@ To run seeder
 To create tables
   - docker-compose exec app php artisan migrate
 
+
+Test the reset.sh
+execute sh
+chmod +x scripts/db/reset.sh
+
+run it
+bash scripts/
+db/reset.sh or ./scripts/db/reset.sh
+
+
+Verification 
+git clone <repo>
+cd project
+cp .env.example .env
+docker compose up -d
+bash scripts/db/reset.sh
