@@ -1,9 +1,0 @@
-In Windows PowerShell:
-Backup Script
-copy database\database.sqlite database\backup\backup.sqlite
-
-Or create a batch file backup.bat:
-
-@echo off
-copy database\database.sqlite database\backup\backup_%date%.sqlite
-echo Backup created successfully.

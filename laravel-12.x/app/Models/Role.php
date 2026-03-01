@@ -8,4 +8,8 @@ class Role extends Model
 {
     protected $fillable = 
     ['name'];
+    public function teachers()
+    {
+        return $this->hasMany(Teacher::class);
+    }
 }
