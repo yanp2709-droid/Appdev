@@ -19,8 +19,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
          $middleware->appendToGroup('api', [
-        \App\Http\Middleware\RequestIdMiddleware::class,
-    ]);
+            \App\Http\Middleware\RequestIdMiddleware::class,
+        ]);
+         $middleware->alias([
+            'role' => RequireRole::class,
+        ]);
     })
 
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('students', function (Blueprint $table) {
             $table->id(); // primary key, automatically indexed
             $table->string('student_id')->unique()->index(); // index for search + unique
+            $table->foreignId('role_id')->constrained('roles')->onDelete('cascade')->after('id');
             $table->string('name');
             $table->timestamps();
         });

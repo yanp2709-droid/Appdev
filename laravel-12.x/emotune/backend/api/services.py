@@ -1,6 +1,7 @@
 import base64
 from collections import Counter
 from datetime import timedelta
+from pathlib import Path
 from typing import Dict, List
 
 import requests
@@ -9,6 +10,27 @@ from django.db.models import Count, Sum
 from django.utils import timezone
 
 from .models import ArtistPreference, PlayEvent
+
+try:
+    from transformers import pipeline
+except Exception:  # pragma: no cover
+    pipeline = None
+
+EMOTION_LABELS = [
+    "happy",
+    "sad",
+    "angry",
+    "motivational",
+    "fear",
+    "depressing",
+    "surprising",
+    "stressed",
+    "calm",
+    "lonely",
+    "romantic",
+    "nostalgic",
+    "mixed",
+]
 
 EMOTION_KEYWORDS = {
     "happy": ["happy", "joy", "great", "excited", "thankful"],
@@ -57,8 +79,37 @@ SEED_GENRES = {
     "mixed": ["pop", "indie"],
 }
 
+_predictor = None
+
+
+def _load_bert_predictor():
+    global _predictor
+    if _predictor is not None:
+        return _predictor
+    if pipeline is None:
+        return None
+
+    model_dir = Path(__file__).resolve().parent.parent / "ml" / "artifacts"
+    if model_dir.exists():
+        try:
+            _predictor = pipeline("text-classification", model=str(model_dir), tokenizer=str(model_dir))
+            return _predictor
+        except Exception:
+            return None
+    return None
+
 
 def predict_emotion(prompt: str) -> str:
+    predictor = _load_bert_predictor()
+    if predictor is not None:
+        try:
+            result = predictor(prompt, truncation=True)[0]
+            label = str(result.get("label", "")).lower().replace("label_", "")
+            if label in EMOTION_LABELS:
+                return label
+        except Exception:
+            pass
+
     lowered = prompt.lower()
     scores = Counter()
     for emotion, words in EMOTION_KEYWORDS.items():
@@ -103,11 +154,7 @@ def recommend_tracks_for_emotion(user, emotion: str, limit: int = 8) -> List[Dic
 
     tracks = []
     if token:
-        params = {
-            "seed_genres": ",".join(genres[:2]),
-            "limit": limit,
-            "market": "US",
-        }
+        params = {"seed_genres": ",".join(genres[:2]), "limit": limit, "market": "US"}
         if preferred_artists:
             params["seed_artists"] = ",".join(preferred_artists)
 

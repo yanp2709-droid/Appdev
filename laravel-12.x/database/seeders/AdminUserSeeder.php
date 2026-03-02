@@ -16,11 +16,13 @@ class AdminUserSeeder extends Seeder
             $role = Role::create(['name' => 'Admin']);
         }
 
+        $adminRole = Role::where('name', 'admin')->first();
+
         Teacher::create([
             'name' => 'Default Admin',
             'email' => 'admin@example.com',
             'password' => bcrypt('password'),
-            'role_id' => $role->id,
+            'role_id' => $adminRole->id,
         ]);
     }
 }

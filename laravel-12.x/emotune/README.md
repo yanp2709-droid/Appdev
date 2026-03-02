@@ -45,6 +45,8 @@ Your Spotify credentials were shared in chat. Treat them as compromised and rota
 2. Frontend setup: see [docs/setup.md](docs/setup.md)
 3. Model training: see [docs/model_training.md](docs/model_training.md)
 
+For first-time Flutter setup, run `flutter create --platforms=web .` inside `frontend/` before `flutter run`.
+
 ## Project layout
 
 - `backend/`: Django APIs, models, admin APIs, Spotify integration

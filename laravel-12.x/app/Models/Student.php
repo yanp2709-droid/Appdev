@@ -10,4 +10,9 @@ class Student extends Model
         'student_id',
         'name',
     ];
+
+    public function role()
+    {           
+        return $this->belongsTo(Role::class);
+    }
 }

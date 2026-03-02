@@ -32,6 +32,7 @@ Put credentials in `backend/.env`:
 
 ```powershell
 cd emotune\frontend
+flutter create --platforms=web .
 flutter pub get
 flutter run -d chrome --web-port 3000 --dart-define=API_BASE=http://127.0.0.1:8000/api
 ```
