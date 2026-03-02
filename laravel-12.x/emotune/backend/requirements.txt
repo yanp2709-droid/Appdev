@@ -1,0 +1,10 @@
+Django==5.1.6
+djangorestframework==3.16.0
+djangorestframework-simplejwt==5.4.0
+django-cors-headers==4.7.0
+python-dotenv==1.0.1
+requests==2.32.3
+pandas==2.2.3
+scikit-learn==1.6.1
+transformers==4.48.3
+torch==2.6.0

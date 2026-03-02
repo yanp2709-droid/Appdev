@@ -1,0 +1,7 @@
+{
+  "status": "sample_template",
+  "message": "Run `python ml/train_bert.py` to generate real metrics.",
+  "eval_accuracy": null,
+  "eval_loss": null,
+  "eval_runtime": null
+}

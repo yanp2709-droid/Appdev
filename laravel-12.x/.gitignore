@@ -22,3 +22,15 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# EmoTune artifacts
+/emotune/backend/.venv
+/emotune/backend/db.sqlite3
+/emotune/backend/.env
+/emotune/backend/ml/artifacts
+/emotune/frontend/.dart_tool
+/emotune/frontend/build
+/emotune/frontend/.flutter-plugins
+/emotune/frontend/.flutter-plugins-dependencies
+/emotune/frontend/.packages
+/emotune/frontend/.metadata
