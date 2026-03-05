@@ -10,19 +10,15 @@ class AdminUserSeeder extends Seeder
 {
     public function run()
     {
-        // Optional: create a default admin
-        $role = Role::firstWhere('name', 'Admin');
-        if (! $role) {
-            $role = Role::create(['name' => 'Admin']);
-        }
+        $adminRole = Role::where('name', 'teacher')->first();
 
-        $adminRole = Role::where('name', 'admin')->first();
-
-        Teacher::create([
-            'name' => 'Default Admin',
-            'email' => 'admin@example.com',
-            'password' => bcrypt('password'),
-            'role_id' => $adminRole->id,
-        ]);
+        Teacher::firstOrCreate(
+            ['email' => 'admin@techquiz.com'], // check first
+            [
+                'name' => 'Default Admin',
+                'password' => bcrypt('password'),
+                'role_id' => $adminRole->id,
+            ]
+        );
     }
 }

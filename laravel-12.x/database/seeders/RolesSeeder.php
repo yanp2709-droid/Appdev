@@ -9,7 +9,8 @@ class RolesSeeder extends Seeder
 {
     public function run()
     {
-        Role::create(['name' => 'Admin']);
-        Role::create(['name' => 'Student']);
+        // ensure the admin role exists for the initial user
+        Role::firstOrCreate(['name' => 'teacher']);
+        Role::firstOrCreate(['name' => 'student']);
     }
 }

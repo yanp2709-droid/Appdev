@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Categories;
+use App\Models\Category;
 use App\Models\Teacher;
-use App\Models\Quizzes;
+use App\Models\Quiz;
 use App\Models\Question;
 use App\Models\Answer;
 
@@ -27,7 +27,7 @@ class QuestionsSeeder extends Seeder
         ];
 
         foreach ($categories as $cat) {
-            Categories::firstOrCreate(['name' => $cat]);
+            Category::firstOrCreate(['name' => $cat]);
         }
 
         $this->createProgrammingQuiz($teacher);
@@ -42,7 +42,7 @@ class QuestionsSeeder extends Seeder
 
     private function createProgrammingQuiz($teacher)
     {
-        $quiz = Quizzes::create([
+        $quiz = Quiz::create([
             'title' => 'Programming Basics Quiz',
             'category_id' => 1,
             'teacher_id' => $teacher->id,
@@ -81,7 +81,7 @@ class QuestionsSeeder extends Seeder
 
     private function createHardwareQuiz($teacher)
     {
-        $quiz = Quizzes::create([
+        $quiz = Quiz::create([
             'title' => 'Computer Hardware Quiz',
             'category_id' => 2,
             'teacher_id' => $teacher->id,
@@ -115,7 +115,7 @@ class QuestionsSeeder extends Seeder
 
     private function createNetworkingQuiz($teacher)
     {
-        $quiz = Quizzes::create([
+        $quiz = Quiz::create([
             'title' => 'Networking Basics Quiz',
             'category_id' => 3,
             'teacher_id' => $teacher->id,
@@ -149,7 +149,7 @@ class QuestionsSeeder extends Seeder
 
     private function createGeneralITQuiz($teacher)
     {
-        $quiz = Quizzes::create([
+        $quiz = Quiz::create([
             'title' => 'General IT Knowledge Quiz',
             'category_id' => 4,
             'teacher_id' => $teacher->id,

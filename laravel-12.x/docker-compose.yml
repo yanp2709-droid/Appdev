@@ -15,7 +15,7 @@ services:
     image: nginx:latest
     container_name: laravel_nginx
     ports:
-      - "8000:80"
+      - "8001:80"
     volumes:
       - ./:/var/www
       - ./docker/nginx:/etc/nginx/conf.d

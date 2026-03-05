@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     libpng-dev libonig-dev libxml2-dev libzip-dev \
     libjpeg-dev libfreetype6-dev \
     sqlite3 libsqlite3-dev \
+    libicu-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
         pdo_sqlite \
@@ -14,8 +15,9 @@ RUN apt-get update && apt-get install -y \
         pcntl \
         bcmath \
         gd \
-        zip
-
+        zip \
+        intl
+        
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
