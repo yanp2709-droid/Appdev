@@ -1,29 +1,23 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
+uuse Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('quiz_id')->constrained()->onDelete('cascade')->index();
-            $table->string('question_text');
-            $table->enum('question_type',['MCQ','FillBlank','TrueFalse','Picture','Matching']);
-            $table->integer('points')->default(5);
+            $table->foreignId('category_id')->constrained()->cascadeOnDelete();
+            $table->enum('question_type', ['mcq', 'tf', 'ordering', 'short_answer']);
+            $table->text('question_text');
+            $table->integer('points')->default(1);
+            $table->text('answer_key')->nullable();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('questions');

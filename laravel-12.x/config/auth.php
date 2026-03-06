@@ -35,11 +35,9 @@ return [
     |
     */
 
-    'guards' => [
-    'web' => [
-        'driver' => 'session',
-        'provider' => 'teachers',
-    ],
+    'auth' => [
+        'guard' => 'web',
+        'user_model' => \App\Models\User::class,
     ],
 
     /*
@@ -60,9 +58,9 @@ return [
     */
 
     'providers' => [
-    'teachers' => [
+    'users' => [
         'driver' => 'eloquent',
-        'model' => App\Models\Teacher::class,
+        'model' => App\Models\User::class,
     ],
 ],
 
@@ -86,8 +84,8 @@ return [
     */
 
    'passwords' => [
-    'teachers' => [
-        'provider' => 'teachers',
+    'users' => [
+        'provider' => 'users',
         'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
         'expire' => 60,
         'throttle' => 60,

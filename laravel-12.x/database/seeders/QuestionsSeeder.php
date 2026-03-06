@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Category;
-use App\Models\Teacher;
 use App\Models\Quiz;
 use App\Models\Question;
 use App\Models\Answer;
@@ -13,12 +12,6 @@ class QuestionsSeeder extends Seeder
 {
     public function run()
     {
-        $teacher = Teacher::first();
-
-        if (!$teacher) {
-            throw new \Exception('No teacher found. Run AdminUserSeeder first.');
-        }
-
         $categories = [
             'Programming Basics',
             'Computer Hardware',
@@ -30,22 +23,21 @@ class QuestionsSeeder extends Seeder
             Category::firstOrCreate(['name' => $cat]);
         }
 
-        $this->createProgrammingQuiz($teacher);
-        $this->createHardwareQuiz($teacher);
-        $this->createNetworkingQuiz($teacher);
-        $this->createGeneralITQuiz($teacher);
+        $this->createProgrammingQuiz();
+        $this->createHardwareQuiz();
+        $this->createNetworkingQuiz();
+        $this->createGeneralITQuiz();
     }
 
     /* ========================================================= */
     /* ================= PROGRAMMING BASICS ==================== */
     /* ========================================================= */
 
-    private function createProgrammingQuiz($teacher)
+    private function createProgrammingQuiz()
     {
         $quiz = Quiz::create([
             'title' => 'Programming Basics Quiz',
             'category_id' => 1,
-            'teacher_id' => $teacher->id,
             'difficulty' => 'Easy',
         ]);
 
@@ -79,12 +71,11 @@ class QuestionsSeeder extends Seeder
     /* ================= COMPUTER HARDWARE ===================== */
     /* ========================================================= */
 
-    private function createHardwareQuiz($teacher)
+    private function createHardwareQuiz()
     {
         $quiz = Quiz::create([
             'title' => 'Computer Hardware Quiz',
             'category_id' => 2,
-            'teacher_id' => $teacher->id,
             'difficulty' => 'Easy',
         ]);
 
@@ -113,12 +104,11 @@ class QuestionsSeeder extends Seeder
     /* ================= NETWORKING BASICS ===================== */
     /* ========================================================= */
 
-    private function createNetworkingQuiz($teacher)
+    private function createNetworkingQuiz()
     {
         $quiz = Quiz::create([
             'title' => 'Networking Basics Quiz',
             'category_id' => 3,
-            'teacher_id' => $teacher->id,
             'difficulty' => 'Easy',
         ]);
 
@@ -147,12 +137,11 @@ class QuestionsSeeder extends Seeder
     /* ================= GENERAL IT KNOWLEDGE ================== */
     /* ========================================================= */
 
-    private function createGeneralITQuiz($teacher)
+    private function createGeneralITQuiz()
     {
         $quiz = Quiz::create([
             'title' => 'General IT Knowledge Quiz',
             'category_id' => 4,
-            'teacher_id' => $teacher->id,
             'difficulty' => 'Easy',
         ]);
 
@@ -184,56 +173,56 @@ class QuestionsSeeder extends Seeder
     private function mcq($quiz, $text, $options)
     {
         $question = Question::create([
-            'quiz_id' => $quiz->id,
+            'category_id' => $quiz->category_id,
             'question_text' => $text,
-            'question_type' => 'MCQ',
+            'question_type' => 'mcq',
             'points' => 5
         ]);
 
+        $order = 1;
         foreach ($options as $answer => $correct) {
-            Answer::create([
+            \App\Models\QuestionOption::create([
                 'question_id' => $question->id,
-                'answer_text' => $answer,
-                'is_correct' => $correct
+                'option_text' => $answer,
+                'is_correct' => $correct,
+                'order_index' => $order
             ]);
+            $order++;
         }
     }
 
     private function fillBlank($quiz, $text, $correctAnswer)
     {
         $question = Question::create([
-            'quiz_id' => $quiz->id,
+            'category_id' => $quiz->category_id,
             'question_text' => $text,
-            'question_type' => 'FillBlank',
-            'points' => 5
-        ]);
-
-        Answer::create([
-            'question_id' => $question->id,
-            'answer_text' => $correctAnswer,
-            'is_correct' => true
+            'question_type' => 'short_answer',
+            'points' => 5,
+            'answer_key' => $correctAnswer
         ]);
     }
 
     private function trueFalse($quiz, $text, $correct)
     {
         $question = Question::create([
-            'quiz_id' => $quiz->id,
+            'category_id' => $quiz->category_id,
             'question_text' => $text,
-            'question_type' => 'TrueFalse',
+            'question_type' => 'tf',
             'points' => 5
         ]);
 
-        Answer::create([
+        \App\Models\QuestionOption::create([
             'question_id' => $question->id,
-            'answer_text' => 'True',
-            'is_correct' => $correct === true
+            'option_text' => 'True',
+            'is_correct' => $correct === true,
+            'order_index' => 1
         ]);
 
-        Answer::create([
+        \App\Models\QuestionOption::create([
             'question_id' => $question->id,
-            'answer_text' => 'False',
-            'is_correct' => $correct === false
+            'option_text' => 'False',
+            'is_correct' => $correct === false,
+            'order_index' => 2
         ]);
     }
 }
