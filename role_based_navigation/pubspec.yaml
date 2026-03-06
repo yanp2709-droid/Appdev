@@ -1,0 +1,26 @@
+name: role_based_navigation
+description: A Flutter project with Student/Admin role-based navigation.
+
+# Prevents accidental publishing
+publish_to: 'none' 
+
+environment:
+  sdk: ">=2.19.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  provider: ^6.0.5
+
+  # Secure storage for token and role
+  flutter_secure_storage: ^10.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.1
+
+flutter:
+  uses-material-design: true
