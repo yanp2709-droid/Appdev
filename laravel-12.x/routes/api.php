@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\QuizzesController;
 use App\Http\Controllers\QuizAttemptController;
+use App\Http\Controllers\CategoriesController;
+use App\Http\Controllers\QuestionController;
 
 
 /*
@@ -50,4 +52,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::middleware('role:student')->group(function () {
         Route::post('/quiz/attempt', [QuizAttemptController::class, 'attempt']);
     });
+
+    Route::get('/categories', [CategoriesController::class, 'index']);
+
+    Route::get('/questions', [QuestionController::class, 'index']);
+
 });
+

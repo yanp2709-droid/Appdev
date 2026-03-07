@@ -4,17 +4,31 @@ namespace App\Http\Controllers;
 
 use App\Models\Question;
 use Illuminate\Http\Request;
+use App\Http\Requests\QuestionFetchRequest;
+use App\Http\Resources\QuestionResource;
 
 class QuestionController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+   public function index(QuestionFetchRequest $request)
     {
-        //
+        $query = Question::with('options')
+            ->where('category_id', $request->category_id);
+
+        if ($request->random) {
+            $query->inRandomOrder();
+        }
+
+        $limit = $request->limit ?? 10;
+
+        $questions = $query->limit($limit)->get();
+
+        return QuestionResource::collection($questions);
     }
 
+    
     /**
      * Show the form for creating a new resource.
      */
