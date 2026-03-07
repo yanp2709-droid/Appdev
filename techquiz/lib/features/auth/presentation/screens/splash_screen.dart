@@ -24,8 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     if (auth.isLoggedIn) {
-      final role = auth.user!.role;
-      context.go(role == 'admin' ? '/admin-home' : '/student-home');
+      context.go('/student-home');
     } else {
       context.go('/login');
     }

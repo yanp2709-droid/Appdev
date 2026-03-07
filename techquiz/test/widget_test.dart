@@ -67,13 +67,6 @@ void main() {
       expect(auth.token,      isNotNull);
     });
 
-    test('admin login succeeds', () async {
-      final ok = await auth.login('admin@admin.com', 'admin123');
-      expect(ok,              true);
-      expect(auth.isLoggedIn, true);
-      expect(auth.user?.role, 'admin');
-    });
-
     test('wrong credentials fail', () async {
       final ok = await auth.login('bad@email.com', 'wrong');
       expect(ok,              false);
@@ -107,19 +100,19 @@ void main() {
     });
 
     test('fetch returns mock categories', () async {
-      await cats.fetch('any_token');
+      await cats.fetch();
       expect(cats.status,     CategoriesStatus.success);
       expect(cats.categories, isNotEmpty);
     });
 
     test('mock data contains Mathematics, Science, History', () async {
-      await cats.fetch('any_token');
+      await cats.fetch();
       final names = cats.categories.map((c) => c.name).toList();
       expect(names, containsAll(['Mathematics', 'Science', 'History']));
     });
 
     test('categories list is unmodifiable', () async {
-      await cats.fetch('any_token');
+      await cats.fetch();
       expect(
         () => (cats.categories as dynamic).add(null),
         throwsUnsupportedError,

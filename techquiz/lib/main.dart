@@ -9,7 +9,6 @@ import 'features/categories/data/categories_repository.dart';
 import 'features/categories/providers/categories_provider.dart';
 import 'features/quiz/data/questions_repository.dart';
 import 'features/quiz/providers/quiz_provider.dart';
-import 'features/admin/providers/admin_questions_provider.dart';
 
 void main() {
   runApp(
@@ -21,17 +20,13 @@ void main() {
         ChangeNotifierProvider(
           create: (_) => CategoriesProvider(CategoriesRepository()),
         ),
-        // Singleton repo shared by both admin and quiz providers
+        // Singleton repo for quiz provider
         Provider<QuestionsRepository>(
           create: (_) => QuestionsRepository(),
         ),
         ChangeNotifierProxyProvider<QuestionsRepository, QuizProvider>(
           create: (ctx) => QuizProvider(ctx.read<QuestionsRepository>()),
           update: (_, repo, prev) => prev ?? QuizProvider(repo),
-        ),
-        ChangeNotifierProxyProvider<QuestionsRepository, AdminQuestionsProvider>(
-          create: (ctx) => AdminQuestionsProvider(ctx.read<QuestionsRepository>()),
-          update: (_, repo, prev) => prev ?? AdminQuestionsProvider(repo),
         ),
       ],
       child: const TechQuizApp(),

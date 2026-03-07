@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
     if (!mounted) return;
     if (success) {
-      context.go(auth.user!.role == 'admin' ? '/admin-home' : '/student-home');
+      context.go('/student-home');
     }
   }
 
@@ -166,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Demo: alex@student.com / password123\nadmin@admin.com / admin123',
+                  'Demo: alex@student.com / password123',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white54, fontSize: 11),
                 ),

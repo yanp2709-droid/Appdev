@@ -4,11 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_widgets.dart';
-import '../../../auth/providers/auth_provider.dart';
-import '../../../home/admin/admin_home_screen.dart';
 import '../../../quiz/providers/quiz_provider.dart';
-import '../../../admin/providers/admin_questions_provider.dart';
-import '../../../admin/presentation/screens/admin_questions_screen.dart';
 import '../../data/categories_repository.dart';
 import '../../data/category_model.dart';
 import '../../providers/categories_provider.dart';
@@ -45,15 +41,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isAdmin   = context.watch<AuthProvider>().user?.role == 'admin';
-    final backRoute = isAdmin ? '/admin-home' : '/student-home';
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Categories'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(backRoute),
+          onPressed: () => context.go('/student-home'),
         ),
         // Task 3: test buttons for simulating API states (admin + student)
         actions: [
@@ -73,9 +66,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           ),
         ],
       ),
-      drawer: isAdmin
-          ? const AdminDrawerWidget(currentRoute: '/categories')
-          : null,
       body: Consumer<CategoriesProvider>(
         builder: (context, provider, _) {
           switch (provider.status) {
@@ -128,25 +118,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   final cat = provider.categories[i];
                   return _CategoryCard(
                     category: cat,
-                    isAdmin: isAdmin,
                     onTap: () {
-                      if (isAdmin) {
-                        // Admin → manage questions for this category
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ChangeNotifierProvider.value(
-                              value: context.read<AdminQuestionsProvider>(),
-                              child: AdminQuestionsScreen(category: cat),
-                            ),
-                          ),
-                        );
-                      } else {
-                        // Student → start quiz (Task 3: navigate to quiz screen)
-                        context.read<QuizProvider>().startQuiz(
-                            cat.id, cat.name);
-                        context.go('/quiz');
-                      }
+                      // Start quiz for student
+                      context.read<QuizProvider>().startQuiz(
+                          cat.id, cat.name);
+                      context.go('/quiz');
                     },
                   );
                 },
@@ -154,23 +130,21 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           }
         },
       ),
-      bottomNavigationBar: !isAdmin
-          ? BottomNavigationBar(
-              items: const [
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.home), label: ''),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.person), label: ''),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.notifications), label: ''),
-              ],
-              selectedItemColor: AppColors.primary,
-              unselectedItemColor: AppColors.gray400,
-              showSelectedLabels: false,
-              showUnselectedLabels: false,
-              currentIndex: 0,
-            )
-          : null,
+      bottomNavigationBar: BottomNavigationBar(
+          items: const [
+            BottomNavigationBarItem(
+                icon: Icon(Icons.home), label: ''),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.person), label: ''),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.notifications), label: ''),
+          ],
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.gray400,
+          showSelectedLabels: false,
+          showUnselectedLabels: false,
+          currentIndex: 0,
+        ),
     );
   }
 }
@@ -178,12 +152,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 // ── Category card ─────────────────────────────────────────────────────────────
 class _CategoryCard extends StatelessWidget {
   final CategoryModel category;
-  final bool isAdmin;
   final VoidCallback onTap;
 
   const _CategoryCard({
     required this.category,
-    required this.isAdmin,
     required this.onTap,
   });
 
@@ -222,10 +194,10 @@ class _CategoryCard extends StatelessWidget {
                           fontSize: 12, color: AppColors.gray400)),
                   const SizedBox(height: 6),
                   Text(
-                    isAdmin ? 'Tap to manage questions' : 'Tap to start quiz',
+                    'Tap to start quiz',
                     style: TextStyle(
                       fontSize: 11,
-                      color: isAdmin ? AppColors.accent : AppColors.primary,
+                      color: AppColors.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
