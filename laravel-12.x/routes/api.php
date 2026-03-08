@@ -7,7 +7,7 @@ use App\Http\Controllers\QuizzesController;
 use App\Http\Controllers\QuizAttemptController;
 use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\QuestionController;
-
+use App\Http\Controllers\Api\AuthController as ApiAuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,4 +58,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/questions', [QuestionController::class, 'index']);
 
 });
+
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+
+// Admin routes - protected by role
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::post('/admin/categories', [CategoriesController::class, 'store']);
+});
+
+
 

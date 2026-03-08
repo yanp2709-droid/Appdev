@@ -7,19 +7,11 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::table('question_options', function (Blueprint $table) {
-            if (!Schema::hasColumn('question_options', 'order_index')) {
-                $table->integer('order_index')->nullable();
-            }
-        });
+        // order_index already exists in question_options table
     }
 
     public function down(): void
     {
-        Schema::table('question_options', function (Blueprint $table) {
-            if (Schema::hasColumn('question_options', 'order_index')) {
-                $table->dropColumn('order_index');
-            }
-        });
+        // no-op
     }
 };

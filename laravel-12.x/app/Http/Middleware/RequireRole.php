@@ -18,7 +18,7 @@ class RequireRole
         // allow multiple roles separated by '|', e.g., 'admin|teacher'
         $allowedRoles = explode('|', $role);
 
-        if (!in_array($user->role->name, $allowedRoles)) {
+        if (!in_array($user->role, $allowedRoles)) {
             return response()->json(['error' => 'Forbidden'], 403);
         }
 
