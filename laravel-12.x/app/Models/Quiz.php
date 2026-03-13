@@ -10,5 +10,6 @@ class Quiz extends Model
         'title',
         'category_id',
         'difficulty',
+        'duration_minutes',
     ];
 }

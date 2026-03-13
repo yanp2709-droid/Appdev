@@ -30,6 +30,10 @@ class CategoriesTable
                     ->label('Published')
                     ->sortable(),
 
+                TextColumn::make('time_limit_minutes')
+                    ->label('Time Limit (Min)')
+                    ->sortable(),
+
                 TextColumn::make('created_at')
                     ->label('Created')
                     ->dateTime('M d, Y')

@@ -13,6 +13,7 @@ class Category extends Model
         'name',
         'description',
         'is_published',
+        'time_limit_minutes',
     ];
 
     // A category has many questions

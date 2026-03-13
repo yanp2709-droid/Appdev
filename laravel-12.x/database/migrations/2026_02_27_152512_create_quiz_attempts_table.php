@@ -12,12 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('quiz_attempts', function (Blueprint $table) {
-             $table->id();
-             $table->foreignId('student_id')->constrained()->onDelete('cascade');
-             $table->foreignId('quiz_id')->constrained()->onDelete('cascade');
-             $table->integer('score')->default(0);
-             $table->timestamp('completed_at')->nullable();
-             $table->timestamps();
+            $table->id();
+            // Use users table for students (role-based)
+            $table->foreignId('student_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('quiz_id')->constrained()->onDelete('cascade');
+            $table->integer('score')->default(0);
+            $table->timestamp('completed_at')->nullable();
+            $table->timestamps();
         });
     }
 

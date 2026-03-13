@@ -16,11 +16,14 @@ RUN apt-get update && apt-get install -y \
         bcmath \
         gd \
         zip \
-        intl
+        intl \
+        opcache
         
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
+
+COPY docker/php/conf.d/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 CMD ["php-fpm"]

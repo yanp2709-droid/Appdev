@@ -53,6 +53,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Student-only routes
     Route::middleware('role:student')->group(function () {
         Route::post('/quiz/attempt', [QuizAttemptController::class, 'attempt']);
+        Route::post('/quiz/attempts/{attempt}/answer', [QuizAttemptController::class, 'saveAnswer']);
+        Route::post('/quiz/attempts/{attempt}/submit', [QuizAttemptController::class, 'submit']);
+        Route::get('/quiz/attempts/{attempt}', [QuizAttemptController::class, 'status']);
     });
 });
 

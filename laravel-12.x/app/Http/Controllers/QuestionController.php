@@ -6,6 +6,7 @@ use App\Models\Question;
 use Illuminate\Http\Request;
 use App\Http\Requests\QuestionFetchRequest;
 use App\Http\Resources\QuestionResource;
+use Illuminate\Support\Facades\Cache;
 
 class QuestionController extends Controller
 {
@@ -17,16 +18,24 @@ class QuestionController extends Controller
         try {
             set_time_limit(60);
 
-            $query = Question::with('options')
-                ->where('category_id', $request->category_id);
-
-            if ($request->random) {
-                $query->inRandomOrder();
-            }
-
             $limit = $request->limit ?? 10;
+            $random = (bool) $request->random;
 
-            $questions = $query->timeout(10)->limit($limit)->get();
+            $cacheKey = "questions:cat:{$request->category_id}:limit:{$limit}:rand:" . ($random ? '1' : '0');
+
+            $questions = Cache::remember($cacheKey, 300, function () use ($request, $limit, $random) {
+                $query = Question::with(['options' => function ($q) {
+                    $q->select('id', 'question_id', 'option_text', 'order_index');
+                }])
+                    ->select('id', 'category_id', 'question_type', 'question_text', 'points')
+                    ->where('category_id', $request->category_id);
+
+                if ($random) {
+                    $query->inRandomOrder();
+                }
+
+                return $query->limit($limit)->get();
+            });
 
             return QuestionResource::collection($questions);
         } catch (\Throwable $e) {

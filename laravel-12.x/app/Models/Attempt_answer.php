@@ -10,7 +10,13 @@ class Attempt_answer extends Model
         'quiz_attempt_id',
         'question_id',
         'answer_id',
+        'question_option_id',
         'text_answer',
+        'is_correct',
+    ];
+
+    protected $casts = [
+        'is_correct' => 'boolean',
     ];
 
     // Relations
@@ -27,5 +33,10 @@ class Attempt_answer extends Model
     public function answer()
     {
         return $this->belongsTo(Answer::class);
+    }
+
+    public function questionOption()
+    {
+        return $this->belongsTo(QuestionOption::class, 'question_option_id');
     }
 }

@@ -17,8 +17,7 @@ class CategoriesController extends Controller
             set_time_limit(60);
 
             $categories = Category::where('is_published', true)
-                ->select('id', 'name', 'description')
-                ->timeout(10)
+                ->select('id', 'name', 'description', 'time_limit_minutes')
                 ->get();
 
             return response()->json([

@@ -30,6 +30,7 @@ class QuestionForm
                         'short_answer' => 'Short Answer',
                     ])
                     ->required()
+                    ->live()
                     ->helperText('Choose the type of question'),
 
                 TextInput::make('points')
@@ -51,8 +52,9 @@ class QuestionForm
                     ->relationship('options')
                     ->visible(function (callable $get) {
                         $type = $get('question_type');
-                        return $type === null || $type === '' || in_array($type, ['mcq', 'tf', 'ordering']);
+                        return in_array($type, ['mcq', 'tf'], true);
                     })
+                    ->reactive()
                     ->schema([
                         TextInput::make('option_text')
                             ->label('Option Text')
