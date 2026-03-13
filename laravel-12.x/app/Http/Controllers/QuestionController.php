@@ -14,21 +14,33 @@ class QuestionController extends Controller
      */
    public function index(QuestionFetchRequest $request)
     {
-        $query = Question::with('options')
-            ->where('category_id', $request->category_id);
+        try {
+            set_time_limit(60);
 
-        if ($request->random) {
-            $query->inRandomOrder();
+            $query = Question::with('options')
+                ->where('category_id', $request->category_id);
+
+            if ($request->random) {
+                $query->inRandomOrder();
+            }
+
+            $limit = $request->limit ?? 10;
+
+            $questions = $query->timeout(10)->limit($limit)->get();
+
+            return QuestionResource::collection($questions);
+        } catch (\Throwable $e) {
+            \Log::error('Questions API Error: ' . $e->getMessage());
+
+            return response()->json([
+                'data' => [],
+                'message' => 'Error: ' . $e->getMessage(),
+                'error' => $e->getCode()
+            ], 500);
         }
-
-        $limit = $request->limit ?? 10;
-
-        $questions = $query->limit($limit)->get();
-
-        return QuestionResource::collection($questions);
     }
 
-    
+
     /**
      * Show the form for creating a new resource.
      */

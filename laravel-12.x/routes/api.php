@@ -39,24 +39,21 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// Public read-only routes (use auth if you need to restrict later)
+Route::get('/categories', [CategoriesController::class, 'index']);
+Route::get('/questions', [QuestionController::class, 'index']);
+
 // Quiz routes protected by role
 Route::middleware(['auth:sanctum'])->group(function () {
-
-    
     // Teacher-only routes
     Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-    Route::post('/quiz/create', [QuizzesController::class, 'store']);
+        Route::post('/quiz/create', [QuizzesController::class, 'store']);
     });
 
     // Student-only routes
     Route::middleware('role:student')->group(function () {
         Route::post('/quiz/attempt', [QuizAttemptController::class, 'attempt']);
     });
-
-    Route::get('/categories', [CategoriesController::class, 'index']);
-
-    Route::get('/questions', [QuestionController::class, 'index']);
-
 });
 
 Route::post('/login', [AuthController::class, 'login']);

@@ -12,14 +12,28 @@ class CategoriesController extends Controller
      */
     public function index()
     {
-        $categories = Category::where('is_published', true)
-            ->select('id', 'name', 'description')
-            ->get();
+        try {
+            // Test database connection and timeout
+            set_time_limit(60);
 
-         return response()->json([
-            'data' => $categories,
-            'message' => 'Success'
-        ]);
+            $categories = Category::where('is_published', true)
+                ->select('id', 'name', 'description')
+                ->timeout(10)
+                ->get();
+
+            return response()->json([
+                'data' => $categories,
+                'message' => 'Success'
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Categories API Error: ' . $e->getMessage());
+
+            return response()->json([
+                'data' => [],
+                'message' => 'Error: ' . $e->getMessage(),
+                'error' => $e->getCode()
+            ], 500);
+        }
     }
 
     /**

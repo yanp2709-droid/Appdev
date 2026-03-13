@@ -49,7 +49,10 @@ class QuestionForm
                 Repeater::make('options')
                     ->label('Answer Options')
                     ->relationship('options')
-                    ->visible(fn (callable $get) => in_array($get('question_type'), ['mcq', 'tf', 'ordering']))
+                    ->visible(function (callable $get) {
+                        $type = $get('question_type');
+                        return $type === null || $type === '' || in_array($type, ['mcq', 'tf', 'ordering']);
+                    })
                     ->schema([
                         TextInput::make('option_text')
                             ->label('Option Text')
@@ -60,7 +63,7 @@ class QuestionForm
                             ->label('Correct Answer')
                             ->columnSpan(fn (callable $get) => $get('../../question_type') === 'ordering' ? 1 : 1)
                             ->visible(fn (callable $get) => $get('../../question_type') !== 'ordering')
-                            ->helperText(fn (callable $get) => 
+                            ->helperText(fn (callable $get) =>
                                 $get('../../question_type') === 'tf' ? 'True/False questions must have exactly one correct answer' : 'MCQ can have multiple correct answers'
                             ),
 
