@@ -1,0 +1,32 @@
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: laravel_app
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www:cached
+      - laravel_db:/var/www/storage/db
+    networks:
+      - laravel
+
+  webserver:
+    image: nginx:latest
+    container_name: laravel_nginx
+    ports:
+      - "8001:80"
+    volumes:
+      - ./:/var/www:cached
+      - ./docker/nginx:/etc/nginx/conf.d
+    depends_on:
+      - app
+    networks:
+      - laravel
+
+networks:
+  laravel:
+
+volumes:
+  laravel_db:
