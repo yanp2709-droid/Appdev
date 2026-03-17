@@ -19,13 +19,13 @@ class QuizAttempt {
 
   factory QuizAttempt.fromJson(Map<String, dynamic> json) {
     return QuizAttempt(
-      id: json['id'] as int? ?? 0,
+      id: (json['id'] as num?)?.toInt() ?? 0,
       status: json['status'] as String? ?? 'in_progress',
       startedAt: _parseDate(json['started_at']),
       expiresAt: _parseDate(json['expires_at']),
       submittedAt: _parseDate(json['submitted_at']),
-      durationMinutes: json['duration_minutes'] as int? ?? 0,
-      remainingSeconds: json['remaining_seconds'] as int? ?? 0,
+      durationMinutes: (json['duration_minutes'] as num?)?.toInt() ?? 0,
+      remainingSeconds: (json['remaining_seconds'] as num?)?.toInt() ?? 0,
     );
   }
 

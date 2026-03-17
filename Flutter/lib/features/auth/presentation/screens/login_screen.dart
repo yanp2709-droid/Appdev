@@ -107,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           builder: (_, auth, __) => PrimaryButton(
                             key: const Key('loginButton'),
                             label: 'Login',
-                            backgroundColor: AppColors.danger,
+                            backgroundColor: AppColors.primary,
                             isLoading: auth.status == AuthStatus.loading,
                             onPressed: _submit,
                           ),
@@ -189,20 +189,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
 
                 const SizedBox(height: 12),
-                const Text(
-                  'Demo: alex@student.com / password123',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white54, fontSize: 11),
-                ),
-                const SizedBox(height: 12),
-                TextButton.icon(
-                  onPressed: () => context.go('/api-test'),
-                  icon: const Icon(Icons.network_check, size: 18),
-                  label: const Text('🧪 Test API Connection'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white70,
-                  ),
-                ),
               ],
             ),
           ),

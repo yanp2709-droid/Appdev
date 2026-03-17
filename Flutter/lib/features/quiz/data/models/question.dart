@@ -9,7 +9,7 @@ class QuestionOptionModel {
 
   factory QuestionOptionModel.fromJson(Map<String, dynamic> json) {
     return QuestionOptionModel(
-      id: json['id'] as int? ?? 0,
+      id: (json['id'] as num?)?.toInt() ?? 0,
       optionText: json['option_text'] as String? ?? '',
     );
   }
@@ -43,11 +43,11 @@ class QuestionModel {
         .toList();
 
     return QuestionModel(
-      id: json['id'] as int? ?? 0,
-      categoryId: json['category_id'] as int? ?? 0,
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      categoryId: (json['category_id'] as num?)?.toInt() ?? 0,
       questionType: json['question_type'] as String? ?? 'mcq',
       questionText: json['question_text'] as String? ?? '',
-      points: json['points'] as int? ?? 1,
+      points: (json['points'] as num?)?.toInt() ?? 1,
       options: optionsList,
     );
   }

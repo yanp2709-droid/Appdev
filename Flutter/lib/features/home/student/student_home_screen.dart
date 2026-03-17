@@ -119,12 +119,24 @@ class StudentHomeScreen extends StatelessWidget {
 
                   const Spacer(),
 
-                  OutlinedButton(
-                    onPressed: () async {
-                      await context.read<AuthProvider>().logout();
-                      if (context.mounted) context.go('/login');
-                    },
-                    child: const Text('Logout'),
+                  Consumer<AuthProvider>(
+                    builder: (_, auth, __) => OutlinedButton(
+                      onPressed: auth.status == AuthStatus.loading
+                          ? null
+                          : () async {
+                              await auth.logout();
+                              if (context.mounted) context.go('/login');
+                            },
+                      child: auth.status == AuthStatus.loading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text('Logout'),
+                    ),
                   ),
                 ],
               ),
@@ -193,14 +205,14 @@ class _StudentDrawer extends StatelessWidget {
               },
             ),
 
-            // Results (shows last result or placeholder)
+            // History (replaced Results)
             _DrawerTile(
-              icon: Icons.bar_chart,
-              label: 'Results',
-              isActive: currentRoute == '/quiz-result',
+              icon: Icons.history,
+              label: 'History',
+              isActive: currentRoute == '/history',
               onTap: () {
                 Navigator.pop(context);
-                context.go('/quiz-result');
+                context.go('/history');
               },
             ),
 
@@ -208,15 +220,20 @@ class _StudentDrawer extends StatelessWidget {
             const Divider(color: Colors.white24, height: 1),
 
             // Logout
-            _DrawerTile(
-              icon: Icons.logout,
-              label: 'Logout',
-              isActive: false,
-              onTap: () async {
-                Navigator.pop(context);
-                await auth.logout();
-                if (context.mounted) context.go('/login');
-              },
+            Consumer<AuthProvider>(
+              builder: (ctx, authProvider, _) => _DrawerTile(
+                icon: Icons.logout,
+                label: 'Logout',
+                isActive: false,
+                isLoading: authProvider.status == AuthStatus.loading,
+                onTap: authProvider.status == AuthStatus.loading
+                    ? null
+                    : () async {
+                        Navigator.pop(context);
+                        await authProvider.logout();
+                        if (context.mounted) context.go('/login');
+                      },
+              ),
             ),
             const SizedBox(height: 8),
           ],
@@ -230,13 +247,15 @@ class _DrawerTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool isActive;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final bool isLoading;
 
   const _DrawerTile({
     required this.icon,
     required this.label,
     required this.isActive,
     required this.onTap,
+    this.isLoading = false,
   });
 
   @override
@@ -248,11 +267,20 @@ class _DrawerTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
-        leading: Icon(icon, color: Colors.white, size: 20),
+        leading: isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Icon(icon, color: Colors.white, size: 20),
         title: Text(label,
             style: const TextStyle(
                 color: Colors.white, fontWeight: FontWeight.w600)),
-        onTap: onTap,
+        onTap: isLoading ? null : onTap,
         dense: true,
       ),
     );

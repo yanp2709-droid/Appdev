@@ -438,15 +438,7 @@ class QuestionBankService
 
         $rawString = trim((string) $raw);
 
-        if (is_numeric($rawString)) {
-            $index = (int) $rawString;
-            if ($index < 1 || $index > count($options)) {
-                return ['index' => null, 'error' => 'Correct answer index is out of range.'];
-            }
-
-            return ['index' => $index, 'error' => null];
-        }
-
+        // First, try to match against option values (case-insensitive)
         $lower = mb_strtolower($rawString);
         $matchIndex = null;
         foreach ($options as $index => $option) {
@@ -458,11 +450,22 @@ class QuestionBankService
             }
         }
 
-        if ($matchIndex === null) {
-            return ['index' => null, 'error' => 'Correct answer must match one of the options or be a 1-based index.'];
+        // If matched by value, return the match
+        if ($matchIndex !== null) {
+            return ['index' => $matchIndex, 'error' => null];
         }
 
-        return ['index' => $matchIndex, 'error' => null];
+        // If not matched by value and the string is numeric, try as index
+        if (is_numeric($rawString)) {
+            $index = (int) $rawString;
+            if ($index < 1 || $index > count($options)) {
+                return ['index' => null, 'error' => 'Correct answer index is out of range.'];
+            }
+
+            return ['index' => $index, 'error' => null];
+        }
+
+        return ['index' => null, 'error' => 'Correct answer must match one of the options or be a 1-based index.'];
     }
 
     private function createQuestionFromNormalized(array $data, int $rowNumber): array
@@ -543,6 +546,7 @@ class QuestionBankService
         }
 
         return [
+            'id' => $question->id,
             'question_text' => $question->question_text,
             'category' => $question->category?->name ?? '',
             'question_type' => $question->question_type,

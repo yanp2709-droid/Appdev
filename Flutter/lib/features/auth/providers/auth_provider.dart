@@ -44,8 +44,13 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final data  = await _repo.login(email, password);
-      _token      = data['token'] as String;
-      _user       = UserModel.fromMap(data['user'] as Map<String, dynamic>);
+      final token = data['token'];
+      final user  = data['user'];
+      if (token == null || user == null) {
+        throw Exception('Login failed: invalid response from server');
+      }
+      _token = token as String;
+      _user  = UserModel.fromMap(user as Map<String, dynamic>);
       await _repo.saveSession(_token!, _user!);
       _status = AuthStatus.authenticated;
       notifyListeners();
@@ -60,6 +65,9 @@ class AuthProvider extends ChangeNotifier {
 
   // ── Logout ─────────────────────────────────────────────────────────────────
   Future<void> logout() async {
+    _status = AuthStatus.loading;
+    notifyListeners();
+
     if (_token != null) await _repo.logout(_token!);
     await _repo.clearSession();
     _user         = null;

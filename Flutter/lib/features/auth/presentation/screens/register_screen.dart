@@ -2,6 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/exceptions/api_exception.dart';
+import '../../../../core/widgets/app_widgets.dart';
+import '../../../../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -30,6 +33,8 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _obscureConfirmPassword = true;
   String? _errorMessage;
   String? _successMessage;
+  final Map<String, String?> _fieldErrors = {};
+  final AuthService _authService = AuthService();
 
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
@@ -100,6 +105,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     setState(() {
       _errorMessage = null;
       _successMessage = null;
+      _fieldErrors.clear();
     });
 
     if (!_formKey.currentState!.validate()) return;
@@ -114,26 +120,18 @@ class _RegisterScreenState extends State<RegisterScreen>
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Replace with your actual API endpoint
-      // final response = await http.post(
-      //   Uri.parse('https://your-api.com/api/register'),
-      //   headers: {'Content-Type': 'application/json'},
-      //   body: jsonEncode({
-      //     'first_name': _firstNameController.text.trim(),
-      //     'last_name': _lastNameController.text.trim(),
-      //     'email': _emailController.text.trim(),
-      //     'student_id': _studentIdController.text.trim(),
-      //     'section': _sectionController.text.trim(),
-      //     'year_level': _yearLevelController.text.trim(),
-      //     'course': _courseController.text.trim(),
-      //     'password': _passwordController.text,
-      //     'password_confirmation': _confirmPasswordController.text,
-      //     'privacy_consent': _privacyConsent,
-      //   }),
-      // );
-
-      // Simulated network delay — remove when connecting real API
-      await Future.delayed(const Duration(seconds: 2));
+      await _authService.registerStudent(
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        email: _emailController.text.trim(),
+        studentId: _studentIdController.text.trim(),
+        section: _sectionController.text.trim(),
+        yearLevel: _yearLevelController.text.trim(),
+        course: _courseController.text.trim(),
+        password: _passwordController.text,
+        passwordConfirmation: _confirmPasswordController.text,
+        privacyConsent: _privacyConsent,
+      );
 
       // On success: show message then redirect to login
       setState(() {
@@ -143,9 +141,31 @@ class _RegisterScreenState extends State<RegisterScreen>
       await Future.delayed(const Duration(seconds: 2));
 
       if (mounted) {
-        context.go('/login'); // ✅ redirect to login after register
+        context.go('/login'); // redirect to login after register
       }
-    } catch (e) {
+    } on ApiValidationException catch (e) {
+      setState(() {
+        if (e.fieldErrors.isNotEmpty) {
+          e.fieldErrors.forEach((key, value) {
+            if (key == 'privacy_consent') {
+              _errorMessage = value.first;
+              return;
+            }
+            final message = value.isNotEmpty ? value.first : 'Invalid value';
+            _fieldErrors[key] = message;
+            if (key == 'password') {
+              _fieldErrors['password_confirmation'] ??= message;
+            }
+          });
+        } else {
+          _errorMessage = e.message;
+        }
+      });
+    } on ApiException catch (e) {
+      setState(() {
+        _errorMessage = e.message;
+      });
+    } catch (_) {
       setState(() {
         _errorMessage = 'Something went wrong. Please try again.';
       });
@@ -221,6 +241,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   controller: _firstNameController,
                                   hint: 'First Name',
                                   validator: (v) => _validateName(v, 'First name'),
+                                  errorText: _fieldErrors['first_name'],
+                                  onChanged: (_) => _clearFieldError('first_name'),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -229,6 +251,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   controller: _lastNameController,
                                   hint: 'Last Name',
                                   validator: (v) => _validateName(v, 'Last name'),
+                                  errorText: _fieldErrors['last_name'],
+                                  onChanged: (_) => _clearFieldError('last_name'),
                                 ),
                               ),
                             ],
@@ -241,6 +265,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                             hint: 'School Email',
                             keyboardType: TextInputType.emailAddress,
                             validator: _validateEmail,
+                            errorText: _fieldErrors['email'],
+                            onChanged: (_) => _clearFieldError('email'),
                           ),
                           const SizedBox(height: 12),
 
@@ -252,6 +278,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   controller: _studentIdController,
                                   hint: 'Student ID',
                                   validator: (v) => _validateRequired(v, 'Student ID'),
+                                  errorText: _fieldErrors['student_id'],
+                                  onChanged: (_) => _clearFieldError('student_id'),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -260,6 +288,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   controller: _sectionController,
                                   hint: 'Section',
                                   validator: (v) => _validateRequired(v, 'Section'),
+                                  errorText: _fieldErrors['section'],
+                                  onChanged: (_) => _clearFieldError('section'),
                                 ),
                               ),
                             ],
@@ -275,6 +305,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   hint: 'Year Level',
                                   keyboardType: TextInputType.number,
                                   validator: (v) => _validateRequired(v, 'Year level'),
+                                  errorText: _fieldErrors['year_level'],
+                                  onChanged: (_) => _clearFieldError('year_level'),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -283,6 +315,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   controller: _courseController,
                                   hint: 'Course / Program',
                                   validator: (v) => _validateRequired(v, 'Course'),
+                                  errorText: _fieldErrors['course'],
+                                  onChanged: (_) => _clearFieldError('course'),
                                 ),
                               ),
                             ],
@@ -295,6 +329,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                             hint: 'Password',
                             obscureText: _obscurePassword,
                             validator: _validatePassword,
+                            errorText: _fieldErrors['password'],
+                            onChanged: (_) => _clearFieldError('password'),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword
@@ -315,6 +351,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                             hint: 'Confirm Password',
                             obscureText: _obscureConfirmPassword,
                             validator: _validateConfirmPassword,
+                            errorText: _fieldErrors['password_confirmation'],
+                            onChanged: (_) =>
+                                _clearFieldError('password_confirmation'),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscureConfirmPassword
@@ -365,37 +404,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                           const SizedBox(height: 20),
 
                           // Create Account button
-                          SizedBox(
-                            height: 48,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _handleRegister,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.danger,
-                                foregroundColor: Colors.white,
-                                disabledBackgroundColor:
-                                    AppColors.danger.withOpacity(0.5),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                elevation: 2,
-                              ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2.5,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Create Account',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                            ),
+                          PrimaryButton(
+                            label: 'Create Account',
+                            backgroundColor: AppColors.primary,
+                            isLoading: _isLoading,
+                            onPressed: _handleRegister,
                           ),
                         ],
                       ),
@@ -435,6 +448,12 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
   }
 
+  void _clearFieldError(String key) {
+    if (_fieldErrors.containsKey(key)) {
+      setState(() => _fieldErrors.remove(key));
+    }
+  }
+
   Widget _buildField({
     required TextEditingController controller,
     required String hint,
@@ -442,43 +461,18 @@ class _RegisterScreenState extends State<RegisterScreen>
     bool obscureText = false,
     String? Function(String?)? validator,
     Widget? suffixIcon,
+    String? errorText,
+    ValueChanged<String>? onChanged,
   }) {
-    return TextFormField(
+    return AppTextField(
       controller: controller,
+      hint: hint,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: const TextStyle(fontSize: 14, color: Colors.black87),
       validator: validator,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Colors.black38, fontSize: 13),
-        suffixIcon: suffixIcon,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        filled: true,
-        fillColor: const Color(0xFFF5F5F5),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.danger, width: 1.5),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.danger, width: 1.5),
-        ),
-        errorStyle: TextStyle(color: AppColors.danger, fontSize: 11),
-      ),
+      suffixIcon: suffixIcon,
+      errorText: errorText,
+      onChanged: onChanged,
     );
   }
 }
@@ -527,3 +521,4 @@ class _StatusBanner extends StatelessWidget {
     );
   }
 }
+

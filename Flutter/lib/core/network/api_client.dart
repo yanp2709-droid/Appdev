@@ -27,10 +27,23 @@ class ApiClient {
         return handler.next(options);
       },
       onError: (error, handler) async {
-        // Handle 401 (token expired)
-        if (error.response?.statusCode == 401) {
+        final response = error.response;
+        if (response?.statusCode == 401) {
+          final requestPath = response?.requestOptions.path ?? '';
+          // Skip auto-logout for auth endpoints (login/register/logout)
+          // These handle 401 themselves
+          if (requestPath.contains('/auth/login') ||
+              requestPath.contains('/auth/register') ||
+              requestPath.contains('/auth/logout')) {
+            return handler.next(error);
+          }
+          // For protected endpoints, 401 means token expired
           await TokenStorage.deleteToken();
-          // TODO: redirect user to login
+          throw ApiException(
+            message: 'Unauthorized - token expired or invalid. Logging out...',
+            statusCode: 401,
+            type: 'unauthorized',
+          );
         }
         return handler.next(error);
       },
@@ -61,10 +74,43 @@ class ApiClient {
         type: 'timeout',
       );
     } else if (e.response?.statusCode == 401) {
+      // Try to extract error message from response
+      final data = e.response?.data;
+      String message = 'Unauthorized - invalid credentials';
+
+      if (data is Map) {
+        // Try different message locations
+        if (data['error'] is Map && data['error']['message'] != null) {
+          message = data['error']['message'].toString();
+        } else if (data['message'] != null) {
+          message = data['message'].toString();
+        }
+      }
+
       return ApiException(
-        message: 'Unauthorized - token expired or invalid',
+        message: message,
         statusCode: 401,
         type: 'unauthorized',
+      );
+    } else if (e.response?.statusCode == 422) {
+      final data = e.response?.data;
+      final Map<String, List<String>> errors = {};
+      if (data is Map && data['errors'] is Map) {
+        (data['errors'] as Map).forEach((key, value) {
+          if (value is List) {
+            errors[key.toString()] = value.map((v) => v.toString()).toList();
+          } else if (value != null) {
+            errors[key.toString()] = [value.toString()];
+          }
+        });
+      }
+      final message = (data is Map && data['message'] != null)
+          ? data['message'].toString()
+          : 'Validation failed';
+      return ApiValidationException(
+        message: message,
+        statusCode: 422,
+        fieldErrors: errors,
       );
     } else if (e.response?.statusCode == 404) {
       return ApiException(

@@ -14,12 +14,22 @@ class QuestionBankController extends Controller
             'file' => [
                 'required',
                 'file',
-                'mimetypes:text/csv,text/plain,application/vnd.ms-excel',
                 'max:5120',
             ],
         ]);
 
         $result = $service->importCsv($request->file('file'));
+
+        // If service detected that file is not a valid CSV, return 422
+        if ($result['rejected'] && isset($result['errors'])) {
+            foreach ($result['errors'] as $error) {
+                // Check for file/header level errors or missing required column errors
+                if (in_array($error['field'], ['file', 'header']) ||
+                    strpos($error['message'] ?? '', 'Missing required column') !== false) {
+                    return response()->json($result, 422);
+                }
+            }
+        }
 
         return response()->json($result);
     }

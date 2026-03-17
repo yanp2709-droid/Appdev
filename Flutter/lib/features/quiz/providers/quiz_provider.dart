@@ -5,6 +5,7 @@ import '../data/models/question.dart';
 import '../data/models/quiz_attempt.dart';
 import '../data/quiz_result_model.dart';
 import '../../../services/quiz_attempt_service.dart';
+import '../../../core/exceptions/api_exception.dart';
 
 enum QuizStatus { idle, loading, active, finished, error }
 
@@ -77,6 +78,14 @@ class QuizProvider extends ChangeNotifier {
         _errorMessage = 'No questions found for this category';
       } else {
         _status = QuizStatus.active;
+      }
+    } on ApiException catch (e) {
+      if (e.statusCode == 409 && e.type == 'active_attempt_exists') {
+        _status = QuizStatus.error;
+        _errorMessage = 'An active attempt already exists for this quiz. Tap to continue?';
+      } else {
+        _status = QuizStatus.error;
+        _errorMessage = 'Failed to load quiz: ${e.message}';
       }
     } catch (e) {
       _status = QuizStatus.error;
@@ -167,7 +176,7 @@ class QuizProvider extends ChangeNotifier {
 
       final totalItems = score['total_items'] as int? ?? _questions.length;
       final correct = score['correct_answers'] as int? ?? 0;
-      final percent = score['score_percent'] as int? ?? 0;
+      final percent = (score['score_percent'] as num?)?.toInt() ?? 0;
 
       _lastResult = QuizResultModel(
         categoryId:     _categoryId,

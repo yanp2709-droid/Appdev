@@ -17,6 +17,7 @@ class _QuizScreenState extends State<QuizScreen> {
   bool _showUnansweredWarning = false;
   final TextEditingController _textController = TextEditingController();
   int? _lastQuestionId;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -431,24 +432,28 @@ class _QuizScreenState extends State<QuizScreen> {
                 // Next / Finish button
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: quiz.isExpired
-                        ? null
-                        : (question.questionType == 'short_answer'
+                    onPressed: quiz.isExpired ||
+                            _isSubmitting ||
+                            (question.questionType == 'short_answer'
                                 ? !hasTextAnswer
                                 : answeredIndex == -1)
-                            ? () => setState(
-                                () => _showUnansweredWarning = true)
-                            : () async {
-                                if (quiz.isLastQuestion) {
-                                  await context.read<QuizProvider>().submitAttempt();
-                                  if (context.read<QuizProvider>().status ==
-                                      QuizStatus.finished) {
-                                    context.go('/quiz-result');
-                                  }
-                                } else {
-                                  context.read<QuizProvider>().nextQuestion();
+                        ? null
+                        : () async {
+                            if (quiz.isLastQuestion) {
+                              setState(() => _isSubmitting = true);
+                              try {
+                                await context.read<QuizProvider>().submitAttempt();
+                                if (context.read<QuizProvider>().status ==
+                                    QuizStatus.finished) {
+                                  context.go('/quiz-result');
                                 }
-                              },
+                              } finally {
+                                setState(() => _isSubmitting = false);
+                              }
+                            } else {
+                              context.read<QuizProvider>().nextQuestion();
+                            }
+                          },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: (question.questionType == 'short_answer'
                               ? !hasTextAnswer
@@ -460,18 +465,27 @@ class _QuizScreenState extends State<QuizScreen> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    child: Text(
-                      quiz.isLastQuestion ? 'Finish Quiz' : 'Next Question',
-                      style: TextStyle(
-                        color: (question.questionType == 'short_answer'
-                                ? !hasTextAnswer
-                                : answeredIndex == -1)
-                            ? AppColors.gray600
-                            : Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            quiz.isLastQuestion ? 'Finish Quiz' : 'Next Question',
+                            style: TextStyle(
+                              color: (question.questionType == 'short_answer'
+                                      ? !hasTextAnswer
+                                      : answeredIndex == -1)
+                                  ? AppColors.gray600
+                                  : Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
                   ),
                 ),
               ],

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Traits\ApiResponse;
 use App\Models\Attempt_answer;
 use App\Models\Category;
 use App\Models\Question;
@@ -15,6 +16,8 @@ use App\Services\Scoring\QuizAttemptScorer;
 
 class QuizAttemptController extends Controller
 {
+    use ApiResponse;
+
     private const STATUS_IN_PROGRESS = 'in_progress';
     private const STATUS_SUBMITTED = 'submitted';
     private const STATUS_EXPIRED = 'expired';
@@ -23,7 +26,7 @@ class QuizAttemptController extends Controller
     public function attempt(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'quiz_id' => 'nullable|exists:quizzes,id',
+            'quiz_id' => 'nullable|integer',
             'category_id' => 'nullable|exists:categories,id',
             'limit' => 'nullable|integer|min:1|max:200',
             'random' => 'nullable|boolean',
@@ -54,6 +57,9 @@ class QuizAttemptController extends Controller
 
         if (!empty($payload['quiz_id'])) {
             $quiz = Quiz::find($payload['quiz_id']);
+            if (!$quiz) {
+                return $this->error('quiz_not_found', 'Quiz not found.', 404);
+            }
         } else {
             $category = Category::find($payload['category_id']);
             $quiz = Quiz::where('category_id', $category->id)->first();
@@ -232,18 +238,25 @@ class QuizAttemptController extends Controller
         }
 
         try {
-            $scoreSummary = DB::transaction(function () use ($attempt, $scorer) {
+            DB::transaction(function () use ($attempt, $scorer) {
                 $attempt->status = self::STATUS_SUBMITTED;
                 $attempt->submitted_at = now();
                 $attempt->completed_at = $attempt->submitted_at;
                 $attempt->save();
 
-                return $scorer->safeScore($attempt->id);
+                $scorer->safeScore($attempt->id);
             }, 3);
 
+            $attempt = $attempt->fresh();
+
             return $this->success([
-                'attempt' => $this->attemptMeta($attempt->fresh()),
-                'score' => $scoreSummary,
+                'attempt' => $this->attemptMeta($attempt),
+                'score' => [
+                    'total_items' => $attempt->total_items,
+                    'answered_count' => $attempt->answered_count,
+                    'correct_answers' => $attempt->correct_answers,
+                    'score_percent' => $attempt->score_percent, // Use model's float-casted value
+                ],
             ], 'Attempt submitted.');
         } catch (\Throwable $e) {
             return $this->error('scoring_failed', 'Scoring failed. Please retry.', 500);
@@ -326,29 +339,128 @@ class QuizAttemptController extends Controller
         return false;
     }
 
-    private function success(array $data, string $message, int $status = 200)
+    /**
+     * Get all completed attempts for the student
+     */
+    public function history(Request $request)
     {
-        return response()->json([
-            'success' => true,
-            'message' => $message,
-            'data' => $data,
-        ], $status);
+        $user = $request->user();
+        $perPage = $request->query('per_page', 15); // Default 15 items per page
+
+        $attempts = Quiz_attempt::with('quiz.category')
+            ->where('student_id', $user->id)
+            ->where('status', self::STATUS_SUBMITTED)
+            ->orderByDesc('submitted_at')
+            ->paginate($perPage);
+
+        $history = $attempts->getCollection()->map(function ($attempt) {
+            return [
+                'id' => $attempt->id,
+                'quiz_id' => $attempt->quiz_id,
+                'category_id' => $attempt->quiz->category_id,
+                'category_name' => $attempt->quiz->category->name ?? 'Unknown',
+                'status' => $attempt->status,
+                'started_at' => $attempt->started_at,
+                'submitted_at' => $attempt->submitted_at,
+                'duration_minutes' => $attempt->started_at ? $attempt->started_at->diffInMinutes($attempt->expires_at) : 0,
+                'total_items' => $attempt->total_items,
+                'answered_count' => $attempt->answered_count,
+                'correct_answers' => $attempt->correct_answers,
+                'score_percent' => $attempt->score_percent,
+            ];
+        });
+
+        return $this->success([
+            'attempts' => $history,
+            'pagination' => [
+                'total' => $attempts->total(),
+                'per_page' => $attempts->perPage(),
+                'current_page' => $attempts->currentPage(),
+                'last_page' => $attempts->lastPage(),
+                'from' => $attempts->firstItem(),
+                'to' => $attempts->lastItem(),
+            ],
+        ], 'Attempt history retrieved.');
     }
 
-    private function error(string $code, string $message, int $status = 400, $details = null)
+    /**
+     * Get detailed review of a specific submitted attempt
+     * Includes per-question breakdown with selected and correct answers
+     */
+    public function detail(Request $request, int $attemptId)
     {
-        $payload = [
-            'success' => false,
-            'error' => [
-                'code' => $code,
-                'message' => $message,
-            ],
-        ];
-
-        if ($details !== null) {
-            $payload['error']['details'] = $details;
+        $attempt = $this->findStudentAttempt($request, $attemptId);
+        if (!$attempt) {
+            return $this->error('not_found', 'Attempt not found.', 404);
         }
 
-        return response()->json($payload, $status);
+        if ($attempt->status !== self::STATUS_SUBMITTED) {
+            return $this->error('attempt_not_submitted', 'Only submitted attempts can be reviewed.', 422);
+        }
+
+        // Load all data needed for the review WITH eager loading
+        $attempt = $attempt->load([
+            'answers.question.options',
+            'quiz.category',
+            'quiz.questions.options',
+        ]);
+
+        // Get only questions in THIS quiz (not all category questions)
+        $questions = $attempt->quiz->questions()->with('options')->orderBy('id')->get();
+
+        // Map answers by question ID for quick lookup
+        $answersMap = $attempt->answers->keyBy('question_id')->toArray();
+
+        // Build per-question review
+        $review = $questions->map(function ($question) use ($answersMap) {
+            $answer = $answersMap[$question->id] ?? null;
+            $selectedOptionId = $answer['question_option_id'] ?? null;
+            $textAnswer = $answer['text_answer'] ?? null;
+
+            // Find correct answer
+            $correctOption = $question->options->firstWhere('is_correct', true);
+
+            // Build options array
+            $options = $question->options->map(function ($option) use ($selectedOptionId) {
+                return [
+                    'id' => $option->id,
+                    'text' => $option->option_text,
+                    'is_selected' => $selectedOptionId === $option->id,
+                    'is_correct' => (bool) $option->is_correct,
+                    'order_index' => $option->order_index,
+                ];
+            });
+
+            return [
+                'question_id' => $question->id,
+                'question_text' => $question->question_text,
+                'question_type' => $question->question_type,
+                'points' => $question->points,
+                'options' => $options->sortBy('order_index')->values(),
+                'selected_option_id' => $selectedOptionId,
+                'correct_option_id' => $correctOption?->id,
+                'text_answer' => $textAnswer,
+                'is_answered' => $answer !== null,
+                'is_correct' => $answer ? ($answer['is_correct'] ?? false) : false,
+                'answer_id' => $answer['id'] ?? null,
+            ];
+        });
+
+        return $this->success([
+            'attempt' => [
+                'id' => $attempt->id,
+                'quiz_id' => $attempt->quiz_id,
+                'category_id' => $attempt->quiz->category_id,
+                'category_name' => $attempt->quiz->category->name,
+                'status' => $attempt->status,
+                'started_at' => $attempt->started_at,
+                'submitted_at' => $attempt->submitted_at,
+                'total_items' => $attempt->total_items,
+                'answered_count' => $attempt->answered_count,
+                'correct_answers' => $attempt->correct_answers,
+                'score_percent' => $attempt->score_percent,
+            ],
+            'questions' => $review,
+        ], 'Attempt details retrieved.');
     }
 }

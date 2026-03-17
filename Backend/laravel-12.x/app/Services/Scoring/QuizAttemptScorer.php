@@ -55,9 +55,9 @@ class QuizAttemptScorer
                 $answer->save();
             }
 
-            $scorePercent = $totalItems > 0
+            $scorePercent = ($totalItems > 0
                 ? round(($correctCount / $totalItems) * 100, 2)
-                : 0;
+                : 0) * 1.0;
 
             $attempt->answered_count = $answeredCount;
             $attempt->correct_answers = $correctCount;

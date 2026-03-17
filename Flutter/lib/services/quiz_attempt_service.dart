@@ -50,6 +50,19 @@ class QuizAttemptService {
         questions: questions,
       );
     } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      if (status == 409) {
+        final errorData = e.response?.data as Map<String, dynamic>?;
+        if (errorData?['error']?['code'] == 'active_attempt_exists') {
+          final details = errorData?['error']?['details'] as Map<String, dynamic>? ?? {};
+          final msg = errorData?['error']?['message'] as String? ?? 'Active attempt already exists';
+          throw ApiException(
+            message: msg,
+            statusCode: 409,
+            type: 'active_attempt_exists',
+          );
+        }
+      }
       throw apiClient.handleException(e);
     }
   }
