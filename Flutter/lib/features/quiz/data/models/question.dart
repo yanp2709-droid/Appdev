@@ -1,0 +1,66 @@
+class QuestionOptionModel {
+  final int id;
+  final String optionText;
+
+  const QuestionOptionModel({
+    required this.id,
+    required this.optionText,
+  });
+
+  factory QuestionOptionModel.fromJson(Map<String, dynamic> json) {
+    return QuestionOptionModel(
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      optionText: json['option_text'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'option_text': optionText,
+  };
+}
+
+class QuestionModel {
+  final int id;
+  final int categoryId;
+  final String questionType;
+  final String questionText;
+  final int points;
+  final List<QuestionOptionModel> options;
+
+  const QuestionModel({
+    required this.id,
+    required this.categoryId,
+    required this.questionType,
+    required this.questionText,
+    required this.points,
+    required this.options,
+  });
+
+  factory QuestionModel.fromJson(Map<String, dynamic> json) {
+    final optionsList = (json['options'] as List<dynamic>? ?? [])
+        .map((o) => QuestionOptionModel.fromJson(o as Map<String, dynamic>))
+        .toList();
+
+    return QuestionModel(
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      categoryId: (json['category_id'] as num?)?.toInt() ?? 0,
+      questionType: json['question_type'] as String? ?? 'mcq',
+      questionText: json['question_text'] as String? ?? '',
+      points: (json['points'] as num?)?.toInt() ?? 1,
+      options: optionsList,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'category_id': categoryId,
+    'question_type': questionType,
+    'question_text': questionText,
+    'points': points,
+    'options': options.map((o) => o.toJson()).toList(),
+  };
+
+  @override
+  String toString() => 'QuestionModel(id: $id, type: $questionType)';
+}

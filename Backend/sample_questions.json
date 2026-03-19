@@ -1,0 +1,148 @@
+{
+  "questions": [
+    {
+      "question_text": "What is the primary use of a variable in programming?",
+      "category": "Programming Basics",
+      "question_type": "mcq",
+      "options": ["To store data values", "To display output", "To create loops", "To define functions"],
+      "correct_answer": "To store data values",
+      "points": 1,
+      "answer_key": "A variable is a named container used to store data values in a program."
+    },
+    {
+      "question_text": "Python is an object-oriented programming language.",
+      "category": "Programming Basics",
+      "question_type": "tf",
+      "options": ["True", "False"],
+      "correct_answer": "True",
+      "points": 1,
+      "answer_key": "Python supports object-oriented programming with classes and inheritance."
+    },
+    {
+      "question_text": "Arrange these programming languages by year of creation: Python, JavaScript, C",
+      "category": "Programming Basics",
+      "question_type": "ordering",
+      "options": ["C", "Python", "JavaScript"],
+      "correct_answer": "C, Python, JavaScript",
+      "points": 2,
+      "answer_key": "C (1972), Python (1991), JavaScript (1995)"
+    },
+    {
+      "question_text": "Define what an API is in your own words.",
+      "category": "Programming Basics",
+      "question_type": "short_answer",
+      "options": [],
+      "correct_answer": "",
+      "points": 3,
+      "answer_key": "An API (Application Programming Interface) is a set of protocols and tools that allow different software applications to communicate with each other."
+    },
+    {
+      "question_text": "Which format is used for storing and transmitting structured data on the web?",
+      "category": "Networking Basics",
+      "question_type": "mcq",
+      "options": ["XML", "JSON", "Both XML and JSON", "HTML only"],
+      "correct_answer": "Both XML and JSON",
+      "points": 1,
+      "answer_key": "Both XML and JSON are widely used formats for data interchange over the internet."
+    },
+    {
+      "question_text": "TCP is the same as UDP in networking.",
+      "category": "Networking Basics",
+      "question_type": "tf",
+      "options": ["True", "False"],
+      "correct_answer": "False",
+      "points": 1,
+      "answer_key": "TCP (Transmission Control Protocol) is connection-oriented and reliable, while UDP (User Datagram Protocol) is connectionless and faster but less reliable."
+    },
+    {
+      "question_text": "Arrange these network layers from bottom to top: Application, Network, Data Link, Physical",
+      "category": "Networking Basics",
+      "question_type": "ordering",
+      "options": ["Physical", "Data Link", "Network", "Application"],
+      "correct_answer": "Physical, Data Link, Network, Application",
+      "points": 2,
+      "answer_key": "According to the OSI model, the layers from bottom to top are: Physical, Data Link, Network, Transport, Session, Presentation, Application."
+    },
+    {
+      "question_text": "Explain the difference between HTTP and HTTPS.",
+      "category": "Networking Basics",
+      "question_type": "short_answer",
+      "options": [],
+      "correct_answer": "",
+      "points": 3,
+      "answer_key": "HTTP is unencrypted and insecure, while HTTPS uses SSL/TLS encryption to secure data transmission over the internet."
+    },
+    {
+      "question_text": "What is the maximum resolution for Full HD video?",
+      "category": "Multimedia",
+      "question_type": "mcq",
+      "options": ["1280x720", "1920x1080", "2560x1440", "3840x2160"],
+      "correct_answer": "1920x1080",
+      "points": 1,
+      "answer_key": "Full HD (1080p) has a resolution of 1920x1080 pixels."
+    },
+    {
+      "question_text": "PNG supports transparency while JPEG does not.",
+      "category": "Multimedia",
+      "question_type": "tf",
+      "options": ["True", "False"],
+      "correct_answer": "True",
+      "points": 1,
+      "answer_key": "PNG supports transparency through an alpha channel, while JPEG does not support transparency."
+    },
+    {
+      "question_text": "Arrange these image formats by file compression: BMP, PNG, JPEG",
+      "category": "Multimedia",
+      "question_type": "ordering",
+      "options": ["JPEG", "PNG", "BMP"],
+      "correct_answer": "BMP, PNG, JPEG",
+      "points": 2,
+      "answer_key": "BMP (uncompressed), PNG (lossless), JPEG (lossy compression)"
+    },
+    {
+      "question_text": "Define what a codec is and provide an example.",
+      "category": "Multimedia",
+      "question_type": "short_answer",
+      "options": [],
+      "correct_answer": "",
+      "points": 3,
+      "answer_key": "A codec is software that encodes or decodes digital media. Examples include H.264 for video, MP3 for audio, and H.265 for advanced video compression."
+    },
+    {
+      "question_text": "What does RAM stand for?",
+      "category": "General IT Knowledge",
+      "question_type": "mcq",
+      "options": ["Random Access Memory", "Read-Only Access Memory", "Rapid Application Memory", "Reserved Active Memory"],
+      "correct_answer": "Random Access Memory",
+      "points": 1,
+      "answer_key": "RAM stands for Random Access Memory, which is a type of computer memory that can be read and written in any order."
+    },
+    {
+      "question_text": "A solid-state drive (SSD) is faster than a hard disk drive (HDD).",
+      "category": "General IT Knowledge",
+      "question_type": "tf",
+      "options": ["True", "False"],
+      "correct_answer": "True",
+      "points": 1,
+      "answer_key": "SSDs use flash memory and have no moving parts, making them significantly faster than traditional HDDs."
+    },
+    {
+      "question_text": "Arrange these storage devices by speed: SSD, HDD, USB Flash Drive",
+      "category": "General IT Knowledge",
+      "question_type": "ordering",
+      "options": ["SSD", "USB Flash Drive", "HDD"],
+      "correct_answer": "SSD, USB Flash Drive, HDD",
+      "points": 2,
+      "answer_key": "SSD is fastest, followed by USB Flash Drive, and HDD is the slowest due to mechanical movement."
+    },
+    {
+      "question_text": "What is the purpose of a firewall in IT security?",
+      "category": "General IT Knowledge",
+      "question_type": "short_answer",
+      "options": [],
+      "correct_answer": "",
+      "points": 3,
+      "answer_key": "A firewall is a network security system that monitors and controls incoming and outgoing network traffic based on predetermined security rules."
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+# OS/editor
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.fleet/
+.zed/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Laravel
+Backend/laravel-12.x/vendor/
+Backend/laravel-12.x/node_modules/
+Backend/laravel-12.x/public/build/
+Backend/laravel-12.x/public/hot/
+Backend/laravel-12.x/storage/*.key
+Backend/laravel-12.x/storage/logs/
+
+# Flutter
+Flutter/.dart_tool/
+Flutter/build/
+Flutter/.flutter-plugins
+Flutter/.flutter-plugins-dependencies
+Flutter/.packages
+Flutter/.metadata
+
+# Archives and local notes
+Backend&Database.zip
+Git push.txt
+make_branch.txt
