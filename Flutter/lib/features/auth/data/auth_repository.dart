@@ -34,4 +34,9 @@ class AuthRepository {
     await prefs.remove(AppConstants.tokenKey);
     await prefs.remove(AppConstants.userKey);
   }
+
+  // ── Validate session with backend ─────────────────────────────────────────
+  Future<Map<String, dynamic>> getMe() async {
+    return AuthService().getMe();
+  }
 }
