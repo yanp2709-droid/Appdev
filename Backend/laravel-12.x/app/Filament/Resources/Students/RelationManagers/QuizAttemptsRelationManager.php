@@ -6,7 +6,6 @@ use App\Models\Quiz_attempt;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -16,7 +15,7 @@ class QuizAttemptsRelationManager extends RelationManager
 
     protected static ?string $recordTitleAttribute = 'id';
 
-    protected static ?string $title = 'Quiz Attempts';
+    protected static ?string $title = 'Attempts by Category';
 
     public function form(Schema $schema): Schema
     {
@@ -31,81 +30,46 @@ class QuizAttemptsRelationManager extends RelationManager
         return $table
             ->query(
                 $this->getRelationship()
-                    ->with(['quiz.category'])
-                    ->orderByDesc('started_at')
+                    ->with(['quiz.category', 'answers.question.options', 'answers.questionOption', 'answers.answer'])
+                    ->orderByDesc('id')
             )
             ->columns([
-                TextColumn::make('quiz.title')
-                    ->label('Quiz Title')
+                TextColumn::make('quiz.category.name')
+                    ->label('Category')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('quiz.category.name')
-                    ->label('Category')
-                    ->sortable(),
-
-                TextColumn::make('started_at')
-                    ->label('Started')
-                    ->dateTime('M d, Y H:i')
-                    ->sortable(),
-
-                TextColumn::make('submitted_at')
-                    ->label('Submitted')
-                    ->dateTime('M d, Y H:i')
-                    ->sortable(),
-
-                TextColumn::make('total_items')
-                    ->label('Total Questions')
-                    ->numeric()
-                    ->sortable(),
-
-                TextColumn::make('answered_count')
-                    ->label('Answered')
-                    ->numeric()
-                    ->sortable(),
-
-                TextColumn::make('correct_answers')
-                    ->label('Correct')
+                TextColumn::make('category_attempt_number')
+                    ->label('Attempt #')
+                    ->state(function (Quiz_attempt $record): int {
+                        return Quiz_attempt::query()
+                            ->where('student_id', $record->student_id)
+                            ->whereHas('quiz', fn ($query) => $query->where('category_id', $record->quiz?->category_id))
+                            ->where('id', '<=', $record->id)
+                            ->count();
+                    })
                     ->numeric()
                     ->sortable(),
 
                 TextColumn::make('score_percent')
-                    ->label('Score')
+                    ->label('Category Score')
                     ->formatStateUsing(fn ($state) => is_numeric($state) ? round($state, 2) . '%' : 'N/A')
-                    ->sortable()
+                    ->numeric()
                     ->color(fn ($state) => is_numeric($state)
                         ? ($state >= 70 ? 'success' : ($state >= 50 ? 'warning' : 'danger'))
-                        : 'gray'),
-
-                BadgeColumn::make('status')
-                    ->label('Status')
-                    ->formatStateUsing(fn (string $state): string => ucfirst(str_replace('_', ' ', $state)))
-                    ->colors([
-                        'success' => 'submitted',
-                        'warning' => 'in_progress',
-                        'danger' => 'expired',
-                        'gray' => 'other',
-                    ])
+                        : 'gray')
                     ->sortable(),
-            ])
-            ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->options([
-                        'submitted' => 'Submitted',
-                        'in_progress' => 'In Progress',
-                        'expired' => 'Expired',
-                    ]),
 
-                Tables\Filters\SelectFilter::make('quiz.category.id')
-                    ->label('Category')
-                    ->relationship('quiz.category', 'name'),
+                TextColumn::make('answered_items')
+                    ->label('Answered Items')
+                    ->state(fn (Quiz_attempt $record): string => ($record->answered_count ?? 0) . '/' . ($record->total_items ?? 0)),
             ])
             ->actions([
                 Tables\Actions\Action::make('viewDetails')
                     ->label('View Details')
                     ->icon('heroicon-m-eye')
                     ->modalHeading(function (Quiz_attempt $record) {
-                        return 'Quiz Attempt Details - ' . ($record->quiz->title ?? 'Untitled');
+                        return 'Attempt Details - ' . ($record->quiz->category->name ?? 'Unknown Category');
                     })
                     ->modalContent(function (Quiz_attempt $record) {
                         return view('filament.resources.students.quiz-attempt-details', [
@@ -117,6 +81,6 @@ class QuizAttemptsRelationManager extends RelationManager
                     ->modalCancelActionLabel('Close'),
             ])
             ->paginated([10, 25, 50])
-            ->defaultSort('started_at', 'desc');
+            ->defaultSort('id', 'desc');
     }
 }

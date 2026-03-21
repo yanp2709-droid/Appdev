@@ -21,21 +21,21 @@ class AdminDashboard extends Dashboard
     public function getWidgets(): array
     {
         return [
-            DashboardStatsOverview::class,
-            StudentInformationWidget::class,
-            StudentStatsWidget::class,
-            RecentAttemptsWidget::class,
-            StudentAttemptHistoryWidget::class,
-            StudentPerformanceAnalyticsWidget::class,
-            CategoryPerformanceWidget::class,
+            DashboardStatsOverview::class, // total students, total attempts
+            StudentInformationWidget::class, // recent students
+            CategoryPerformanceWidget::class, // category performance
         ];
     }
 
     public function getColumns(): int | array
     {
         return [
-            'md' => 2,
-            'lg' => 3,
+            'md' => 1,
+            'lg' => [
+                'DashboardStatsOverview' => 1,
+                'StudentInformationWidget' => 2, // make recent students widget larger
+                'CategoryPerformanceWidget' => 1,
+            ],
         ];
     }
 }

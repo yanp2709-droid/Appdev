@@ -216,6 +216,10 @@ class QuizAttemptController extends Controller
             ]
         );
 
+        // Keep answered_count persisted as answers are saved from the mobile app.
+        $attempt->answered_count = Attempt_answer::where('quiz_attempt_id', $attempt->id)->count();
+        $attempt->save();
+
         return $this->success([
             'answer_id' => $answer->id,
             'attempt' => $this->attemptMeta($attempt),
@@ -307,6 +311,10 @@ class QuizAttemptController extends Controller
             'started_at' => $attempt->started_at,
             'expires_at' => $attempt->expires_at,
             'submitted_at' => $attempt->submitted_at,
+            'total_items' => $attempt->total_items,
+            'answered_count' => $attempt->answered_count,
+            'correct_answers' => $attempt->correct_answers,
+            'score_percent' => $attempt->score_percent,
             'duration_minutes' => $durationMinutes,
             'remaining_seconds' => $this->remainingSeconds($attempt),
         ];

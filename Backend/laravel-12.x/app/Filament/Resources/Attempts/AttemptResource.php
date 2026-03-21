@@ -102,6 +102,6 @@ class AttemptResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return true;
+        return false; // Remove Quiz Attempt menu from navigation
     }
 }
