@@ -1,5 +1,6 @@
 // lib/features/quiz/presentation/screens/attempt_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../data/models/attempt_detail.dart';
 import '../../../../services/attempt_history_service.dart';
@@ -25,90 +26,81 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Attempt Review'),
-        centerTitle: true,
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        automaticallyImplyLeading: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+    return WillPopScope(
+      onWillPop: () async {
+        // Use GoRouter navigation
+        context.go('/student-home');
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Attempt Review'),
+          centerTitle: true,
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          automaticallyImplyLeading: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              context.go('/student-home');
+            },
+          ),
+        ),
+        body: FutureBuilder<AttemptDetailModel>(
+          future: _detailDataFuture,
+          builder: (context, snapshot) {
+            // Loading state
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+
+            // Error state
+            if (snapshot.hasError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Failed to load attempt details',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            // Success state
+            if (snapshot.hasData) {
+              final detail = snapshot.data!;
+              return SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildScoreSummary(detail),
+                    const SizedBox(height: 20),
+                    ...detail.questions.asMap().entries.map((entry) {
+                      final idx = entry.key + 1;
+                      final question = entry.value;
+                      return _QuestionReview(
+                        question: question,
+                        questionNumber: idx,
+                      );
+                    }).toList(),
+                  ],
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          },
         ),
       ),
-      body: FutureBuilder<AttemptDetailModel>(
-        future: _detailDataFuture,
-        builder: (context, snapshot) {
-          // Loading state
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-
-          // Error state
-          if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Failed to load attempt details',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    snapshot.error.toString(),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () => setState(() =>
-                        _detailDataFuture = _historyService.getAttemptDetail(attemptId: widget.attemptId)),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          // Success state
-          if (!snapshot.hasData) {
-            return const Center(
-              child: Text('No data available'),
-            );
-          }
-
-          final detail = snapshot.data!;
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                // ── Summary Card ──────────────────────────────
-                _buildScoreSummary(detail),
-
-                // ── Questions List ────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: detail.questions.length,
-                    itemBuilder: (context, index) {
-                      final question = detail.questions[index];
-                      return _QuestionReview(question: question, questionNumber: index + 1);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
     );
+  }
+
+
   }
 
   Widget _buildScoreSummary(AttemptDetailModel detail) {
@@ -158,7 +150,7 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
       ),
     );
   }
-}
+
 
 class _SummaryItem extends StatelessWidget {
   final String label;
