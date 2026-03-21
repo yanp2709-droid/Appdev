@@ -155,13 +155,20 @@ class QuizProvider extends ChangeNotifier {
     _stopTicker();
   }
 
-  void reset() {
+  void reset({bool clearLastResult = false}) {
     _status       = QuizStatus.idle;
     _currentIndex = 0;
+    _questions = [];
     _selectedOptionIds.clear();
     _textAnswers.clear();
+    _categoryId = 0;
+    _categoryName = '';
+    _errorMessage = null;
     _attempt = null;
     _remainingSeconds = 0;
+    if (clearLastResult) {
+      _lastResult = null;
+    }
     _stopTicker();
     notifyListeners();
   }
