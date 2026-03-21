@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Students;
 
 use App\Filament\Resources\Students\Pages\ListStudents;
+use App\Filament\Resources\Students\Pages\ViewStudent;
 use App\Filament\Resources\Students\RelationManagers\QuizAttemptsRelationManager;
 use App\Models\User;
 use Filament\Forms\Components\Select;
@@ -94,6 +95,7 @@ class StudentResource extends Resource
     {
         return [
             'index' => ListStudents::route('/'),
+            'view' => ViewStudent::route('/{record}'),
         ];
     }
 }
