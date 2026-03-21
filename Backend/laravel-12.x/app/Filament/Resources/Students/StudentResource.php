@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Students;
 
 use App\Filament\Resources\Students\Pages\ListStudents;
 use App\Filament\Resources\Students\Pages\ViewStudent;
-use App\Filament\Resources\Students\RelationManagers\QuizAttemptsRelationManager;
 use App\Models\User;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -86,9 +85,7 @@ class StudentResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            QuizAttemptsRelationManager::class,
-        ];
+        return [];
     }
 
     public static function getPages(): array
