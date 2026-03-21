@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Schema;
 
 class Quiz extends Model
 {
@@ -25,7 +26,11 @@ class Quiz extends Model
     // A quiz has many questions
     public function questions()
     {
-        return $this->hasMany(Question::class);
+        if (Schema::hasColumn('questions', 'quiz_id')) {
+            return $this->hasMany(Question::class, 'quiz_id');
+        }
+
+        return $this->hasMany(Question::class, 'category_id', 'category_id');
     }
 
     // A quiz has many attempts

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Students\Pages;
 
 use App\Filament\Resources\Students\StudentResource;
+use App\Filament\Widgets\StudentQuizAttemptsTableWidget;
 use App\Models\User;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\ViewRecord;
@@ -67,5 +68,17 @@ class ViewStudent extends ViewRecord
                             ->columnSpanFull(),
                     ]),
             ]);
+    }
+
+    protected function getFooterWidgets(): array
+    {
+        return [
+            StudentQuizAttemptsTableWidget::class,
+        ];
+    }
+
+    public function getFooterWidgetsColumns(): int | array
+    {
+        return 1;
     }
 }
