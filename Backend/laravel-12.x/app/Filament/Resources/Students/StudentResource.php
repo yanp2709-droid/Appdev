@@ -53,7 +53,7 @@ class StudentResource extends Resource
                     ->dateTime()
                     ->sortable(),
 
-                TextColumn::make('attempts_count')
+                TextColumn::make('quiz_attempts_count')
                     ->label('Total Attempts')
                     ->counts('quizAttempts')
                     ->sortable(),
