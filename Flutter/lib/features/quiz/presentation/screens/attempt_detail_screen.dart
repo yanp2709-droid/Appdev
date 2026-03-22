@@ -16,20 +16,50 @@ class AttemptDetailScreen extends StatefulWidget {
 
 class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
   final AttemptHistoryService _historyService = AttemptHistoryService();
-  late Future<AttemptDetailModel> _detailDataFuture;
+  late Future<_AttemptReviewData> _reviewDataFuture;
 
   @override
   void initState() {
     super.initState();
-    _detailDataFuture = _historyService.getAttemptDetail(attemptId: widget.attemptId);
+    _reviewDataFuture = _loadReviewData();
+  }
+
+  Future<_AttemptReviewData> _loadReviewData() async {
+    final detail = await _historyService.getAttemptDetail(attemptId: widget.attemptId);
+    final attemptCount = await _getCategoryAttemptCount(detail.categoryId);
+    return _AttemptReviewData(detail: detail, categoryAttemptCount: attemptCount);
+  }
+
+  Future<int?> _getCategoryAttemptCount(int categoryId) async {
+    const perPage = 50;
+    const maxPages = 20;
+    var page = 1;
+    var totalCount = 0;
+
+    try {
+      while (page <= maxPages) {
+        final pageItems = await _historyService.getHistory(page: page, perPage: perPage);
+        if (pageItems.isEmpty) break;
+        totalCount += pageItems.where((a) => a.categoryId == categoryId).length;
+        if (pageItems.length < perPage) break;
+        page++;
+      }
+      return totalCount;
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        // Use GoRouter navigation
-        context.go('/student-home');
+        if (context.canPop()) {
+          return true;
+        }
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) context.go('/student-home');
+        });
         return false;
       },
       child: Scaffold(
@@ -42,12 +72,16 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
-              context.go('/student-home');
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/student-home');
+              }
             },
           ),
         ),
-        body: FutureBuilder<AttemptDetailModel>(
-          future: _detailDataFuture,
+        body: FutureBuilder<_AttemptReviewData>(
+          future: _reviewDataFuture,
           builder: (context, snapshot) {
             // Loading state
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -75,11 +109,12 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
 
             // Success state
             if (snapshot.hasData) {
-              final detail = snapshot.data!;
+              final detail = snapshot.data!.detail;
+              final categoryAttemptCount = snapshot.data!.categoryAttemptCount;
               return SingleChildScrollView(
                 child: Column(
                   children: [
-                    _buildScoreSummary(detail),
+                    _buildScoreSummary(detail, categoryAttemptCount),
                     const SizedBox(height: 20),
                     ...detail.questions.asMap().entries.map((entry) {
                       final idx = entry.key + 1;
@@ -100,10 +135,7 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
     );
   }
 
-
-  }
-
-  Widget _buildScoreSummary(AttemptDetailModel detail) {
+  Widget _buildScoreSummary(AttemptDetailModel detail, int? categoryAttemptCount) {
     final scorePercent = detail.scorePercent;
     final scoreColor = scorePercent >= 70
         ? AppColors.accent
@@ -125,7 +157,16 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
+          Text(
+            'Attempts in this category: ${categoryAttemptCount?.toString() ?? 'Unknown'}',
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -150,7 +191,7 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
       ),
     );
   }
-
+}
 
 class _SummaryItem extends StatelessWidget {
   final String label;
@@ -208,7 +249,7 @@ class _QuestionReview extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Question Header ──────────────────┐
+            // Question Header
             Row(
               children: [
                 Expanded(
@@ -253,7 +294,7 @@ class _QuestionReview extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // ── Answer Display ──────────────────┐
+            // Answer Display
             if (question.questionType == 'short_answer') ...[
               _buildShortAnswerReview(context, question),
             ] else if (question.questionType == 'ordering') ...[
@@ -268,6 +309,7 @@ class _QuestionReview extends StatelessWidget {
   }
 
   Widget _buildShortAnswerReview(BuildContext context, AttemptQuestionDetail question) {
+    final correctAnswer = _getCorrectAnswerText(question);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -289,11 +331,37 @@ class _QuestionReview extends StatelessWidget {
             style: const TextStyle(fontSize: 14),
           ),
         ),
+        if (correctAnswer != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            'Correct Answer:',
+            style: Theme.of(context).textTheme.labelMedium,
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.accent),
+            ),
+            child: Text(
+              correctAnswer,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
       ],
     );
   }
 
   Widget _buildMultipleChoiceReview(BuildContext context, AttemptQuestionDetail question) {
+    var selectedOptions = question.options.where((o) => o.isSelected).toList();
+    if (selectedOptions.isEmpty && question.selectedOptionId != null) {
+      selectedOptions = question.options.where((o) => o.id == question.selectedOptionId).toList();
+    }
+    final correctAnswer = _getCorrectAnswerText(question);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -344,6 +412,22 @@ class _QuestionReview extends StatelessWidget {
             ),
           );
         }).toList(),
+        const SizedBox(height: 8),
+        Text('Your Answer:', style: Theme.of(context).textTheme.labelMedium),
+        const SizedBox(height: 6),
+        Text(
+          selectedOptions.isNotEmpty ? selectedOptions.map((o) => o.text).join(', ') : '(No answer)',
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+        if (correctAnswer != null) ...[
+          const SizedBox(height: 8),
+          Text('Correct Answer:', style: Theme.of(context).textTheme.labelMedium),
+          const SizedBox(height: 6),
+          Text(
+            correctAnswer,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+        ],
       ],
     );
   }
@@ -351,55 +435,142 @@ class _QuestionReview extends StatelessWidget {
   Widget _buildOrderingReview(BuildContext context, AttemptQuestionDetail question) {
     // For ordering questions, show selected order
     final selectedOptions = question.options.where((o) => o.isSelected).toList();
+    final correctOptions = _getCorrectOrderOptions(question);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Your Order:', style: Theme.of(context).textTheme.labelMedium),
         const SizedBox(height: 8),
-        ...selectedOptions.asMap().entries.map((entry) {
-          final index = entry.key + 1;
-          final option = entry.value;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Center(
-                      child: Text(
-                        index.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
+        if (selectedOptions.isEmpty)
+          const Text(
+            '(No answer)',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          )
+        else
+          ...selectedOptions.asMap().entries.map((entry) {
+            final index = entry.key + 1;
+            final option = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Center(
+                        child: Text(
+                          index.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      option.text,
-                      style: const TextStyle(fontSize: 14),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        option.text,
+                        style: const TextStyle(fontSize: 14),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        if (correctOptions != null && correctOptions.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text('Correct Order:', style: Theme.of(context).textTheme.labelMedium),
+          const SizedBox(height: 8),
+          ...correctOptions.asMap().entries.map((entry) {
+            final index = entry.key + 1;
+            final option = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.accent),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: AppColors.accent,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Center(
+                        child: Text(
+                          index.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        option.text,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ],
       ],
     );
   }
+
+  String? _getCorrectAnswerText(AttemptQuestionDetail question) {
+    final correctOptions = question.options.where((o) => o.isCorrect).toList();
+    if (correctOptions.isNotEmpty) {
+      return correctOptions.map((o) => o.text).join(', ');
+    }
+    if (question.correctOptionId != null) {
+      final match = question.options.firstWhere(
+        (o) => o.id == question.correctOptionId,
+        orElse: () => const AttemptOption(id: 0, text: '', isSelected: false, isCorrect: false),
+      );
+      if (match.text.isNotEmpty) return match.text;
+    }
+    return null;
+  }
+
+  List<AttemptOption>? _getCorrectOrderOptions(AttemptQuestionDetail question) {
+    final ordered = question.options.where((o) => o.orderIndex != null).toList();
+    if (ordered.isEmpty) return null;
+    ordered.sort((a, b) => a.orderIndex!.compareTo(b.orderIndex!));
+    return ordered;
+  }
+}
+
+class _AttemptReviewData {
+  final AttemptDetailModel detail;
+  final int? categoryAttemptCount;
+
+  const _AttemptReviewData({
+    required this.detail,
+    required this.categoryAttemptCount,
+  });
 }

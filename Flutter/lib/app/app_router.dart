@@ -12,6 +12,7 @@ import '../features/categories/presentation/screens/categories_screen.dart';
 import '../features/quiz/presentation/screens/quiz_screen.dart';
 import '../features/quiz/presentation/screens/quiz_result_screen.dart';
 import '../features/quiz/presentation/screens/history_screen.dart';
+import '../features/quiz/presentation/screens/attempt_detail_screen.dart';
 import '../screens/api_test_screen.dart';
 
 GoRouter createRouter(BuildContext context) {
@@ -38,6 +39,14 @@ GoRouter createRouter(BuildContext context) {
       GoRoute(path: '/quiz',            builder: (_, __) => const QuizScreen()),
       GoRoute(path: '/quiz-result',     builder: (_, __) => const QuizResultScreen()),
       GoRoute(path: '/history',         builder: (_, __) => const HistoryScreen()),
+      GoRoute(
+        path: '/history/:attemptId',
+        builder: (_, state) {
+          final idParam = state.pathParameters['attemptId'] ?? '0';
+          final attemptId = int.tryParse(idParam) ?? 0;
+          return AttemptDetailScreen(attemptId: attemptId);
+        },
+      ),
       GoRoute(path: '/session-expired', builder: (_, __) => const SessionExpiredScreen()),
       GoRoute(path: '/api-test',        builder: (_, __) => const ApiTestScreen()),
     ],
