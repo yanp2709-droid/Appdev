@@ -11,6 +11,8 @@ class CategoryPerformanceWidget extends ChartWidget
 
     protected static ?int $sort = 4;
 
+    protected static bool $isLazy = false;
+
     protected ?string $maxHeight = '300px';
 
     protected int | string | array $columnSpan = 1;

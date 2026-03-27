@@ -5,10 +5,12 @@ namespace App\Filament\Pages;
 use App\Filament\Widgets\DashboardStatsOverview;
 use App\Filament\Widgets\StudentPerformanceAnalyticsWidget;
 use App\Filament\Widgets\CategoryPerformanceWidget;
-use App\Filament\Widgets\StudentStatsWidget;
-use App\Filament\Widgets\RecentAttemptsWidget;
+use App\Models\Quiz_attempt;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
 
 class Statistics extends Page
 {

@@ -9,6 +9,10 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class DashboardStatsOverview extends BaseWidget
 {
+    protected static ?int $sort = 1;
+
+    protected static bool $isLazy = false;
+
     protected function getStats(): array
     {
         $totalStudents = User::where('role', 'student')->count();
