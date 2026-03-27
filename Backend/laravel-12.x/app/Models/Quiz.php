@@ -15,4 +15,20 @@ class Quiz extends Model
         'difficulty',
         'duration_minutes',
     ];
+
+    // Relations
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function questions()
+    {
+        return $this->hasMany(Question::class);
+    }
+
+    public function attempts()
+    {
+        return $this->hasMany(Quiz_attempt::class);
+    }
 }
