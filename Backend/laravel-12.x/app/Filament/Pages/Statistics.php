@@ -16,8 +16,6 @@ class Statistics extends Page
 
     protected static ?string $navigationLabel = 'Statistics';
 
-    protected static string $view = 'filament.pages.statistics';
-
     protected static ?int $navigationSort = 3;
 
     protected static ?string $title = 'Quiz Statistics & Analytics';
