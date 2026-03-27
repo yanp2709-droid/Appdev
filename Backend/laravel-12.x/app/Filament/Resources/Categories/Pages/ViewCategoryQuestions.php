@@ -1,41 +1,36 @@
 <?php
 
-namespace App\Filament\Resources\Questions\Pages;
+namespace App\Filament\Resources\Categories\Pages;
 
+use App\Filament\Resources\Categories\CategoryResource;
 use App\Filament\Resources\Questions\QuestionResource;
-use App\Filament\Widgets\QuestionBankOverviewWidget;
-use App\Filament\Widgets\QuestionTypeDistributionWidget;
+use App\Models\Question;
 use App\Services\QuestionBank\QuestionBankService;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Pages\ViewRecord;
 
-class ListQuestions extends ListRecords
+class ViewCategoryQuestions extends ViewRecord
 {
-    protected static string $resource = QuestionResource::class;
+    protected static string $resource = CategoryResource::class;
 
-    protected function getHeaderWidgets(): array
-    {
-        return [
-            QuestionBankOverviewWidget::class,
-            QuestionTypeDistributionWidget::class,
-        ];
-    }
+    protected string $view = 'filament.resources.categories.pages.view-category-questions';
 
-    public function getHeaderWidgetsColumns(): int | array
+    public array $selectedQuestionIds = [];
+
+    public function getTitle(): string
     {
-        return [
-            'md' => 1,
-            'xl' => 2,
-        ];
+        return $this->getRecord()->name . ' Questions';
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make('newQuestion')
+                ->label('New Question')
+                ->url(QuestionResource::getUrl('create')),
             Action::make('importCsv')
                 ->label('Import CSV')
                 ->form([
@@ -66,9 +61,7 @@ class ListQuestions extends ListRecords
                 }),
             Action::make('exportCsv')
                 ->label('Export CSV')
-                ->action(function (QuestionBankService $service) {
-                    return $service->exportCsv();
-                }),
+                ->action(fn (QuestionBankService $service) => $service->exportCsv()),
             Action::make('exportJson')
                 ->label('Export JSON')
                 ->action(function (QuestionBankService $service) {
@@ -81,6 +74,40 @@ class ListQuestions extends ListRecords
         ];
     }
 
+    public function getQuestions(): \Illuminate\Support\Collection
+    {
+        return $this->getRecord()
+            ->questions()
+            ->orderByDesc('created_at')
+            ->get();
+    }
+
+    public function deleteSelectedQuestions(): void
+    {
+        $questionIds = collect($this->selectedQuestionIds)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        if ($questionIds->isEmpty()) {
+            return;
+        }
+
+        Question::query()
+            ->whereIn('id', $questionIds)
+            ->where('category_id', $this->getRecord()->id)
+            ->delete();
+
+        $deletedCount = $questionIds->count();
+        $this->selectedQuestionIds = [];
+
+        Notification::make()
+            ->title('Questions deleted')
+            ->body($deletedCount . ' question(s) were deleted successfully.')
+            ->success()
+            ->send();
+    }
+
     private function notifyImportResult(array $result): void
     {
         $errors = $result['errors'] ?? [];
@@ -91,8 +118,9 @@ class ListQuestions extends ListRecords
             'Failed: ' . ($result['failed_count'] ?? 0),
         ];
 
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             $preview = array_slice($errors, 0, 5);
+
             foreach ($preview as $error) {
                 $bodyLines[] = 'Row ' . $error['row'] . ' ' . $error['field'] . ': ' . $error['message'];
             }
