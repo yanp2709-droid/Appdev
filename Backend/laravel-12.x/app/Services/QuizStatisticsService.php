@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Quiz_attempt;
 use App\Models\User;
 use App\Models\Quiz;
+use App\Models\Category;
 use Illuminate\Support\Facades\DB;
 
 class QuizStatisticsService
@@ -135,6 +136,119 @@ class QuizStatisticsService
                 'lowest_score' => round($stat->lowest_score ?? 0, 2),
             ];
         })->toArray();
+    }
+
+    /**
+     * Get category summary cards for the statistics page
+     */
+    public function getCategoryCardStatistics(): array
+    {
+        $stats = DB::table('categories')
+            ->join('quizzes', 'quizzes.category_id', '=', 'categories.id')
+            ->join('quiz_attempts', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
+            ->select(
+                'categories.id',
+                'categories.name',
+                DB::raw('COUNT(quiz_attempts.id) as total_attempts'),
+                DB::raw('COUNT(DISTINCT quiz_attempts.student_id) as attempted_users'),
+                DB::raw('MAX(CASE WHEN quiz_attempts.status = "submitted" THEN quiz_attempts.score_percent ELSE NULL END) as highest_score'),
+                DB::raw('MIN(CASE WHEN quiz_attempts.status = "submitted" THEN quiz_attempts.score_percent ELSE NULL END) as lowest_score'),
+                DB::raw('SUM(CASE WHEN quiz_attempts.status = "submitted" THEN 1 ELSE 0 END) as submitted_attempts'),
+                DB::raw('SUM(CASE WHEN quiz_attempts.status = "in_progress" THEN 1 ELSE 0 END) as in_progress_attempts'),
+                DB::raw('SUM(CASE WHEN quiz_attempts.status = "expired" THEN 1 ELSE 0 END) as expired_attempts')
+            )
+            ->groupBy('categories.id', 'categories.name')
+            ->havingRaw('COUNT(quiz_attempts.id) > 0')
+            ->orderBy('categories.name')
+            ->get();
+
+        return $stats->map(function ($stat) {
+            $totalAttempts = (int) $stat->total_attempts;
+            $submittedAttempts = (int) $stat->submitted_attempts;
+
+            return [
+                'category_id' => (int) $stat->id,
+                'category_name' => $stat->name,
+                'total_attempts' => $totalAttempts,
+                'attempted_users' => (int) $stat->attempted_users,
+                'highest_score' => round((float) ($stat->highest_score ?? 0), 2),
+                'lowest_score' => round((float) ($stat->lowest_score ?? 0), 2),
+                'completion_rate' => $totalAttempts > 0 ? round(($submittedAttempts / $totalAttempts) * 100, 2) : 0,
+                'in_progress_attempts' => (int) $stat->in_progress_attempts,
+                'expired_attempts' => (int) $stat->expired_attempts,
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Get category detail data for the selected statistics card
+     */
+    public function getCategoryDetailStatistics(int $categoryId): array
+    {
+        $category = Category::find($categoryId);
+
+        if (! $category) {
+            return [];
+        }
+
+        $summary = collect($this->getCategoryCardStatistics())
+            ->firstWhere('category_id', $categoryId);
+
+        if (! $summary) {
+            return [];
+        }
+
+        $users = DB::table('quiz_attempts')
+            ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
+            ->join('users', 'quiz_attempts.student_id', '=', 'users.id')
+            ->where('quizzes.category_id', $categoryId)
+            ->where('users.role', 'student')
+            ->groupBy('users.id', 'users.name', 'users.email')
+            ->select(
+                'users.id',
+                'users.name',
+                'users.email',
+                DB::raw('COUNT(quiz_attempts.id) as total_attempts'),
+                DB::raw('SUM(CASE WHEN quiz_attempts.status = "submitted" THEN 1 ELSE 0 END) as submitted_attempts'),
+                DB::raw('SUM(CASE WHEN quiz_attempts.status = "in_progress" THEN 1 ELSE 0 END) as in_progress_attempts'),
+                DB::raw('SUM(CASE WHEN quiz_attempts.status = "expired" THEN 1 ELSE 0 END) as expired_attempts'),
+                DB::raw('MAX(CASE WHEN quiz_attempts.status = "submitted" THEN quiz_attempts.score_percent ELSE NULL END) as best_score'),
+                DB::raw('MIN(CASE WHEN quiz_attempts.status = "submitted" THEN quiz_attempts.score_percent ELSE NULL END) as lowest_score')
+            )
+            ->orderByDesc('best_score')
+            ->orderBy('users.name')
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'student_id' => (int) $user->id,
+                    'student_name' => $user->name,
+                    'student_email' => $user->email,
+                    'total_attempts' => (int) $user->total_attempts,
+                    'submitted_attempts' => (int) $user->submitted_attempts,
+                    'in_progress_attempts' => (int) $user->in_progress_attempts,
+                    'expired_attempts' => (int) $user->expired_attempts,
+                    'best_score' => round((float) ($user->best_score ?? 0), 2),
+                    'lowest_score' => round((float) ($user->lowest_score ?? 0), 2),
+                ];
+            })
+            ->values();
+
+        $highestScorer = $users
+            ->filter(fn (array $user): bool => $user['best_score'] > 0)
+            ->sortByDesc('best_score')
+            ->first();
+
+        $lowestScorer = $users
+            ->filter(fn (array $user): bool => $user['lowest_score'] > 0)
+            ->sortBy('lowest_score')
+            ->first();
+
+        return [
+            'summary' => $summary,
+            'users' => $users->all(),
+            'highest_scorer' => $highestScorer,
+            'lowest_scorer' => $lowestScorer,
+        ];
     }
 
     /**

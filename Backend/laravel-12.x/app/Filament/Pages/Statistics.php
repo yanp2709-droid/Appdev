@@ -2,15 +2,9 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Widgets\DashboardStatsOverview;
-use App\Filament\Widgets\StudentPerformanceAnalyticsWidget;
-use App\Filament\Widgets\CategoryPerformanceWidget;
-use App\Models\Quiz_attempt;
+use App\Services\QuizStatisticsService;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\TextEntry;
 
 class Statistics extends Page
 {
@@ -22,24 +16,35 @@ class Statistics extends Page
 
     protected static ?string $title = 'Quiz Statistics & Analytics';
 
-    public function getWidgets(): array
+    protected string $view = 'filament.pages.statistics';
+
+    public ?int $selectedCategoryId = null;
+
+    public function mount(): void
     {
-        return [
-            DashboardStatsOverview::class,
-            CategoryPerformanceWidget::class,
-            StudentPerformanceAnalyticsWidget::class,
-        ];
+        $cards = $this->getCategoryCards();
+
+        if (($this->selectedCategoryId === null) && filled($cards)) {
+            $this->selectedCategoryId = $cards[0]['category_id'];
+        }
     }
 
-    public function getColumns(): int | array
+    public function selectCategory(int $categoryId): void
     {
-        return [
-            'md' => 1,
-            'lg' => [
-                'DashboardStatsOverview' => 1,
-                'CategoryPerformanceWidget' => 1,
-                'StudentPerformanceAnalyticsWidget' => 'full',
-            ],
-        ];
+        $this->selectedCategoryId = $categoryId;
+    }
+
+    public function getCategoryCards(): array
+    {
+        return app(QuizStatisticsService::class)->getCategoryCardStatistics();
+    }
+
+    public function getSelectedCategoryDetail(): array
+    {
+        if (! $this->selectedCategoryId) {
+            return [];
+        }
+
+        return app(QuizStatisticsService::class)->getCategoryDetailStatistics($this->selectedCategoryId);
     }
 }

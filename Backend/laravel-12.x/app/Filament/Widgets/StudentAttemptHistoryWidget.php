@@ -9,6 +9,7 @@ use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Database\Eloquent\Builder;
 
 class StudentAttemptHistoryWidget extends BaseWidget
 {
@@ -103,11 +104,18 @@ class StudentAttemptHistoryWidget extends BaseWidget
                         'verified' => 'Verified',
                         'unverified' => 'Unverified',
                     ])
-                    ->query(function (Tables\Filters\BaseFilter $filter, $value) {
+                    ->query(function (Builder $query, array $data): Builder {
+                        $value = $data['value'] ?? null;
+
                         if ($value === 'verified') {
-                            return $filter->getQuery()->whereNotNull('email_verified_at');
+                            return $query->whereNotNull('email_verified_at');
                         }
-                        return $filter->getQuery()->whereNull('email_verified_at');
+
+                        if ($value === 'unverified') {
+                            return $query->whereNull('email_verified_at');
+                        }
+
+                        return $query;
                     }),
             ])
             ->paginated([10, 25, 50])
