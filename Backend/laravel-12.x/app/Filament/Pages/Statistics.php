@@ -12,7 +12,7 @@ use Filament\Support\Icons\Heroicon;
 
 class Statistics extends Page
 {
-    protected static ?string $navigationIcon = Heroicon::OutlinedChartBar;
+    protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
 
     protected static ?string $navigationLabel = 'Statistics';
 
