@@ -26,9 +26,7 @@ class StudentPerformanceAnalyticsWidget extends BaseWidget
                 User::query()
                     ->where('role', 'student')
                     ->withCount('quizAttempts')
-                    ->with(['quizAttempts' => function ($query) {
-                        $query->where('status', 'submitted');
-                    }])
+                    ->with(['quizAttempts'])
                     ->latest('created_at')
             )
             ->columns([
@@ -55,9 +53,7 @@ class StudentPerformanceAnalyticsWidget extends BaseWidget
                 TextColumn::make('avg_score')
                     ->label('Average Score')
                     ->formatStateUsing(function (User $record): string {
-                        $attempts = $record->quizAttempts()
-                            ->where('status', 'submitted')
-                            ->get();
+                        $attempts = $record->quizAttempts()->get();
 
                         if ($attempts->isEmpty()) {
                             return 'No Data';
@@ -71,9 +67,7 @@ class StudentPerformanceAnalyticsWidget extends BaseWidget
                 TextColumn::make('highest_score')
                     ->label('Highest Score')
                     ->formatStateUsing(function (User $record): string {
-                        $attempts = $record->quizAttempts()
-                            ->where('status', 'submitted')
-                            ->get();
+                        $attempts = $record->quizAttempts()->get();
 
                         if ($attempts->isEmpty()) {
                             return 'N/A';
