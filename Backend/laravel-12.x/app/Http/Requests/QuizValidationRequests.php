@@ -136,7 +136,7 @@ class ImportQuestionsFileRequest extends FormRequest
             'file' => [
                 'required',
                 'file',
-                'mimetypes:text/csv,text/plain,application/vnd.ms-excel,application/json',
+                'mimetypes:text/csv,text/plain,application/vnd.ms-excel',
                 'max:5120',
             ],
         ];
@@ -145,9 +145,9 @@ class ImportQuestionsFileRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'file.required' => 'A CSV or JSON file is required.',
+            'file.required' => 'A CSV file is required.',
             'file.file' => 'The selected file is not a valid file.',
-            'file.mimetypes' => 'The file must be a CSV or JSON file.',
+            'file.mimetypes' => 'The file must be a CSV file.',
             'file.max' => 'The file size must not exceed 5MB.',
         ];
     }

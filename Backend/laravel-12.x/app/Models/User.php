@@ -58,12 +58,4 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->role === 'student';
     }
-
-    /**
-     * Get all quiz attempts for this student
-     */
-    public function quizAttempts()
-    {
-        return $this->hasMany(Quiz_attempt::class, 'student_id');
-    }
 }

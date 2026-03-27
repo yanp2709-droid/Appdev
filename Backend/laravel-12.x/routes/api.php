@@ -28,7 +28,7 @@ Route::get('/test', function () {
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
-
+    
     // Routes requiring authentication
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
@@ -58,8 +58,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/quiz/attempts/{attempt}/answer', [QuizAttemptController::class, 'saveAnswer']);
         Route::post('/quiz/attempts/{attempt}/submit', [QuizAttemptController::class, 'submit']);
         Route::get('/quiz/attempts/{attempt}', [QuizAttemptController::class, 'status']);
-        Route::get('/quiz/attempts', [QuizAttemptController::class, 'history']);
-        Route::get('/quiz/attempts/{attempt}/detail', [QuizAttemptController::class, 'detail']);
     });
 });
 

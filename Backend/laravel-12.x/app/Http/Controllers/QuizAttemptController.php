@@ -216,10 +216,6 @@ class QuizAttemptController extends Controller
             ]
         );
 
-        // Keep answered_count persisted as answers are saved from the mobile app.
-        $attempt->answered_count = Attempt_answer::where('quiz_attempt_id', $attempt->id)->count();
-        $attempt->save();
-
         return $this->success([
             'answer_id' => $answer->id,
             'attempt' => $this->attemptMeta($attempt),
@@ -311,10 +307,6 @@ class QuizAttemptController extends Controller
             'started_at' => $attempt->started_at,
             'expires_at' => $attempt->expires_at,
             'submitted_at' => $attempt->submitted_at,
-            'total_items' => $attempt->total_items,
-            'answered_count' => $attempt->answered_count,
-            'correct_answers' => $attempt->correct_answers,
-            'score_percent' => $attempt->score_percent,
             'duration_minutes' => $durationMinutes,
             'remaining_seconds' => $this->remainingSeconds($attempt),
         ];
@@ -345,130 +337,5 @@ class QuizAttemptController extends Controller
         }
 
         return false;
-    }
-
-    /**
-     * Get all completed attempts for the student
-     */
-    public function history(Request $request)
-    {
-        $user = $request->user();
-        $perPage = $request->query('per_page', 15); // Default 15 items per page
-
-        $attempts = Quiz_attempt::with('quiz.category')
-            ->where('student_id', $user->id)
-            ->where('status', self::STATUS_SUBMITTED)
-            ->orderByDesc('submitted_at')
-            ->paginate($perPage);
-
-        $history = $attempts->getCollection()->map(function ($attempt) {
-            return [
-                'id' => $attempt->id,
-                'quiz_id' => $attempt->quiz_id,
-                'category_id' => $attempt->quiz->category_id,
-                'category_name' => $attempt->quiz->category->name ?? 'Unknown',
-                'status' => $attempt->status,
-                'started_at' => $attempt->started_at,
-                'submitted_at' => $attempt->submitted_at,
-                'duration_minutes' => $attempt->started_at ? $attempt->started_at->diffInMinutes($attempt->expires_at) : 0,
-                'total_items' => $attempt->total_items,
-                'answered_count' => $attempt->answered_count,
-                'correct_answers' => $attempt->correct_answers,
-                'score_percent' => $attempt->score_percent,
-            ];
-        });
-
-        return $this->success([
-            'attempts' => $history,
-            'pagination' => [
-                'total' => $attempts->total(),
-                'per_page' => $attempts->perPage(),
-                'current_page' => $attempts->currentPage(),
-                'last_page' => $attempts->lastPage(),
-                'from' => $attempts->firstItem(),
-                'to' => $attempts->lastItem(),
-            ],
-        ], 'Attempt history retrieved.');
-    }
-
-    /**
-     * Get detailed review of a specific submitted attempt
-     * Includes per-question breakdown with selected and correct answers
-     */
-    public function detail(Request $request, int $attemptId)
-    {
-        $attempt = $this->findStudentAttempt($request, $attemptId);
-        if (!$attempt) {
-            return $this->error('not_found', 'Attempt not found.', 404);
-        }
-
-        if ($attempt->status !== self::STATUS_SUBMITTED) {
-            return $this->error('attempt_not_submitted', 'Only submitted attempts can be reviewed.', 422);
-        }
-
-        // Load all data needed for the review WITH eager loading
-        $attempt = $attempt->load([
-            'answers.question.options',
-            'quiz.category',
-            'quiz.questions.options',
-        ]);
-
-        // Get only questions in THIS quiz (not all category questions)
-        $questions = $attempt->quiz->questions()->with('options')->orderBy('id')->get();
-
-        // Map answers by question ID for quick lookup
-        $answersMap = $attempt->answers->keyBy('question_id')->toArray();
-
-        // Build per-question review
-        $review = $questions->map(function ($question) use ($answersMap) {
-            $answer = $answersMap[$question->id] ?? null;
-            $selectedOptionId = $answer['question_option_id'] ?? null;
-            $textAnswer = $answer['text_answer'] ?? null;
-
-            // Find correct answer
-            $correctOption = $question->options->firstWhere('is_correct', true);
-
-            // Build options array
-            $options = $question->options->map(function ($option) use ($selectedOptionId) {
-                return [
-                    'id' => $option->id,
-                    'text' => $option->option_text,
-                    'is_selected' => $selectedOptionId === $option->id,
-                    'is_correct' => (bool) $option->is_correct,
-                    'order_index' => $option->order_index,
-                ];
-            });
-
-            return [
-                'question_id' => $question->id,
-                'question_text' => $question->question_text,
-                'question_type' => $question->question_type,
-                'points' => $question->points,
-                'options' => $options->sortBy('order_index')->values(),
-                'selected_option_id' => $selectedOptionId,
-                'correct_option_id' => $correctOption?->id,
-                'text_answer' => $textAnswer,
-                'is_answered' => $answer !== null,
-                'is_correct' => $answer ? ($answer['is_correct'] ?? false) : false,
-                'answer_id' => $answer['id'] ?? null,
-            ];
-        });
-
-        return $this->success([
-            'attempt' => [
-                'id' => $attempt->id,
-                'quiz_id' => $attempt->quiz_id,
-                'category_id' => $attempt->quiz->category_id,
-                'category_name' => $attempt->quiz->category->name,
-                'status' => $attempt->status,
-                'started_at' => $attempt->started_at,
-                'submitted_at' => $attempt->submitted_at,
-                'total_items' => $attempt->total_items,
-                'answered_count' => $attempt->answered_count,
-                'correct_answers' => $attempt->correct_answers,
-                'score_percent' => $attempt->score_percent,
-            ],
-            'questions' => $review,
-        ], 'Attempt details retrieved.');
     }
 }
