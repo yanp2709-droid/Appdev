@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Students\Pages;
 
 use App\Filament\Resources\Students\StudentResource;
 use App\Filament\Widgets\StudentQuizAttemptsTableWidget;
+use App\Filament\Widgets\StudentScoreStatsWidget;
 use App\Models\User;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\ViewRecord;
@@ -73,6 +74,7 @@ class ViewStudent extends ViewRecord
     protected function getFooterWidgets(): array
     {
         return [
+            StudentScoreStatsWidget::class,
             StudentQuizAttemptsTableWidget::class,
         ];
     }

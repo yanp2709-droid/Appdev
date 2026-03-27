@@ -80,25 +80,6 @@ class StudentHomeScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                   ],
 
-                  // Start Mock Assessment
-                  SizedBox(
-                    width: double.infinity, height: 50,
-                    child: ElevatedButton(
-                      onPressed: () => context.go('/categories'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Start Mock Assessment',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16)),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
                   // Browse Categories
                   SizedBox(
                     width: double.infinity, height: 50,
@@ -121,9 +102,10 @@ class StudentHomeScreen extends StatelessWidget {
 
                   Consumer<AuthProvider>(
                     builder: (_, auth, __) => OutlinedButton(
-                      onPressed: auth.status == AuthStatus.loading
+                        onPressed: auth.status == AuthStatus.loading
                           ? null
                           : () async {
+                              context.read<QuizProvider>().reset(clearLastResult: true);
                               await auth.logout();
                               if (context.mounted) context.go('/login');
                             },
@@ -230,6 +212,7 @@ class _StudentDrawer extends StatelessWidget {
                     ? null
                     : () async {
                         Navigator.pop(context);
+                        context.read<QuizProvider>().reset(clearLastResult: true);
                         await authProvider.logout();
                         if (context.mounted) context.go('/login');
                       },

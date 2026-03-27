@@ -8,6 +8,7 @@ use App\Http\Controllers\QuizAttemptController;
 use App\Http\Controllers\CategoriesController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\Admin\QuestionBankController;
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\AuthController as ApiAuthController;
 
 /*
@@ -76,5 +77,14 @@ Route::middleware(['auth:sanctum', 'role:admin|teacher'])->prefix('admin/questio
     Route::get('/export/json', [QuestionBankController::class, 'exportJson']);
 });
 
+// Admin Statistics and Analytics routes
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
+    Route::get('/statistics/dashboard', [AdminDashboardController::class, 'dashboard']);
+    Route::get('/statistics/students', [AdminDashboardController::class, 'students']);
+    Route::get('/statistics/student/{studentId}', [AdminDashboardController::class, 'studentDetail']);
+    Route::get('/statistics/attempts', [AdminDashboardController::class, 'attempts']);
+    Route::get('/statistics/attempt-history', [AdminDashboardController::class, 'studentAttemptHistory']);
+    Route::get('/statistics/categories', [AdminDashboardController::class, 'categoryStats']);
+});
 
 

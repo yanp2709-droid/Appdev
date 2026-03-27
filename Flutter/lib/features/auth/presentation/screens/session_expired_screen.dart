@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_widgets.dart';
 import '../../providers/auth_provider.dart';
+import '../../../quiz/providers/quiz_provider.dart';
 
 class SessionExpiredScreen extends StatelessWidget {
   const SessionExpiredScreen({super.key});
@@ -55,6 +56,7 @@ class SessionExpiredScreen extends StatelessWidget {
             child: PrimaryButton(
               label: 'Login Again',
               onPressed: () async {
+                context.read<QuizProvider>().reset(clearLastResult: true);
                 await context.read<AuthProvider>().logout();
                 if (context.mounted) context.go('/login');
               },

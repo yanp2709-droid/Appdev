@@ -94,23 +94,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/student-home'),
         ),
-        // Task 3: test buttons for simulating API states (admin + student)
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.bug_report, color: Colors.white),
-            tooltip: 'Simulate API state',
-            onSelected: (val) {
-              if (val == 'error') _simulateError();
-              if (val == 'empty') _simulateEmpty();
-              if (val == 'normal') _load();
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'normal', child: Text('✅ Normal')),
-              PopupMenuItem(value: 'error',  child: Text('❌ Simulate Error')),
-              PopupMenuItem(value: 'empty',  child: Text('📭 Simulate Empty')),
-            ],
-          ),
-        ],
+        actions: const [],
       ),
       body: Consumer<CategoriesProvider>(
         builder: (context, provider, _) {
@@ -132,21 +116,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           return const SizedBox.shrink();
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
-          items: const [
-            BottomNavigationBarItem(
-                icon: Icon(Icons.home), label: ''),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.person), label: ''),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.notifications), label: ''),
-          ],
-          selectedItemColor: AppColors.primary,
-          unselectedItemColor: AppColors.gray400,
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          currentIndex: 0,
-        ),
+      bottomNavigationBar: null,
     );
   }
 
@@ -554,3 +524,4 @@ class _ShimmerList extends StatelessWidget {
     );
   }
 }
+

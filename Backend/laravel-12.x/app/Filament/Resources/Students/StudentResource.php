@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Students;
 use App\Filament\Resources\Students\Pages\ListStudents;
 use App\Filament\Resources\Students\Pages\ViewStudent;
 use App\Models\User;
+use App\Models\Quiz_attempt;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Actions\DeleteAction;
@@ -57,6 +58,43 @@ class StudentResource extends Resource
                     ->label('Total Attempts')
                     ->counts('quizAttempts')
                     ->sortable(),
+
+                TextColumn::make('avg_score')
+                    ->label('Avg. Score')
+                    ->formatStateUsing(function (User $record): string {
+                        $attempts = Quiz_attempt::where('student_id', $record->id)
+                            ->where('status', 'submitted');
+                        
+                        if ($attempts->count() === 0) {
+                            return 'N/A';
+                        }
+
+                        $avgScore = $attempts->avg('score_percent') ?? 0;
+                        return round($avgScore, 2) . '%';
+                    })
+                    ->color(function (User $record): string {
+                        $attempts = Quiz_attempt::where('student_id', $record->id)
+                            ->where('status', 'submitted');
+                        
+                        if ($attempts->count() === 0) {
+                            return 'gray';
+                        }
+
+                        $avgScore = $attempts->avg('score_percent') ?? 0;
+                        return $avgScore >= 80 ? 'success' : ($avgScore >= 60 ? 'warning' : 'danger');
+                    })
+                    ->sortable(),
+
+                TextColumn::make('highest_score')
+                    ->label('Highest')
+                    ->formatStateUsing(function (User $record): string {
+                        $highest = Quiz_attempt::where('student_id', $record->id)
+                            ->where('status', 'submitted')
+                            ->max('score_percent') ?? 0;
+                        
+                        return $highest > 0 ? round($highest, 2) . '%' : 'N/A';
+                    })
+                    ->color('success'),
             ])
             ->filters([
                 //
