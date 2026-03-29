@@ -194,7 +194,6 @@
                                     {{ match ($question->question_type) {
                                         'mcq' => 'MCQ',
                                         'tf' => 'True / False',
-                                        'ordering' => 'Ordering',
                                         'short_answer' => 'Short Answer',
                                         default => ucfirst((string) $question->question_type),
                                     } }}

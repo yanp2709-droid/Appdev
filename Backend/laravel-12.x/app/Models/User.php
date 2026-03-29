@@ -5,6 +5,7 @@ namespace App\Models;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -25,6 +26,7 @@ class User extends Authenticatable implements FilamentUser
         'year_level',
         'course',
         'privacy_consent',
+        'is_protected',
     ];
 
     protected $hidden = [
@@ -38,13 +40,33 @@ class User extends Authenticatable implements FilamentUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'privacy_consent' => 'boolean',
+            'is_protected' => 'boolean',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (self $user): void {
+            if ($user->isProtected()) {
+                throw ValidationException::withMessages([
+                    'user' => 'Protected users cannot be deleted.',
+                ]);
+            }
+
+            if ($user->isAdmin() && static::query()
+                ->where('role', 'admin')
+                ->whereKeyNot($user->getKey())
+                ->doesntExist()) {
+                throw ValidationException::withMessages([
+                    'user' => 'The last admin account cannot be deleted.',
+                ]);
+            }
+        });
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
-        // Only allow admin role to access Filament admin panel
-        return $this->role === 'admin';
+        return $this->isAdmin() || $this->isTeacher();
     }
 
     // Helper functions (optional but useful)
@@ -57,6 +79,16 @@ class User extends Authenticatable implements FilamentUser
     public function isStudent()
     {
         return $this->role === 'student';
+    }
+
+    public function isTeacher()
+    {
+        return $this->role === 'teacher';
+    }
+
+    public function isProtected(): bool
+    {
+        return (bool) $this->is_protected;
     }
 
     // Relations

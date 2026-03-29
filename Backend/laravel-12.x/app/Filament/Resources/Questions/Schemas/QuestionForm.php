@@ -26,7 +26,6 @@ class QuestionForm
                     ->options([
                         'mcq' => 'Multiple Choice (MCQ)',
                         'tf' => 'True/False',
-                        'ordering' => 'Ordering',
                         'short_answer' => 'Short Answer',
                     ])
                     ->required()
@@ -59,24 +58,16 @@ class QuestionForm
                         TextInput::make('option_text')
                             ->label('Option Text')
                             ->required()
-                            ->columnSpan(fn (callable $get) => $get('../../question_type') === 'ordering' ? 1 : 2),
+                            ->columnSpan(2),
 
                         Checkbox::make('is_correct')
                             ->label('Correct Answer')
-                            ->columnSpan(fn (callable $get) => $get('../../question_type') === 'ordering' ? 1 : 1)
-                            ->visible(fn (callable $get) => $get('../../question_type') !== 'ordering')
+                            ->columnSpan(1)
                             ->helperText(fn (callable $get) =>
                                 $get('../../question_type') === 'tf' ? 'True/False questions must have exactly one correct answer' : 'MCQ can have multiple correct answers'
                             ),
-
-                        TextInput::make('order_index')
-                            ->label('Order')
-                            ->numeric()
-                            ->default(fn (callable $get) => $get('../../options') ? count($get('../../options')) + 1 : 1)
-                            ->visible(fn (callable $get) => $get('../../question_type') === 'ordering')
-                            ->columnSpan(1),
                     ])
-                    ->columns(fn (callable $get) => $get('question_type') === 'ordering' ? 2 : 3)
+                    ->columns(3)
                     ->minItems(fn (callable $get) => $get('question_type') === 'tf' ? 2 : 2)
                     ->maxItems(fn (callable $get) => $get('question_type') === 'tf' ? 2 : null)
                     ->orderable()

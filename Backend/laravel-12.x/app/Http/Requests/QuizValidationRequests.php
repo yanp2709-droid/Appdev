@@ -97,7 +97,7 @@ class ImportQuestionsJsonRequest extends FormRequest
             'questions' => 'required|array|min:1',
             'questions.*.question_text' => 'required|string|max:1000',
             'questions.*.category' => 'required|string|max:100',
-            'questions.*.question_type' => 'required|string|in:mcq,tf,ordering,short_answer',
+            'questions.*.question_type' => 'required|string|in:mcq,tf,short_answer',
             'questions.*.options' => 'nullable|array',
             'questions.*.options.*' => 'nullable|string|max:500',
             'questions.*.correct_answer' => 'nullable|string|max:500',
@@ -113,7 +113,7 @@ class ImportQuestionsJsonRequest extends FormRequest
             'questions.array' => 'Questions must be an array.',
             'questions.min' => 'At least one question is required.',
             'questions.*.question_text.required' => 'Question text is required for each question.',
-            'questions.*.question_type.in' => 'Question type must be one of: mcq, tf, ordering, short_answer.',
+            'questions.*.question_type.in' => 'Question type must be one of: mcq, tf, short_answer.',
             'questions.*.category.required' => 'Category is required for each question.',
             'questions.*.points.min' => 'Points must be at least 1.',
         ];

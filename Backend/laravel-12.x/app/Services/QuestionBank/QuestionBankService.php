@@ -22,7 +22,7 @@ class QuestionBankService
         'answer_key',
     ];
 
-    private const QUESTION_TYPES = ['mcq', 'tf', 'ordering', 'short_answer'];
+    private const QUESTION_TYPES = ['mcq', 'tf', 'short_answer'];
 
     public function importCsv(UploadedFile|string $file): array
     {
@@ -284,7 +284,7 @@ class QuestionBankService
 
         $questionType = strtolower(trim((string) ($payload['question_type'] ?? '')));
         if (!in_array($questionType, self::QUESTION_TYPES, true)) {
-            $errors[] = $this->rowError($rowNumber, 'question_type', 'Question type must be mcq, tf, ordering, or short_answer.');
+            $errors[] = $this->rowError($rowNumber, 'question_type', 'Question type must be mcq, tf, or short_answer.');
         }
 
         $pointsRaw = $payload['points'] ?? null;
@@ -313,10 +313,6 @@ class QuestionBankService
                 $errors[] = $this->rowError($rowNumber, 'answer_key', 'Answer key is required for short_answer.');
             }
             $options = [];
-        } elseif ($questionType === 'ordering') {
-            if (count($options) < 2) {
-                $errors[] = $this->rowError($rowNumber, 'options', 'Ordering questions need at least 2 options.');
-            }
         } elseif (in_array($questionType, ['mcq', 'tf'], true)) {
             if ($questionType === 'tf' && count($options) === 0) {
                 $options = ['True', 'False'];
@@ -486,15 +482,6 @@ class QuestionBankService
                             'question_id' => $question->id,
                             'option_text' => $optionText,
                             'is_correct' => ($index + 1) === $data['correct_index'],
-                        ]);
-                    }
-                } elseif ($data['question_type'] === 'ordering') {
-                    foreach ($data['options'] as $index => $optionText) {
-                        QuestionOption::create([
-                            'question_id' => $question->id,
-                            'option_text' => $optionText,
-                            'order_index' => $index + 1,
-                            'is_correct' => false,
                         ]);
                     }
                 }

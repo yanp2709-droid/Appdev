@@ -87,7 +87,7 @@ class QuizAttemptValidator
             if (empty(trim((string) $textAnswer))) {
                 $errors[] = 'Text answer is required for short answer questions.';
             }
-        } elseif (in_array($questionType, ['mcq', 'tf', 'ordering'], true)) {
+        } elseif (in_array($questionType, ['mcq', 'tf'], true)) {
             if (empty($optionId)) {
                 $errors[] = 'Option selection is required for multiple choice questions.';
             }
@@ -184,7 +184,7 @@ class QuestionImportValidator
         'answer_key',
     ];
 
-    public const QUESTION_TYPES = ['mcq', 'tf', 'ordering', 'short_answer'];
+    public const QUESTION_TYPES = ['mcq', 'tf', 'short_answer'];
 
     /**
      * Validate question type
@@ -220,7 +220,7 @@ class QuestionImportValidator
                     'message' => 'True/False questions must have exactly 2 options.',
                 ];
             }
-        } elseif (in_array($questionType, ['mcq', 'ordering'], true)) {
+        } elseif ($questionType === 'mcq') {
             // Must have at least 2 options
             if (count($options) < 2) {
                 $errors[] = [

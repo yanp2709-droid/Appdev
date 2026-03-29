@@ -28,15 +28,10 @@ class QuestionBankOverviewWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-check-badge')
                 ->color('info'),
 
-            Stat::make('Ordering', Question::query()->where('question_type', 'ordering')->count())
-                ->description('Sequencing questions')
-                ->descriptionIcon('heroicon-m-arrows-up-down')
-                ->color('warning'),
-
             Stat::make('Short Answer', Question::query()->where('question_type', 'short_answer')->count())
                 ->description('Open-ended responses')
                 ->descriptionIcon('heroicon-m-pencil-square')
-                ->color('gray'),
+                ->color('warning'),
         ];
     }
 }
