@@ -6,12 +6,12 @@ use App\Http\Traits\ApiResponse;
 use App\Models\Attempt_answer;
 use App\Models\Category;
 use App\Models\Question;
-use App\Models\QuestionOption;
 use App\Models\Quiz;
 use App\Models\Quiz_attempt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use App\Services\Scoring\QuizAttemptScorer;
 
 class QuizAttemptController extends Controller
@@ -122,19 +122,7 @@ class QuizAttemptController extends Controller
         }
 
         $questions = $query->get()->map(function ($question) {
-            return [
-                'id' => $question->id,
-                'question_text' => $question->question_text,
-                'question_type' => $question->question_type,
-                'points' => $question->points,
-                'options' => $question->options->map(function ($option) {
-                    return [
-                        'id' => $option->id,
-                        'option_text' => $option->option_text,
-                        'order_index' => $option->order_index,
-                    ];
-                }),
-            ];
+            return $this->formatAttemptQuestion($question);
         });
 
         $attempt->total_items = $questions->count();
@@ -146,80 +134,215 @@ class QuizAttemptController extends Controller
         ], 'Attempt started.');
     }
 
-    public function saveAnswer(Request $request, int $attemptId)
+    /**
+     * Get the authenticated student's attempt history.
+     */
+    public function history(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'question_id' => 'required|exists:questions,id',
-            'option_id' => 'nullable|exists:question_options,id',
-            'text_answer' => 'nullable|string',
-        ]);
+        $perPage = (int) $request->query('per_page', 15);
+        $status = $request->query('status', self::STATUS_SUBMITTED);
 
-        if ($validator->fails()) {
-            return $this->error(
-                'validation_error',
-                'Invalid request.',
-                422,
-                $validator->errors()
-            );
+        $query = Quiz_attempt::with(['quiz.category'])
+            ->where('student_id', $request->user()->id);
+
+        if (!empty($status)) {
+            $query->where('status', $status);
         }
 
-        $payload = $validator->validated();
+        $attempts = $query->orderByDesc('submitted_at')
+            ->orderByDesc('started_at')
+            ->paginate($perPage);
 
-        if (empty($payload['option_id']) && empty($payload['text_answer'])) {
-            return $this->error(
-                'validation_error',
-                'Either option_id or text_answer is required.',
-                422
-            );
-        }
+        $attemptsData = $attempts->getCollection()->map(function (Quiz_attempt $attempt) {
+            $durationMinutes = $attempt->getDurationMinutes();
+            if ($durationMinutes === null) {
+                $durationMinutes = (int) ($attempt->quiz->duration_minutes ?? self::DEFAULT_DURATION_MINUTES);
+            }
 
-        $attempt = $this->findStudentAttempt($request, $attemptId);
+            return [
+                'id' => $attempt->id,
+                'quiz_id' => $attempt->quiz_id,
+                'category_id' => $attempt->quiz->category_id ?? 0,
+                'category_name' => $attempt->quiz->category->name ?? 'Unknown',
+                'status' => $attempt->status,
+                'started_at' => $attempt->started_at,
+                'submitted_at' => $attempt->submitted_at,
+                'duration_minutes' => $durationMinutes,
+                'total_items' => (int) ($attempt->total_items ?? 0),
+                'answered_count' => (int) ($attempt->answered_count ?? 0),
+                'correct_answers' => (int) ($attempt->correct_answers ?? 0),
+                'score_percent' => (float) ($attempt->score_percent ?? 0),
+            ];
+        });
+
+        return $this->success([
+            'attempts' => $attemptsData,
+            'pagination' => [
+                'total' => $attempts->total(),
+                'per_page' => $attempts->perPage(),
+                'current_page' => $attempts->currentPage(),
+                'last_page' => $attempts->lastPage(),
+                'from' => $attempts->firstItem(),
+                'to' => $attempts->lastItem(),
+            ],
+        ], 'Attempt history retrieved.');
+    }
+
+    /**
+     * Get detailed review data for a specific attempt.
+     */
+    public function detail(Request $request, int $attemptId)
+    {
+        $attempt = Quiz_attempt::with([
+            'quiz.category',
+            'answers.question.options',
+            'answers.questionOption',
+        ])
+            ->where('id', $attemptId)
+            ->where('student_id', $request->user()->id)
+            ->first();
+
         if (!$attempt) {
             return $this->error('not_found', 'Attempt not found.', 404);
         }
 
-        if ($attempt->status === self::STATUS_SUBMITTED) {
-            return $this->error('attempt_submitted', 'Attempt already submitted.', 409);
-        }
+        $questions = $attempt->answers
+            ->sortBy('id')
+            ->map(function (Attempt_answer $answer) {
+                $question = $answer->question;
+                if (!$question) {
+                    return null;
+                }
 
-        if ($this->expireIfNeeded($attempt)) {
-            return $this->error('attempt_expired', 'Attempt has expired.', 410);
-        }
+                $selectedOptionIds = $this->selectedOptionIdsFromAnswer($answer);
+                $selectedOptionId = count($selectedOptionIds) === 1 ? $selectedOptionIds[0] : null;
+                $correctOptionIds = $question->options
+                    ->where('is_correct', true)
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->values()
+                    ->all();
+                $correctOptionId = count($correctOptionIds) === 1 ? $correctOptionIds[0] : null;
 
-        $question = Question::where('id', $payload['question_id'])
-            ->where('category_id', $attempt->quiz->category_id)
-            ->first();
-
-        if (!$question) {
-            return $this->error('invalid_question', 'Question does not belong to this quiz.', 422);
-        }
-
-        if (!empty($payload['option_id'])) {
-            $optionExists = QuestionOption::where('id', $payload['option_id'])
-                ->where('question_id', $question->id)
-                ->exists();
-
-            if (!$optionExists) {
-                return $this->error('invalid_option', 'Option does not belong to this question.', 422);
-            }
-        }
-
-        $answer = Attempt_answer::updateOrCreate(
-            [
-                'quiz_attempt_id' => $attempt->id,
-                'question_id' => $question->id,
-            ],
-            [
-                'question_option_id' => $payload['option_id'] ?? null,
-                'text_answer' => $payload['text_answer'] ?? null,
-                'answer_id' => null,
-            ]
-        );
+                return [
+                    'question_id' => $question->id,
+                    'question_text' => $question->question_text,
+                    'question_type' => Question::toApiQuestionType($question->question_type),
+                    'stored_question_type' => $question->question_type,
+                    'points' => (int) ($question->points ?? 0),
+                    'options' => $question->options->map(function ($option) use ($selectedOptionIds, $correctOptionIds) {
+                        return [
+                            'id' => $option->id,
+                            'text' => $option->option_text,
+                            'is_selected' => in_array((int) $option->id, $selectedOptionIds, true),
+                            'is_correct' => in_array((int) $option->id, $correctOptionIds, true),
+                            'order_index' => $option->order_index,
+                        ];
+                    })->values(),
+                    'selected_option_id' => $selectedOptionId ? (int) $selectedOptionId : null,
+                    'selected_option_ids' => $selectedOptionIds,
+                    'correct_option_id' => $correctOptionId,
+                    'correct_option_ids' => $correctOptionIds,
+                    'text_answer' => $answer->text_answer,
+                    'is_answered' => !empty($selectedOptionIds) || !empty($answer->text_answer),
+                    'is_correct' => (bool) ($answer->is_correct ?? false),
+                    'score_impact' => (bool) ($answer->is_correct ?? false) ? (int) ($question->points ?? 0) : 0,
+                    'answer_id' => (int) $answer->id,
+                ];
+            })
+            ->filter()
+            ->values();
 
         return $this->success([
-            'answer_id' => $answer->id,
-            'attempt' => $this->attemptMeta($attempt),
-        ], 'Answer saved.');
+            'attempt' => [
+                'id' => $attempt->id,
+                'quiz_id' => $attempt->quiz_id,
+                'category_id' => $attempt->quiz->category_id ?? 0,
+                'category_name' => $attempt->quiz->category->name ?? 'Unknown',
+                'status' => $attempt->status,
+                'started_at' => $attempt->started_at,
+                'submitted_at' => $attempt->submitted_at,
+                'total_items' => (int) ($attempt->total_items ?? 0),
+                'answered_count' => (int) ($attempt->answered_count ?? 0),
+                'correct_answers' => (int) ($attempt->correct_answers ?? 0),
+                'score_percent' => (float) ($attempt->score_percent ?? 0),
+            ],
+            'questions' => $questions,
+        ], 'Attempt detail retrieved.');
+    }
+
+    public function saveAnswer(Request $request, int $attemptId)
+    {
+        try {
+            $baseValidator = Validator::make($request->all(), [
+                'question_id' => 'required|integer|exists:questions,id',
+                'option_id' => 'nullable|integer|exists:question_options,id',
+                'option_ids' => 'nullable|array',
+                'option_ids.*' => 'integer|exists:question_options,id|distinct',
+                'answer' => 'nullable',
+                'text_answer' => 'nullable|string|max:5000',
+            ]);
+
+            if ($baseValidator->fails()) {
+                return $this->error(
+                    'validation_error',
+                    'Invalid request.',
+                    422,
+                    $baseValidator->errors()
+                );
+            }
+
+            $payload = $baseValidator->validated();
+
+            $attempt = $this->findStudentAttempt($request, $attemptId);
+            if (!$attempt) {
+                return $this->error('not_found', 'Attempt not found.', 404);
+            }
+
+            if ($attempt->status === self::STATUS_SUBMITTED) {
+                return $this->error('attempt_submitted', 'Attempt already submitted.', 409);
+            }
+
+            if ($this->expireIfNeeded($attempt)) {
+                return $this->error('attempt_expired', 'Attempt has expired.', 410);
+            }
+
+            $question = Question::with('options')
+                ->where('id', $payload['question_id'])
+                ->where('category_id', $attempt->quiz->category_id)
+                ->first();
+
+            if (!$question) {
+                return $this->error('invalid_question', 'Question does not belong to this quiz.', 422);
+            }
+
+            $normalizedAnswer = $this->normalizeSubmittedAnswer($question, $payload);
+
+            $answer = Attempt_answer::updateOrCreate(
+                [
+                    'quiz_attempt_id' => $attempt->id,
+                    'question_id' => $question->id,
+                ],
+                [
+                    'question_option_id' => $normalizedAnswer['question_option_id'],
+                    'selected_option_ids' => $normalizedAnswer['selected_option_ids'],
+                    'text_answer' => $normalizedAnswer['text_answer'],
+                    'answer_id' => null,
+                    'is_correct' => null,
+                ]
+            );
+
+            return $this->success([
+                'answer_id' => $answer->id,
+                'attempt' => $this->attemptMeta($attempt),
+                'question_type' => Question::toApiQuestionType($question->question_type),
+                'selected_option_id' => $normalizedAnswer['question_option_id'],
+                'selected_option_ids' => $normalizedAnswer['selected_option_ids'] ?? [],
+                'text_answer' => $normalizedAnswer['text_answer'],
+            ], 'Answer saved.');
+        } catch (ValidationException $e) {
+            return $this->validationError($e, 'Invalid request.');
+        }
     }
 
     public function submit(Request $request, int $attemptId, QuizAttemptScorer $scorer)
@@ -337,5 +460,147 @@ class QuizAttemptController extends Controller
         }
 
         return false;
+    }
+
+    private function formatAttemptQuestion(Question $question): array
+    {
+        return [
+            'id' => $question->id,
+            'question_text' => $question->question_text,
+            'question_type' => Question::toApiQuestionType($question->question_type),
+            'stored_question_type' => $question->question_type,
+            'points' => $question->points,
+            'options' => $question->options->map(function ($option) {
+                return [
+                    'id' => $option->id,
+                    'option_text' => $option->option_text,
+                    'order_index' => $option->order_index,
+                ];
+            })->values(),
+        ];
+    }
+
+    private function normalizeSubmittedAnswer(Question $question, array $payload): array
+    {
+        $questionType = Question::normalizeQuestionType($question->question_type) ?? $question->question_type;
+        $submitted = $payload['answer'] ?? null;
+
+        if ($questionType === Question::TYPE_SHORT_ANSWER) {
+            $textAnswer = array_key_exists('text_answer', $payload)
+                ? trim((string) $payload['text_answer'])
+                : trim((string) $submitted);
+
+            if ($textAnswer === '') {
+                throw ValidationException::withMessages([
+                    'text_answer' => 'Text answer is required for short answer questions.',
+                ]);
+            }
+
+            return [
+                'question_option_id' => null,
+                'selected_option_ids' => null,
+                'text_answer' => $textAnswer,
+            ];
+        }
+
+        $questionOptionIds = $question->options->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+        $selectedOptionIds = [];
+
+        if ($questionType === Question::TYPE_MULTI_SELECT) {
+            if (array_key_exists('option_ids', $payload)) {
+                $selectedOptionIds = (array) $payload['option_ids'];
+            } elseif (is_array($submitted)) {
+                $selectedOptionIds = $submitted;
+            } elseif ($submitted !== null) {
+                $selectedOptionIds = [$submitted];
+            }
+
+            $selectedOptionIds = array_values(array_map('intval', $selectedOptionIds));
+
+            if (empty($selectedOptionIds)) {
+                throw ValidationException::withMessages([
+                    'answer' => 'At least one option must be selected for multi-select questions.',
+                ]);
+            }
+
+            if (count($selectedOptionIds) !== count(array_unique($selectedOptionIds))) {
+                throw ValidationException::withMessages([
+                    'option_ids' => 'Duplicate option selections are not allowed.',
+                ]);
+            }
+
+            foreach ($selectedOptionIds as $optionId) {
+                if (!in_array($optionId, $questionOptionIds, true)) {
+                    throw ValidationException::withMessages([
+                        'option_ids' => 'All selected options must belong to the current question.',
+                    ]);
+                }
+            }
+
+            sort($selectedOptionIds);
+
+            return [
+                'question_option_id' => null,
+                'selected_option_ids' => $selectedOptionIds,
+                'text_answer' => null,
+            ];
+        }
+
+        if (is_bool($submitted)) {
+            $matchingOption = $question->options->first(function ($option) use ($submitted) {
+                return mb_strtolower(trim((string) $option->option_text)) === ($submitted ? 'true' : 'false');
+            });
+
+            if (!$matchingOption) {
+                throw ValidationException::withMessages([
+                    'answer' => 'Boolean answers require True/False options on the question.',
+                ]);
+            }
+
+            $selectedOptionId = (int) $matchingOption->id;
+        } elseif (array_key_exists('option_id', $payload) && $payload['option_id'] !== null) {
+            $selectedOptionId = (int) $payload['option_id'];
+        } elseif (is_array($submitted)) {
+            throw ValidationException::withMessages([
+                'answer' => 'Only one option may be selected for this question type.',
+            ]);
+        } elseif ($submitted !== null && $submitted !== '') {
+            $selectedOptionId = (int) $submitted;
+        } else {
+            $selectedOptionId = null;
+        }
+
+        if ($selectedOptionId === null) {
+            throw ValidationException::withMessages([
+                'answer' => 'A single option selection is required for this question type.',
+            ]);
+        }
+
+        if (!in_array($selectedOptionId, $questionOptionIds, true)) {
+            throw ValidationException::withMessages([
+                'option_id' => 'Option does not belong to this question.',
+            ]);
+        }
+
+        return [
+            'question_option_id' => $selectedOptionId,
+            'selected_option_ids' => [$selectedOptionId],
+            'text_answer' => null,
+        ];
+    }
+
+    private function selectedOptionIdsFromAnswer(Attempt_answer $answer): array
+    {
+        $selectedOptionIds = $answer->selected_option_ids ?? [];
+
+        if (empty($selectedOptionIds) && !empty($answer->question_option_id)) {
+            $selectedOptionIds = [(int) $answer->question_option_id];
+        }
+
+        if (empty($selectedOptionIds) && !empty($answer->answer_id)) {
+            $selectedOptionIds = [(int) $answer->answer_id];
+        }
+
+        return array_values(array_unique(array_map('intval', $selectedOptionIds)));
     }
 }

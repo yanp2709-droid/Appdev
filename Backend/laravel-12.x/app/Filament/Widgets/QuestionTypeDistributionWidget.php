@@ -20,6 +20,7 @@ class QuestionTypeDistributionWidget extends ChartWidget
         $types = [
             'MCQ' => Question::query()->where('question_type', 'mcq')->count(),
             'True / False' => Question::query()->where('question_type', 'tf')->count(),
+            'Multi-Select' => Question::query()->where('question_type', 'multi_select')->count(),
             'Short Answer' => Question::query()->where('question_type', 'short_answer')->count(),
         ];
 
@@ -31,6 +32,7 @@ class QuestionTypeDistributionWidget extends ChartWidget
                     'backgroundColor' => [
                         '#111827',
                         '#2563eb',
+                        '#f59e0b',
                         '#14b8a6',
                     ],
                 ],

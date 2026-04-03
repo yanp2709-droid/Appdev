@@ -26,6 +26,7 @@ class QuestionForm
                     ->options([
                         'mcq' => 'Multiple Choice (MCQ)',
                         'tf' => 'True/False',
+                        'multi_select' => 'Multi-Select',
                         'short_answer' => 'Short Answer',
                     ])
                     ->required()
@@ -51,7 +52,7 @@ class QuestionForm
                     ->relationship('options')
                     ->visible(function (callable $get) {
                         $type = $get('question_type');
-                        return in_array($type, ['mcq', 'tf'], true);
+                        return in_array($type, ['mcq', 'tf', 'multi_select'], true);
                     })
                     ->reactive()
                     ->schema([
@@ -64,7 +65,11 @@ class QuestionForm
                             ->label('Correct Answer')
                             ->columnSpan(1)
                             ->helperText(fn (callable $get) =>
-                                $get('../../question_type') === 'tf' ? 'True/False questions must have exactly one correct answer' : 'MCQ can have multiple correct answers'
+                                $get('../../question_type') === 'tf'
+                                    ? 'True/False questions must have exactly one correct answer'
+                                    : ($get('../../question_type') === 'multi_select'
+                                        ? 'Multi-select questions can have multiple correct answers'
+                                        : 'Multiple choice questions must have exactly one correct answer')
                             ),
                     ])
                     ->columns(3)

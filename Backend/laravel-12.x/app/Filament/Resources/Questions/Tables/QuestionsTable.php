@@ -32,12 +32,14 @@ class QuestionsTable
                     ->formatStateUsing(fn ($state) => match ($state) {
                         'mcq' => 'MCQ',
                         'tf' => 'True/False',
+                        'multi_select' => 'Multi-Select',
                         'short_answer' => 'Short Answer',
                         default => $state,
                     })
                     ->color(fn ($state) => match ($state) {
                         'mcq' => 'blue',
                         'tf' => 'green',
+                        'multi_select' => 'warning',
                         'short_answer' => 'orange',
                         default => 'gray',
                     })
@@ -63,6 +65,7 @@ class QuestionsTable
                     ->options([
                         'mcq' => 'Multiple Choice (MCQ)',
                         'tf' => 'True/False',
+                        'multi_select' => 'Multi-Select',
                         'short_answer' => 'Short Answer',
                     ]),
             ])

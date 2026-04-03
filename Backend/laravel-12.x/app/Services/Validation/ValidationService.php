@@ -83,13 +83,15 @@ class QuizAttemptValidator
     {
         $errors = [];
 
-        if ($questionType === 'short_answer') {
+        $questionType = Question::normalizeQuestionType($questionType) ?? $questionType;
+
+        if ($questionType === Question::TYPE_SHORT_ANSWER) {
             if (empty(trim((string) $textAnswer))) {
                 $errors[] = 'Text answer is required for short answer questions.';
             }
-        } elseif (in_array($questionType, ['mcq', 'tf'], true)) {
+        } elseif (in_array($questionType, [Question::TYPE_MCQ, Question::TYPE_TRUE_FALSE, Question::TYPE_MULTI_SELECT], true)) {
             if (empty($optionId)) {
-                $errors[] = 'Option selection is required for multiple choice questions.';
+                $errors[] = 'Option selection is required for choice-based questions.';
             }
         }
 
@@ -184,7 +186,7 @@ class QuestionImportValidator
         'answer_key',
     ];
 
-    public const QUESTION_TYPES = ['mcq', 'tf', 'short_answer'];
+    public const QUESTION_TYPES = ['mcq', 'multiple_choice', 'tf', 'true_false', 'multi_select', 'short_answer'];
 
     /**
      * Validate question type
@@ -207,12 +209,14 @@ class QuestionImportValidator
     {
         $errors = [];
 
-        if ($questionType === 'short_answer') {
+        $questionType = Question::normalizeQuestionType($questionType) ?? $questionType;
+
+        if ($questionType === Question::TYPE_SHORT_ANSWER) {
             // Short answers don't need options
             return [];
         }
 
-        if ($questionType === 'tf') {
+        if ($questionType === Question::TYPE_TRUE_FALSE) {
             // True/False must have exactly 2 options
             if (count($options) !== 2) {
                 $errors[] = [
@@ -220,7 +224,7 @@ class QuestionImportValidator
                     'message' => 'True/False questions must have exactly 2 options.',
                 ];
             }
-        } elseif ($questionType === 'mcq') {
+        } elseif (in_array($questionType, [Question::TYPE_MCQ, Question::TYPE_MULTI_SELECT], true)) {
             // Must have at least 2 options
             if (count($options) < 2) {
                 $errors[] = [

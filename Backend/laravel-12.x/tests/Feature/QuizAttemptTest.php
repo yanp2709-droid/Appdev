@@ -226,6 +226,230 @@ class QuizAttemptTest extends TestCase
         ]);
     }
 
+    public function test_student_can_save_true_false_answer_using_boolean_payload()
+    {
+        $question = Question::factory()->create([
+            'category_id' => $this->category->id,
+            'question_type' => 'tf',
+        ]);
+
+        $trueOption = QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'option_text' => 'True',
+            'is_correct' => true,
+        ]);
+
+        QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'option_text' => 'False',
+            'is_correct' => false,
+        ]);
+
+        $attempt = Quiz_attempt::create([
+            'student_id' => $this->student->id,
+            'quiz_id' => $this->quiz->id,
+            'status' => 'in_progress',
+            'started_at' => now(),
+            'expires_at' => now()->addMinutes(15),
+            'total_items' => 1,
+            'score' => 0,
+        ]);
+
+        $response = $this->actingAs($this->student)->postJson(
+            "/api/quiz/attempts/{$attempt->id}/answer",
+            [
+                'question_id' => $question->id,
+                'answer' => true,
+            ]
+        );
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.question_type', 'true_false')
+            ->assertJsonPath('data.selected_option_id', $trueOption->id)
+            ->assertJsonPath('data.selected_option_ids.0', $trueOption->id);
+
+        $this->assertDatabaseHas('attempt_answers', [
+            'quiz_attempt_id' => $attempt->id,
+            'question_id' => $question->id,
+            'question_option_id' => $trueOption->id,
+        ]);
+    }
+
+    public function test_true_false_answer_rejects_multiple_selections()
+    {
+        $question = Question::factory()->create([
+            'category_id' => $this->category->id,
+            'question_type' => 'tf',
+        ]);
+
+        $options = QuestionOption::factory()->count(2)->create([
+            'question_id' => $question->id,
+            'is_correct' => false,
+        ]);
+
+        $attempt = Quiz_attempt::create([
+            'student_id' => $this->student->id,
+            'quiz_id' => $this->quiz->id,
+            'status' => 'in_progress',
+            'started_at' => now(),
+            'expires_at' => now()->addMinutes(15),
+            'total_items' => 1,
+            'score' => 0,
+        ]);
+
+        $response = $this->actingAs($this->student)->postJson(
+            "/api/quiz/attempts/{$attempt->id}/answer",
+            [
+                'question_id' => $question->id,
+                'answer' => $options->pluck('id')->all(),
+            ]
+        );
+
+        $response->assertStatus(422)
+            ->assertJsonPath('error.code', 'validation_error');
+    }
+
+    public function test_student_can_save_multi_select_answer()
+    {
+        $question = Question::factory()->create([
+            'category_id' => $this->category->id,
+            'question_type' => 'multi_select',
+        ]);
+
+        $selectedOptions = collect([
+            QuestionOption::factory()->create([
+                'question_id' => $question->id,
+                'is_correct' => true,
+            ]),
+            QuestionOption::factory()->create([
+                'question_id' => $question->id,
+                'is_correct' => true,
+            ]),
+        ]);
+
+        QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'is_correct' => false,
+        ]);
+
+        $attempt = Quiz_attempt::create([
+            'student_id' => $this->student->id,
+            'quiz_id' => $this->quiz->id,
+            'status' => 'in_progress',
+            'started_at' => now(),
+            'expires_at' => now()->addMinutes(15),
+            'total_items' => 1,
+            'score' => 0,
+        ]);
+
+        $response = $this->actingAs($this->student)->postJson(
+            "/api/quiz/attempts/{$attempt->id}/answer",
+            [
+                'question_id' => $question->id,
+                'answer' => $selectedOptions->pluck('id')->all(),
+            ]
+        );
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.question_type', 'multi_select')
+            ->assertJsonPath('data.selected_option_id', null)
+            ->assertJsonPath('data.selected_option_ids', $selectedOptions->pluck('id')->sort()->values()->all());
+
+        $this->assertDatabaseHas('attempt_answers', [
+            'quiz_attempt_id' => $attempt->id,
+            'question_id' => $question->id,
+        ]);
+    }
+
+    public function test_multi_select_answer_rejects_duplicate_option_ids()
+    {
+        $question = Question::factory()->create([
+            'category_id' => $this->category->id,
+            'question_type' => 'multi_select',
+        ]);
+
+        $option = QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'is_correct' => true,
+        ]);
+
+        QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'is_correct' => false,
+        ]);
+
+        $attempt = Quiz_attempt::create([
+            'student_id' => $this->student->id,
+            'quiz_id' => $this->quiz->id,
+            'status' => 'in_progress',
+            'started_at' => now(),
+            'expires_at' => now()->addMinutes(15),
+            'total_items' => 1,
+            'score' => 0,
+        ]);
+
+        $response = $this->actingAs($this->student)->postJson(
+            "/api/quiz/attempts/{$attempt->id}/answer",
+            [
+                'question_id' => $question->id,
+                'option_ids' => [$option->id, $option->id],
+            ]
+        );
+
+        $response->assertStatus(422)
+            ->assertJsonPath('error.code', 'validation_error');
+    }
+
+    public function test_changing_existing_answer_replaces_previous_selection()
+    {
+        $question = Question::factory()->create([
+            'category_id' => $this->category->id,
+            'question_type' => 'multi_select',
+        ]);
+
+        $firstSelection = QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'is_correct' => true,
+        ]);
+        $replacementSelection = QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'is_correct' => true,
+        ]);
+
+        $attempt = Quiz_attempt::create([
+            'student_id' => $this->student->id,
+            'quiz_id' => $this->quiz->id,
+            'status' => 'in_progress',
+            'started_at' => now(),
+            'expires_at' => now()->addMinutes(15),
+            'total_items' => 1,
+            'score' => 0,
+        ]);
+
+        $this->actingAs($this->student)->postJson(
+            "/api/quiz/attempts/{$attempt->id}/answer",
+            [
+                'question_id' => $question->id,
+                'option_ids' => [$firstSelection->id],
+            ]
+        )->assertStatus(200);
+
+        $this->actingAs($this->student)->postJson(
+            "/api/quiz/attempts/{$attempt->id}/answer",
+            [
+                'question_id' => $question->id,
+                'option_ids' => [$replacementSelection->id],
+            ]
+        )->assertStatus(200);
+
+        $answer = \App\Models\Attempt_answer::where('quiz_attempt_id', $attempt->id)
+            ->where('question_id', $question->id)
+            ->first();
+
+        $this->assertNotNull($answer);
+        $this->assertSame([$replacementSelection->id], $answer->selected_option_ids);
+    }
+
     /**
      * Test answer requires either option_id or text_answer
      */

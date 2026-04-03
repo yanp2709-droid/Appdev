@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('category_id')->constrained()->cascadeOnDelete();
-            $table->enum('question_type', ['mcq', 'tf', 'ordering', 'short_answer']);
+            $table->enum('question_type', ['mcq', 'tf', 'multi_select', 'ordering', 'short_answer']);
             $table->text('question_text');
             $table->integer('points')->default(1);
             $table->text('answer_key')->nullable();

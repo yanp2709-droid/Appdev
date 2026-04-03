@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('questions', function (Blueprint $table) {
             if (!Schema::hasColumn('questions', 'question_type')) {
-                $table->enum('question_type', ['mcq', 'tf', 'ordering', 'short_answer'])->default('mcq')->after('category_id');
+                $table->enum('question_type', ['mcq', 'tf', 'multi_select', 'ordering', 'short_answer'])->default('mcq')->after('category_id');
             }
             if (!Schema::hasColumn('questions', 'question_text')) {
                 $table->longText('question_text')->nullable()->after('question_type');

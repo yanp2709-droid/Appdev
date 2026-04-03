@@ -52,6 +52,9 @@ class SaveAnswerRequest extends FormRequest
         return [
             'question_id' => 'required|integer|exists:questions,id',
             'option_id' => 'nullable|integer|exists:question_options,id',
+            'option_ids' => 'nullable|array',
+            'option_ids.*' => 'integer|exists:question_options,id|distinct',
+            'answer' => 'nullable',
             'text_answer' => 'nullable|string|max:5000',
         ];
     }
@@ -62,6 +65,9 @@ class SaveAnswerRequest extends FormRequest
             'question_id.required' => 'Question ID is required.',
             'question_id.exists' => 'The selected question does not exist.',
             'option_id.exists' => 'The selected option does not exist.',
+            'option_ids.array' => 'Selected answers must be an array.',
+            'option_ids.*.exists' => 'One or more selected options do not exist.',
+            'option_ids.*.distinct' => 'Duplicate option selections are not allowed.',
             'text_answer.max' => 'Text answer cannot exceed 5000 characters.',
         ];
     }
@@ -70,10 +76,18 @@ class SaveAnswerRequest extends FormRequest
     {
         $data = parent::validated($key, $default);
 
-        // Ensure at least one answer is provided
-        if (empty($data['option_id']) && empty($data['text_answer'])) {
+        if (!array_key_exists('option_ids', $data) && $this->has('option_ids')) {
+            $data['option_ids'] = [];
+        }
+
+        $hasAnswer = array_key_exists('answer', $data);
+        $hasOptionId = !empty($data['option_id']);
+        $hasOptionIds = !empty($data['option_ids']);
+        $hasTextAnswer = !empty($data['text_answer']);
+
+        if (!$hasAnswer && !$hasOptionId && !$hasOptionIds && !$hasTextAnswer) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'answer' => 'Either option_id or text_answer is required.',
+                'answer' => 'An answer payload is required.',
             ]);
         }
 
@@ -97,10 +111,10 @@ class ImportQuestionsJsonRequest extends FormRequest
             'questions' => 'required|array|min:1',
             'questions.*.question_text' => 'required|string|max:1000',
             'questions.*.category' => 'required|string|max:100',
-            'questions.*.question_type' => 'required|string|in:mcq,tf,short_answer',
+            'questions.*.question_type' => 'required|string|in:mcq,multiple_choice,tf,true_false,multi_select,short_answer',
             'questions.*.options' => 'nullable|array',
             'questions.*.options.*' => 'nullable|string|max:500',
-            'questions.*.correct_answer' => 'nullable|string|max:500',
+            'questions.*.correct_answer' => 'nullable',
             'questions.*.points' => 'nullable|integer|min:1|max:1000',
             'questions.*.answer_key' => 'nullable|string|max:1000',
         ];
@@ -113,7 +127,7 @@ class ImportQuestionsJsonRequest extends FormRequest
             'questions.array' => 'Questions must be an array.',
             'questions.min' => 'At least one question is required.',
             'questions.*.question_text.required' => 'Question text is required for each question.',
-            'questions.*.question_type.in' => 'Question type must be one of: mcq, tf, short_answer.',
+            'questions.*.question_type.in' => 'Question type must be one of: multiple_choice, true_false, multi_select, short_answer.',
             'questions.*.category.required' => 'Category is required for each question.',
             'questions.*.points.min' => 'Points must be at least 1.',
         ];

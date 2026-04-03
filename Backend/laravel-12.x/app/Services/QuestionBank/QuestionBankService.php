@@ -22,7 +22,7 @@ class QuestionBankService
         'answer_key',
     ];
 
-    private const QUESTION_TYPES = ['mcq', 'tf', 'short_answer'];
+    private const QUESTION_TYPES = ['mcq', 'multiple_choice', 'tf', 'true_false', 'multi_select', 'short_answer'];
 
     public function importCsv(UploadedFile|string $file): array
     {
@@ -210,7 +210,7 @@ class QuestionBankService
                     $payload['category'],
                     $payload['question_type'],
                     json_encode($payload['options']),
-                    $payload['correct_answer'],
+                    is_array($payload['correct_answer']) ? json_encode($payload['correct_answer']) : $payload['correct_answer'],
                     $payload['points'],
                     $payload['answer_key'],
                 ];
@@ -283,8 +283,10 @@ class QuestionBankService
         }
 
         $questionType = strtolower(trim((string) ($payload['question_type'] ?? '')));
-        if (!in_array($questionType, self::QUESTION_TYPES, true)) {
-            $errors[] = $this->rowError($rowNumber, 'question_type', 'Question type must be mcq, tf, or short_answer.');
+        $questionType = Question::normalizeQuestionType($questionType);
+
+        if (!in_array($questionType, [Question::TYPE_MCQ, Question::TYPE_TRUE_FALSE, Question::TYPE_MULTI_SELECT, Question::TYPE_SHORT_ANSWER], true)) {
+            $errors[] = $this->rowError($rowNumber, 'question_type', 'Question type must be multiple_choice, true_false, multi_select, or short_answer.');
         }
 
         $pointsRaw = $payload['points'] ?? null;
@@ -306,35 +308,35 @@ class QuestionBankService
         $options = $optionsResult['options'];
 
         $correctAnswerRaw = $payload['correct_answer'] ?? null;
-        $correctIndex = null;
+        $correctIndexes = [];
 
-        if ($questionType === 'short_answer') {
+        if ($questionType === Question::TYPE_SHORT_ANSWER) {
             if ($answerKey === '') {
                 $errors[] = $this->rowError($rowNumber, 'answer_key', 'Answer key is required for short_answer.');
             }
             $options = [];
-        } elseif (in_array($questionType, ['mcq', 'tf'], true)) {
-            if ($questionType === 'tf' && count($options) === 0) {
+        } elseif (in_array($questionType, [Question::TYPE_MCQ, Question::TYPE_TRUE_FALSE, Question::TYPE_MULTI_SELECT], true)) {
+            if ($questionType === Question::TYPE_TRUE_FALSE && count($options) === 0) {
                 $options = ['True', 'False'];
             }
 
             if (count($options) < 2) {
-                $errors[] = $this->rowError($rowNumber, 'options', 'Multiple-choice questions need at least 2 options.');
+                $errors[] = $this->rowError($rowNumber, 'options', 'Choice-based questions need at least 2 options.');
             }
 
-            $correctResult = $this->normalizeCorrectAnswer($correctAnswerRaw, $options);
+            $correctResult = $this->normalizeCorrectAnswer($correctAnswerRaw, $options, $questionType);
             if ($correctResult['error'] !== null) {
                 $errors[] = $this->rowError($rowNumber, 'correct_answer', $correctResult['error']);
             } else {
-                $correctIndex = $correctResult['index'];
+                $correctIndexes = $correctResult['indexes'];
             }
 
-            if ($questionType === 'tf' && count($options) !== 2) {
+            if ($questionType === Question::TYPE_TRUE_FALSE && count($options) !== 2) {
                 $errors[] = $this->rowError($rowNumber, 'options', 'True/False questions must have exactly 2 options.');
             }
         }
 
-        if ($categoryId !== null && $questionText !== '' && $questionType !== '') {
+        if ($categoryId !== null && $questionText !== '' && !empty($questionType)) {
             $duplicateExists = Question::where('category_id', $categoryId)
                 ->where('question_text', $questionText)
                 ->where('question_type', $questionType)
@@ -356,9 +358,9 @@ class QuestionBankService
                 'category_id' => $categoryId,
                 'question_type' => $questionType,
                 'points' => $points,
-                'answer_key' => $questionType === 'short_answer' ? $answerKey : null,
+                'answer_key' => $questionType === Question::TYPE_SHORT_ANSWER ? $answerKey : null,
                 'options' => $options,
-                'correct_index' => $correctIndex,
+                'correct_indexes' => $correctIndexes,
             ],
             'errors' => [],
         ];
@@ -426,42 +428,60 @@ class QuestionBankService
         return ['options' => $options, 'error' => null];
     }
 
-    private function normalizeCorrectAnswer($raw, array $options): array
+    private function normalizeCorrectAnswer($raw, array $options, string $questionType): array
     {
         if ($raw === null || trim((string) $raw) === '') {
-            return ['index' => null, 'error' => 'Correct answer is required.'];
+            return ['indexes' => [], 'error' => 'Correct answer is required.'];
         }
 
-        $rawString = trim((string) $raw);
+        $rawValues = is_array($raw) ? $raw : preg_split('/\s*\|\s*/', trim((string) $raw));
+        $rawValues = array_values(array_filter(array_map(function ($value) {
+            return trim((string) $value);
+        }, $rawValues), fn ($value) => $value !== ''));
 
-        // First, try to match against option values (case-insensitive)
-        $lower = mb_strtolower($rawString);
-        $matchIndex = null;
-        foreach ($options as $index => $option) {
-            if (mb_strtolower($option) === $lower) {
-                if ($matchIndex !== null) {
-                    return ['index' => null, 'error' => 'Correct answer matches multiple options.'];
+        if (empty($rawValues)) {
+            return ['indexes' => [], 'error' => 'Correct answer is required.'];
+        }
+
+        $indexes = [];
+
+        foreach ($rawValues as $rawString) {
+            $lower = mb_strtolower($rawString);
+            $matchIndex = null;
+            foreach ($options as $index => $option) {
+                if (mb_strtolower($option) === $lower) {
+                    if ($matchIndex !== null) {
+                        return ['indexes' => [], 'error' => 'Correct answer matches multiple options.'];
+                    }
+                    $matchIndex = $index + 1;
                 }
-                $matchIndex = $index + 1;
-            }
-        }
-
-        // If matched by value, return the match
-        if ($matchIndex !== null) {
-            return ['index' => $matchIndex, 'error' => null];
-        }
-
-        // If not matched by value and the string is numeric, try as index
-        if (is_numeric($rawString)) {
-            $index = (int) $rawString;
-            if ($index < 1 || $index > count($options)) {
-                return ['index' => null, 'error' => 'Correct answer index is out of range.'];
             }
 
-            return ['index' => $index, 'error' => null];
+            if ($matchIndex !== null) {
+                $indexes[] = $matchIndex;
+                continue;
+            }
+
+            if (is_numeric($rawString)) {
+                $index = (int) $rawString;
+                if ($index < 1 || $index > count($options)) {
+                    return ['indexes' => [], 'error' => 'Correct answer index is out of range.'];
+                }
+
+                $indexes[] = $index;
+                continue;
+            }
+
+            return ['indexes' => [], 'error' => 'Correct answer must match one of the options or be a 1-based index.'];
         }
 
-        return ['index' => null, 'error' => 'Correct answer must match one of the options or be a 1-based index.'];
+        $indexes = array_values(array_unique($indexes));
+
+        if ($questionType !== Question::TYPE_MULTI_SELECT && count($indexes) !== 1) {
+            return ['indexes' => [], 'error' => 'This question type must have exactly 1 correct answer.'];
+        }
+
+        return ['indexes' => $indexes, 'error' => null];
     }
 
     private function createQuestionFromNormalized(array $data, int $rowNumber): array
@@ -476,12 +496,12 @@ class QuestionBankService
                     'answer_key' => $data['answer_key'],
                 ]);
 
-                if (in_array($data['question_type'], ['mcq', 'tf'], true)) {
+                if (in_array($data['question_type'], [Question::TYPE_MCQ, Question::TYPE_TRUE_FALSE, Question::TYPE_MULTI_SELECT], true)) {
                     foreach ($data['options'] as $index => $optionText) {
                         QuestionOption::create([
                             'question_id' => $question->id,
                             'option_text' => $optionText,
-                            'is_correct' => ($index + 1) === $data['correct_index'],
+                            'is_correct' => in_array($index + 1, $data['correct_indexes'], true),
                         ]);
                     }
                 }
@@ -520,16 +540,23 @@ class QuestionBankService
     private function exportQuestionPayload(Question $question): array
     {
         $options = $question->options->pluck('option_text')->values()->all();
-        $correctIndex = null;
+        $correctAnswer = null;
 
-        if (in_array($question->question_type, ['mcq', 'tf'], true)) {
-            $correct = $question->options->firstWhere('is_correct', true);
-            if ($correct) {
-                $correctIndex = $question->options->search(function ($option) use ($correct) {
-                    return $option->id === $correct->id;
-                });
-                $correctIndex = $correctIndex === false ? null : $correctIndex + 1;
-            }
+        if (in_array($question->question_type, [Question::TYPE_MCQ, Question::TYPE_TRUE_FALSE, Question::TYPE_MULTI_SELECT], true)) {
+            $correctIndexes = $question->options
+                ->filter(fn ($option) => (bool) $option->is_correct)
+                ->map(function ($correct) use ($question) {
+                    $index = $question->options->search(fn ($option) => $option->id === $correct->id);
+
+                    return $index === false ? null : $index + 1;
+                })
+                ->filter(fn ($index) => $index !== null)
+                ->values()
+                ->all();
+
+            $correctAnswer = $question->question_type === Question::TYPE_MULTI_SELECT
+                ? $correctIndexes
+                : ($correctIndexes[0] ?? null);
         }
 
         return [
@@ -538,9 +565,9 @@ class QuestionBankService
             'category' => $question->category?->name ?? '',
             'question_type' => $question->question_type,
             'options' => $options,
-            'correct_answer' => $correctIndex,
+            'correct_answer' => $correctAnswer,
             'points' => $question->points,
-            'answer_key' => $question->question_type === 'short_answer' ? $question->answer_key : null,
+            'answer_key' => $question->question_type === Question::TYPE_SHORT_ANSWER ? $question->answer_key : null,
         ];
     }
 

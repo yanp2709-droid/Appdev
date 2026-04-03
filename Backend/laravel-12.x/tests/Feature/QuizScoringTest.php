@@ -275,6 +275,181 @@ class QuizScoringTest extends TestCase
                  ->assertJsonPath('data.score.correct_answers', 1);
     }
 
+    public function test_true_false_submission_scores_exact_match()
+    {
+        $question = Question::factory()->create([
+            'category_id' => $this->category->id,
+            'question_type' => 'tf',
+            'points' => 5,
+        ]);
+
+        $trueOption = QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'option_text' => 'True',
+            'is_correct' => true,
+        ]);
+        QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'option_text' => 'False',
+            'is_correct' => false,
+        ]);
+
+        $attempt = Quiz_attempt::create([
+            'student_id' => $this->student->id,
+            'quiz_id' => $this->quiz->id,
+            'status' => 'in_progress',
+            'started_at' => now(),
+            'expires_at' => now()->addMinutes(15),
+            'total_items' => 1,
+            'score' => 0,
+        ]);
+
+        Attempt_answer::create([
+            'quiz_attempt_id' => $attempt->id,
+            'question_id' => $question->id,
+            'question_option_id' => $trueOption->id,
+            'selected_option_ids' => [$trueOption->id],
+        ]);
+
+        $this->actingAs($this->student)
+            ->postJson("/api/quiz/attempts/{$attempt->id}/submit")
+            ->assertStatus(200)
+            ->assertJsonPath('data.score.correct_answers', 1)
+            ->assertJsonPath('data.score.score_percent', 100.0);
+    }
+
+    public function test_multi_select_exact_match_scores_correctly()
+    {
+        $question = Question::factory()->create([
+            'category_id' => $this->category->id,
+            'question_type' => 'multi_select',
+            'points' => 5,
+        ]);
+
+        $correctA = QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'is_correct' => true,
+        ]);
+        $correctB = QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'is_correct' => true,
+        ]);
+        QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'is_correct' => false,
+        ]);
+
+        $attempt = Quiz_attempt::create([
+            'student_id' => $this->student->id,
+            'quiz_id' => $this->quiz->id,
+            'status' => 'in_progress',
+            'started_at' => now(),
+            'expires_at' => now()->addMinutes(15),
+            'total_items' => 1,
+            'score' => 0,
+        ]);
+
+        Attempt_answer::create([
+            'quiz_attempt_id' => $attempt->id,
+            'question_id' => $question->id,
+            'selected_option_ids' => [$correctA->id, $correctB->id],
+        ]);
+
+        $this->actingAs($this->student)
+            ->postJson("/api/quiz/attempts/{$attempt->id}/submit")
+            ->assertStatus(200)
+            ->assertJsonPath('data.score.correct_answers', 1)
+            ->assertJsonPath('data.score.score_percent', 100.0);
+    }
+
+    public function test_multi_select_partial_answer_is_not_counted_as_correct()
+    {
+        $question = Question::factory()->create([
+            'category_id' => $this->category->id,
+            'question_type' => 'multi_select',
+            'points' => 5,
+        ]);
+
+        $correctA = QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'is_correct' => true,
+        ]);
+        QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'is_correct' => true,
+        ]);
+        QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'is_correct' => false,
+        ]);
+
+        $attempt = Quiz_attempt::create([
+            'student_id' => $this->student->id,
+            'quiz_id' => $this->quiz->id,
+            'status' => 'in_progress',
+            'started_at' => now(),
+            'expires_at' => now()->addMinutes(15),
+            'total_items' => 1,
+            'score' => 0,
+        ]);
+
+        Attempt_answer::create([
+            'quiz_attempt_id' => $attempt->id,
+            'question_id' => $question->id,
+            'selected_option_ids' => [$correctA->id],
+        ]);
+
+        $this->actingAs($this->student)
+            ->postJson("/api/quiz/attempts/{$attempt->id}/submit")
+            ->assertStatus(200)
+            ->assertJsonPath('data.score.correct_answers', 0)
+            ->assertJsonPath('data.score.score_percent', 0.0);
+    }
+
+    public function test_multi_select_with_extra_wrong_option_is_not_counted_as_correct()
+    {
+        $question = Question::factory()->create([
+            'category_id' => $this->category->id,
+            'question_type' => 'multi_select',
+            'points' => 5,
+        ]);
+
+        $correctA = QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'is_correct' => true,
+        ]);
+        $correctB = QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'is_correct' => true,
+        ]);
+        $wrong = QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'is_correct' => false,
+        ]);
+
+        $attempt = Quiz_attempt::create([
+            'student_id' => $this->student->id,
+            'quiz_id' => $this->quiz->id,
+            'status' => 'in_progress',
+            'started_at' => now(),
+            'expires_at' => now()->addMinutes(15),
+            'total_items' => 1,
+            'score' => 0,
+        ]);
+
+        Attempt_answer::create([
+            'quiz_attempt_id' => $attempt->id,
+            'question_id' => $question->id,
+            'selected_option_ids' => [$correctA->id, $correctB->id, $wrong->id],
+        ]);
+
+        $this->actingAs($this->student)
+            ->postJson("/api/quiz/attempts/{$attempt->id}/submit")
+            ->assertStatus(200)
+            ->assertJsonPath('data.score.correct_answers', 0)
+            ->assertJsonPath('data.score.score_percent', 0.0);
+    }
+
     /**
      * Test score percent calculation
      */

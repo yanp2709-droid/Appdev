@@ -23,7 +23,7 @@ class QuestionFactory extends Factory
         return [
             'question_text' => $this->faker->sentence(),
             'category_id' => Category::factory(),
-            'question_type' => $this->faker->randomElement(['mcq', 'tf', 'ordering', 'short_answer']),
+            'question_type' => $this->faker->randomElement(['mcq', 'tf', 'multi_select', 'ordering', 'short_answer']),
             'points' => $this->faker->numberBetween(1, 10),
             'answer_key' => $this->faker->word(),
         ];

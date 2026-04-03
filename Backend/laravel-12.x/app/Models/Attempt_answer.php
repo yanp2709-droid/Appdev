@@ -11,11 +11,13 @@ class Attempt_answer extends Model
         'question_id',
         'answer_id',
         'question_option_id',
+        'selected_option_ids',
         'text_answer',
         'is_correct',
     ];
 
     protected $casts = [
+        'selected_option_ids' => 'array',
         'is_correct' => 'boolean',
     ];
 
@@ -38,5 +40,22 @@ class Attempt_answer extends Model
     public function questionOption()
     {
         return $this->belongsTo(QuestionOption::class, 'question_option_id');
+    }
+
+    public function getSelectedOptionIdsAttribute($value): array
+    {
+        if ($value !== null) {
+            $decoded = is_array($value) ? $value : json_decode($value, true);
+
+            if (is_array($decoded)) {
+                return array_values(array_map('intval', $decoded));
+            }
+        }
+
+        if (!empty($this->attributes['question_option_id'])) {
+            return [(int) $this->attributes['question_option_id']];
+        }
+
+        return [];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Question;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,7 +19,8 @@ class QuestionResource extends JsonResource
             'id' => $this->id,
             'question_text' => $this->question_text,
             'category_id' => $this->category_id,
-            'question_type' => $this->question_type,
+            'question_type' => Question::toApiQuestionType($this->question_type),
+            'stored_question_type' => $this->question_type,
             'points' => $this->points,
             'options' => $this->whenLoaded('options', function () {
                 return $this->options->map(function ($option) {

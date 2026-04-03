@@ -2,6 +2,8 @@
 
 namespace App\Services\Scoring;
 
+use App\Models\Attempt_answer;
+use App\Models\Question;
 use App\Models\Quiz_attempt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -28,27 +30,10 @@ class QuizAttemptScorer
 
             foreach ($answers as $answer) {
                 $question = $answer->question;
-                $isCorrect = null;
+                $isCorrect = $question ? $this->scoreAnswer($question, $answer) : null;
 
-                if ($question && in_array($question->question_type, ['mcq', 'tf'], true)) {
-                    if ($answer->question_option_id) {
-                        $option = $question->options->firstWhere('id', $answer->question_option_id);
-                        $isCorrect = $option ? (bool) $option->is_correct : false;
-                    } else {
-                        $isCorrect = false;
-                    }
-
-                    if ($isCorrect) {
-                        $correctCount++;
-                    }
-                } elseif ($question && $question->question_type === 'short_answer') {
-                    $expected = $question->answer_key ?? '';
-                    $given = $answer->text_answer ?? '';
-                    $isCorrect = trim(mb_strtolower($given)) === trim(mb_strtolower($expected));
-
-                    if ($isCorrect) {
-                        $correctCount++;
-                    }
+                if ($isCorrect) {
+                    $correctCount++;
                 }
 
                 $answer->is_correct = $isCorrect;
@@ -84,5 +69,54 @@ class QuizAttemptScorer
             ]);
             throw $e;
         }
+    }
+
+    private function scoreAnswer(Question $question, Attempt_answer $answer): ?bool
+    {
+        $questionType = Question::normalizeQuestionType($question->question_type) ?? $question->question_type;
+
+        if (in_array($questionType, [Question::TYPE_MCQ, Question::TYPE_TRUE_FALSE], true)) {
+            $selectedOptionId = $answer->question_option_id;
+            if (!$selectedOptionId && !empty($answer->selected_option_ids)) {
+                $selectedOptionId = $answer->selected_option_ids[0] ?? null;
+            }
+
+            if (!$selectedOptionId) {
+                return false;
+            }
+
+            $option = $question->options->firstWhere('id', $selectedOptionId);
+
+            return $option ? (bool) $option->is_correct : false;
+        }
+
+        if ($questionType === Question::TYPE_MULTI_SELECT) {
+            $selectedOptionIds = collect($answer->selected_option_ids ?? [])
+                ->map(fn ($id) => (int) $id)
+                ->filter()
+                ->unique()
+                ->sort()
+                ->values();
+
+            $correctOptionIds = $question->options
+                ->where('is_correct', true)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->sort()
+                ->values();
+
+            return $selectedOptionIds->isNotEmpty()
+                && $selectedOptionIds->count() === $correctOptionIds->count()
+                && $selectedOptionIds->values()->all() === $correctOptionIds->values()->all();
+        }
+
+        if ($questionType === Question::TYPE_SHORT_ANSWER) {
+            $expected = $question->answer_key ?? '';
+            $given = $answer->text_answer ?? '';
+
+            return trim(mb_strtolower($given)) === trim(mb_strtolower($expected));
+        }
+
+        return null;
     }
 }
