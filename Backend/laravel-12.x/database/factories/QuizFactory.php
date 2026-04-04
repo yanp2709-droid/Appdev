@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Quiz;
 use App\Models\Category;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -23,8 +24,17 @@ class QuizFactory extends Factory
         return [
             'title' => $this->faker->word() . ' Quiz',
             'category_id' => Category::factory(),
+            'teacher_id' => User::factory()->teacher(),
             'difficulty' => $this->faker->randomElement(['Easy', 'Medium', 'Hard']),
             'duration_minutes' => $this->faker->numberBetween(10, 60),
+            'timer_enabled' => true,
+            'shuffle_questions' => false,
+            'shuffle_options' => false,
+            'max_attempts' => null,
+            'allow_review_before_submit' => false,
+            'show_score_immediately' => true,
+            'show_answers_after_submit' => false,
+            'show_correct_answers_after_submit' => false,
         ];
     }
 

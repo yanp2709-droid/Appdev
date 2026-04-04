@@ -51,16 +51,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Teacher-only routes
     Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
         Route::post('/quiz/create', [QuizzesController::class, 'store']);
+        Route::put('/quiz/{quiz}', [QuizzesController::class, 'update'])->whereNumber('quiz');
+        Route::get('/quiz/{quiz}', [QuizzesController::class, 'show'])->whereNumber('quiz');
     });
 
     // Student-only routes
     Route::middleware('role:student')->group(function () {
         Route::post('/quiz/attempt', [QuizAttemptController::class, 'attempt']);
         Route::get('/quiz/attempts', [QuizAttemptController::class, 'history']);
-        Route::post('/quiz/attempts/{attempt}/answer', [QuizAttemptController::class, 'saveAnswer']);
-        Route::post('/quiz/attempts/{attempt}/submit', [QuizAttemptController::class, 'submit']);
-        Route::get('/quiz/attempts/{attempt}/detail', [QuizAttemptController::class, 'detail']);
-        Route::get('/quiz/attempts/{attempt}', [QuizAttemptController::class, 'status']);
+        Route::post('/quiz/attempts/{attempt}/answer', [QuizAttemptController::class, 'saveAnswer'])->whereNumber('attempt');
+        Route::post('/quiz/attempts/{attempt}/submit', [QuizAttemptController::class, 'submit'])->whereNumber('attempt');
+        Route::get('/quiz/attempts/{attempt}/detail', [QuizAttemptController::class, 'detail'])->whereNumber('attempt');
+        Route::get('/quiz/attempts/{attempt}', [QuizAttemptController::class, 'status'])->whereNumber('attempt');
     });
 });
 
@@ -77,6 +79,7 @@ Route::middleware(['auth:sanctum', 'role:admin|teacher'])->prefix('admin/questio
     Route::post('/import/json', [QuestionBankController::class, 'importJson']);
     Route::get('/export/csv', [QuestionBankController::class, 'exportCsv']);
     Route::get('/export/json', [QuestionBankController::class, 'exportJson']);
+    Route::get('/{question}/preview', [QuestionController::class, 'preview']);
 });
 
 // Admin Statistics and Analytics routes
@@ -88,4 +91,3 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('/statistics/attempt-history', [AdminDashboardController::class, 'studentAttemptHistory']);
     Route::get('/statistics/categories', [AdminDashboardController::class, 'categoryStats']);
 });
-

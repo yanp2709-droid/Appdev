@@ -22,7 +22,7 @@ class QuizAttemptController extends Controller
     private const STATUS_IN_PROGRESS = 'in_progress';
     private const STATUS_SUBMITTED = 'submitted';
     private const STATUS_EXPIRED = 'expired';
-    private const DEFAULT_DURATION_MINUTES = 10;
+    private const DEFAULT_DURATION_MINUTES = Quiz::DEFAULT_DURATION_MINUTES;
 
     public function attempt(Request $request)
     {
@@ -97,6 +97,20 @@ class QuizAttemptController extends Controller
             );
         }
 
+        if (!empty($quiz->max_attempts)) {
+            $attemptCount = Quiz_attempt::where('student_id', $user->id)
+                ->where('quiz_id', $quiz->id)
+                ->count();
+
+            if ($attemptCount >= $quiz->max_attempts) {
+                return $this->error(
+                    'attempt_limit_reached',
+                    'Maximum attempt limit reached for this quiz.',
+                    403
+                );
+            }
+        }
+
         $durationMinutes = (int) ($quiz->duration_minutes ?? self::DEFAULT_DURATION_MINUTES);
         if ($durationMinutes <= 0) {
             if (empty($category)) {
@@ -109,7 +123,11 @@ class QuizAttemptController extends Controller
         }
 
         $startedAt = $now;
-        $expiresAt = $startedAt->copy()->addMinutes($durationMinutes);
+        $expiresAt = null;
+
+        if ($quiz->timer_enabled) {
+            $expiresAt = $startedAt->copy()->addMinutes($durationMinutes);
+        }
 
         $attempt = Quiz_attempt::create([
             'student_id' => $user->id,
@@ -123,7 +141,8 @@ class QuizAttemptController extends Controller
         $query = Question::with('options')
             ->where('category_id', $quiz->category_id);
 
-        if (!empty($payload['random'])) {
+        $shuffleQuestions = !empty($payload['random']) || $quiz->shuffle_questions;
+        if ($shuffleQuestions) {
             $query->inRandomOrder();
         }
 
@@ -216,9 +235,12 @@ class QuizAttemptController extends Controller
             return $this->error('not_found', 'Attempt not found.', 404);
         }
 
+        $canReview = $this->canReviewAttemptDetails($attempt);
+        $showCorrectAnswers = $this->shouldShowCorrectAnswers($attempt);
+
         $questions = $attempt->answers
             ->sortBy('id')
-            ->map(function (Attempt_answer $answer) {
+            ->map(function (Attempt_answer $answer) use ($canReview, $showCorrectAnswers) {
                 $question = $answer->question;
                 if (!$question) {
                     return null;
@@ -240,23 +262,23 @@ class QuizAttemptController extends Controller
                     'question_type' => Question::toApiQuestionType($question->question_type),
                     'stored_question_type' => $question->question_type,
                     'points' => (int) ($question->points ?? 0),
-                    'options' => $question->options->map(function ($option) use ($selectedOptionIds, $correctOptionIds) {
+                    'options' => $question->options->map(function ($option) use ($selectedOptionIds, $correctOptionIds, $canReview, $showCorrectAnswers) {
                         return [
                             'id' => $option->id,
                             'text' => $option->option_text,
                             'is_selected' => in_array((int) $option->id, $selectedOptionIds, true),
-                            'is_correct' => in_array((int) $option->id, $correctOptionIds, true),
+                            'is_correct' => $canReview && $showCorrectAnswers && in_array((int) $option->id, $correctOptionIds, true),
                             'order_index' => $option->order_index,
                         ];
                     })->values(),
                     'selected_option_id' => $selectedOptionId ? (int) $selectedOptionId : null,
                     'selected_option_ids' => $selectedOptionIds,
-                    'correct_option_id' => $correctOptionId,
-                    'correct_option_ids' => $correctOptionIds,
+                    'correct_option_id' => $canReview && $showCorrectAnswers ? $correctOptionId : null,
+                    'correct_option_ids' => $canReview && $showCorrectAnswers ? $correctOptionIds : [],
                     'text_answer' => $answer->text_answer,
                     'is_answered' => !empty($selectedOptionIds) || !empty($answer->text_answer),
-                    'is_correct' => (bool) ($answer->is_correct ?? false),
-                    'score_impact' => (bool) ($answer->is_correct ?? false) ? (int) ($question->points ?? 0) : 0,
+                    'is_correct' => $canReview && $showCorrectAnswers ? (bool) ($answer->is_correct ?? false) : null,
+                    'score_impact' => $canReview && $showCorrectAnswers ? ((bool) ($answer->is_correct ?? false) ? (int) ($question->points ?? 0) : 0) : 0,
                     'answer_id' => (int) $answer->id,
                 ];
             })
@@ -274,8 +296,8 @@ class QuizAttemptController extends Controller
                 'submitted_at' => $attempt->submitted_at,
                 'total_items' => (int) ($attempt->total_items ?? 0),
                 'answered_count' => (int) ($attempt->answered_count ?? 0),
-                'correct_answers' => (int) ($attempt->correct_answers ?? 0),
-                'score_percent' => (float) ($attempt->score_percent ?? 0),
+                'correct_answers' => $this->shouldShowAttemptScore($attempt) ? (int) ($attempt->correct_answers ?? 0) : null,
+                'score_percent' => $this->shouldShowAttemptScore($attempt) ? (float) ($attempt->score_percent ?? 0) : null,
             ],
             'questions' => $questions,
         ], 'Attempt detail retrieved.');
@@ -437,14 +459,19 @@ class QuizAttemptController extends Controller
 
             $attempt = $attempt->fresh();
 
-            return $this->success([
-                'attempt' => $this->attemptMeta($attempt),
-                'score' => [
+            $scorePayload = null;
+            if ($attempt->quiz->show_score_immediately) {
+                $scorePayload = [
                     'total_items' => $attempt->total_items,
                     'answered_count' => $attempt->answered_count,
                     'correct_answers' => $attempt->correct_answers,
                     'score_percent' => $attempt->score_percent, // Use model's float-casted value
-                ],
+                ];
+            }
+
+            return $this->success([
+                'attempt' => $this->attemptMeta($attempt),
+                'score' => $scorePayload,
             ], 'Attempt submitted.');
         } catch (\Throwable $e) {
             return $this->error('scoring_failed', 'Scoring failed. Please retry.', 500);
@@ -533,8 +560,13 @@ class QuizAttemptController extends Controller
         return false;
     }
 
-    private function formatAttemptQuestion(Question $question): array
+    private function formatAttemptQuestion(Question $question, Quiz_attempt $attempt): array
     {
+        $options = $question->options;
+        if ($attempt->quiz->shuffle_options) {
+            $options = $options->shuffle();
+        }
+
         return [
             'id' => $question->id,
             'question_text' => $question->question_text,
@@ -542,11 +574,11 @@ class QuizAttemptController extends Controller
             'stored_question_type' => $question->question_type,
             'points' => $question->points,
             'saved_answer' => null,
-            'options' => $question->options->map(function ($option) {
+            'options' => $options->values()->map(function ($option, int $index) {
                 return [
                     'id' => $option->id,
                     'option_text' => $option->option_text,
-                    'order_index' => $option->order_index,
+                    'order_index' => $index,
                 ];
             })->values(),
         ];
@@ -704,6 +736,7 @@ class QuizAttemptController extends Controller
 
         return [
             'attempt' => $this->attemptMeta($attempt),
+            'quiz_settings' => $this->quizSettingsPayload($attempt->quiz),
             'questions' => $this->questionsPayload($questions, $attempt),
             'saved_answers' => $this->savedAnswersPayload($attempt),
             'progress' => $this->progressPayload($attempt),
@@ -741,8 +774,8 @@ class QuizAttemptController extends Controller
             ? $attempt->answers->keyBy('question_id')
             : Attempt_answer::where('quiz_attempt_id', $attempt->id)->get()->keyBy('question_id');
 
-        return $questions->values()->map(function (Question $question, int $index) use ($answersByQuestionId) {
-            $formatted = $this->formatAttemptQuestion($question);
+        return $questions->values()->map(function (Question $question, int $index) use ($answersByQuestionId, $attempt) {
+            $formatted = $this->formatAttemptQuestion($question, $attempt);
             $formatted['index'] = $index;
             $formatted['saved_answer'] = $this->savedAnswerPayload($answersByQuestionId->get($question->id));
 
@@ -790,6 +823,49 @@ class QuizAttemptController extends Controller
             'last_viewed_question_index' => $attempt->last_viewed_question_index,
             'last_activity_at' => $attempt->last_activity_at,
         ];
+    }
+
+    private function quizSettingsPayload(Quiz $quiz): array
+    {
+        return [
+            'shuffle_questions' => (bool) $quiz->shuffle_questions,
+            'shuffle_options' => (bool) $quiz->shuffle_options,
+            'max_attempts' => $quiz->max_attempts,
+            'attempt_limit' => $quiz->max_attempts,
+            'timer_enabled' => (bool) $quiz->timer_enabled,
+            'duration_minutes' => $quiz->duration_minutes,
+            'allow_review_before_submit' => (bool) $quiz->allow_review_before_submit,
+            'show_score_immediately' => (bool) $quiz->show_score_immediately,
+            'show_answers_after_submit' => (bool) $quiz->show_answers_after_submit,
+            'show_correct_answers_after_submit' => (bool) $quiz->show_correct_answers_after_submit,
+        ];
+    }
+
+    private function canReviewAttemptDetails(Quiz_attempt $attempt): bool
+    {
+        if ($attempt->status === self::STATUS_SUBMITTED) {
+            return (bool) $attempt->quiz->show_answers_after_submit;
+        }
+
+        return (bool) $attempt->quiz->allow_review_before_submit;
+    }
+
+    private function shouldShowCorrectAnswers(Quiz_attempt $attempt): bool
+    {
+        if ($attempt->status !== self::STATUS_SUBMITTED) {
+            return false;
+        }
+
+        return (bool) $attempt->quiz->show_correct_answers_after_submit;
+    }
+
+    private function shouldShowAttemptScore(Quiz_attempt $attempt): bool
+    {
+        if ($attempt->status !== self::STATUS_SUBMITTED) {
+            return false;
+        }
+
+        return (bool) $attempt->quiz->show_score_immediately;
     }
 
     private function countAnsweredQuestions(int $attemptId): int

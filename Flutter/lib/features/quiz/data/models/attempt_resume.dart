@@ -1,6 +1,7 @@
 class AttemptSavedAnswer {
   final int questionId;
   final int? optionId;
+  final List<int> selectedOptionIds;
   final String? textAnswer;
   final String? answer;
   final bool? isBookmarked;
@@ -8,15 +9,26 @@ class AttemptSavedAnswer {
   const AttemptSavedAnswer({
     required this.questionId,
     this.optionId,
+    this.selectedOptionIds = const [],
     this.textAnswer,
     this.answer,
     this.isBookmarked,
   });
 
   factory AttemptSavedAnswer.fromJson(Map<String, dynamic> json) {
+    final rawSelectedOptionIds =
+        json['selected_option_ids'] as List<dynamic>? ?? const <dynamic>[];
+    final selectedOptionIds = rawSelectedOptionIds
+        .map((id) => (id as num?)?.toInt())
+        .whereType<int>()
+        .toList();
+    final selectedOptionId = (json['selected_option_id'] as num?)?.toInt() ??
+        (json['option_id'] as num?)?.toInt();
+
     return AttemptSavedAnswer(
       questionId: (json['question_id'] as num?)?.toInt() ?? 0,
-      optionId: (json['option_id'] as num?)?.toInt(),
+      optionId: selectedOptionId,
+      selectedOptionIds: selectedOptionIds,
       textAnswer: json['text_answer'] as String?,
       answer: json['answer'] as String?,
       isBookmarked: json['is_bookmarked'] as bool?,

@@ -6,47 +6,49 @@ import '../data/models/quiz_attempt.dart';
 import '../data/models/attempt_resume.dart';
 import '../data/quiz_result_model.dart';
 import '../../../services/quiz_attempt_service.dart';
+import '../../../services/attempt_history_service.dart';
 import '../../../core/exceptions/api_exception.dart';
 
 enum QuizStatus { idle, loading, active, finished, error }
 
 class QuizProvider extends ChangeNotifier {
   final QuizAttemptService _attemptService;
+  final AttemptHistoryService _historyService = AttemptHistoryService();
 
   QuizProvider(this._attemptService);
 
-  QuizStatus            _status       = QuizStatus.idle;
-  List<QuestionModel>   _questions    = [];
-  int                   _currentIndex = 0;
-  final Map<int, int>   _selectedOptionIds = {}; // questionIndex -> optionId
+  QuizStatus _status = QuizStatus.idle;
+  List<QuestionModel> _questions = [];
+  int _currentIndex = 0;
+  final Map<int, List<int>> _selectedOptionIds = {}; // questionIndex -> optionIds
   final Map<int, String> _textAnswers = {}; // questionIndex -> text
   final Map<int, bool> _bookmarks = {}; // questionIndex -> bookmarked
-  int                   _categoryId   = 0;
-  String                _categoryName = '';
-  QuizResultModel?      _lastResult;
-  String?               _errorMessage;
-  QuizAttempt?          _attempt;
-  Timer?                _ticker;
-  int                   _remainingSeconds = 0;
+  int _categoryId = 0;
+  String _categoryName = '';
+  QuizResultModel? _lastResult;
+  String? _errorMessage;
+  QuizAttempt? _attempt;
+  Timer? _ticker;
+  int _remainingSeconds = 0;
 
-  QuizStatus            get status        => _status;
-  List<QuestionModel>   get questions     => _questions;
-  int                   get currentIndex  => _currentIndex;
-  QuestionModel?        get currentQuestion =>
+  QuizStatus get status => _status;
+  List<QuestionModel> get questions => _questions;
+  int get currentIndex => _currentIndex;
+  QuestionModel? get currentQuestion =>
       _questions.isEmpty ? null : _questions[_currentIndex];
-  int                   get totalQuestions => _questions.length;
-  bool                  get isLastQuestion => _currentIndex == _questions.length - 1;
-  Map<int, int>         get answers       => Map.unmodifiable(_selectedOptionIds);
-  Map<int, String>      get textAnswers   => Map.unmodifiable(_textAnswers);
-  Map<int, bool>        get bookmarks     => Map.unmodifiable(_bookmarks);
-  QuizResultModel?      get lastResult    => _lastResult;
-  String?               get errorMessage  => _errorMessage;
-  bool                  get hasEverTakenQuiz => _lastResult != null;
-  int                   get remainingSeconds => _remainingSeconds;
-  QuizAttempt?          get attempt => _attempt;
-  bool                  get isExpired => _remainingSeconds <= 0;
-  bool                  get allowReviewBeforeSubmit =>
-      _attempt?.allowReviewBeforeSubmit ?? true;
+  int get totalQuestions => _questions.length;
+  bool get isLastQuestion => _currentIndex == _questions.length - 1;
+  Map<int, List<int>> get answers =>
+      _selectedOptionIds.map((key, value) => MapEntry(key, List.unmodifiable(value)));
+  Map<int, String> get textAnswers => Map.unmodifiable(_textAnswers);
+  Map<int, bool> get bookmarks => Map.unmodifiable(_bookmarks);
+  QuizResultModel? get lastResult => _lastResult;
+  String? get errorMessage => _errorMessage;
+  bool get hasEverTakenQuiz => _lastResult != null;
+  int get remainingSeconds => _remainingSeconds;
+  QuizAttempt? get attempt => _attempt;
+  bool get isExpired => _remainingSeconds <= 0;
+  bool get allowReviewBeforeSubmit => _attempt?.allowReviewBeforeSubmit ?? true;
 
   bool isQuestionAnswered(int index) {
     if (index < 0 || index >= _questions.length) return false;
@@ -54,18 +56,16 @@ class QuizProvider extends ChangeNotifier {
     if (question.questionType == 'short_answer') {
       return (_textAnswers[index] ?? '').trim().isNotEmpty;
     }
-    return _selectedOptionIds.containsKey(index);
+    return (_selectedOptionIds[index] ?? const <int>[]).isNotEmpty;
   }
 
   bool isBookmarked(int index) => _bookmarks[index] ?? false;
 
-  int get answeredCount =>
-      List.generate(_questions.length, (i) => i)
-          .where(isQuestionAnswered)
-          .length;
+  int get answeredCount => List.generate(_questions.length, (i) => i)
+      .where(isQuestionAnswered)
+      .length;
 
-  int get bookmarkedCount =>
-      _bookmarks.values.where((value) => value).length;
+  int get bookmarkedCount => _bookmarks.values.where((value) => value).length;
 
   int get unansweredCount => _questions.length - answeredCount;
 
@@ -112,7 +112,8 @@ class QuizProvider extends ChangeNotifier {
     } on ApiException catch (e) {
       if (e.statusCode == 409 && e.type == 'active_attempt_exists') {
         _status = QuizStatus.error;
-        _errorMessage = 'An active attempt already exists for this quiz. Tap to continue?';
+        _errorMessage =
+            'An active attempt already exists for this quiz. Tap to continue?';
       } else {
         _status = QuizStatus.error;
         _errorMessage = 'Failed to load quiz: ${e.message}';
@@ -133,7 +134,7 @@ class QuizProvider extends ChangeNotifier {
     if (question == null) return;
 
     final optionId = question.options[optionIndex].id;
-    _selectedOptionIds[_currentIndex] = optionId;
+    _selectedOptionIds[_currentIndex] = [optionId];
     notifyListeners();
 
     await _attemptService.saveAnswer(
@@ -142,6 +143,42 @@ class QuizProvider extends ChangeNotifier {
       optionId: optionId,
     );
   }
+
+  Future<void> toggleMultiSelectOption(int optionIndex) async {
+    if (_attempt == null) return;
+    if (isExpired) return;
+
+    final question = currentQuestion;
+    if (question == null || question.questionType != 'multi_select') return;
+
+    final optionId = question.options[optionIndex].id;
+    final selected = List<int>.from(_selectedOptionIds[_currentIndex] ?? const <int>[]);
+
+    if (selected.contains(optionId)) {
+      if (selected.length == 1) {
+        return;
+      }
+      selected.remove(optionId);
+    } else {
+      selected.add(optionId);
+    }
+
+    selected.sort();
+    _selectedOptionIds[_currentIndex] = selected;
+    notifyListeners();
+
+    await _attemptService.saveAnswer(
+      attemptId: _attempt!.id,
+      questionId: question.id,
+      optionIds: selected,
+    );
+  }
+
+  List<int> selectedOptionIdsFor(int index) =>
+      List.unmodifiable(_selectedOptionIds[index] ?? const <int>[]);
+
+  bool isOptionSelected(int questionIndex, int optionId) =>
+      (_selectedOptionIds[questionIndex] ?? const <int>[]).contains(optionId);
 
   void toggleBookmark({int? questionIndex}) {
     if (_attempt == null) return;
@@ -206,7 +243,7 @@ class QuizProvider extends ChangeNotifier {
   }
 
   void reset({bool clearLastResult = false}) {
-    _status       = QuizStatus.idle;
+    _status = QuizStatus.idle;
     _currentIndex = 0;
     _questions = [];
     _selectedOptionIds.clear();
@@ -228,7 +265,8 @@ class QuizProvider extends ChangeNotifier {
     if (_attempt == null) return;
 
     try {
-      final response = await _attemptService.submitAttempt(attemptId: _attempt!.id);
+      final response =
+          await _attemptService.submitAttempt(attemptId: _attempt!.id);
       final data = (response['data'] as Map<String, dynamic>?) ?? {};
       final score = (data['score'] as Map<String, dynamic>?) ?? {};
 
@@ -237,12 +275,12 @@ class QuizProvider extends ChangeNotifier {
       final percent = (score['score_percent'] as num?)?.toInt() ?? 0;
 
       _lastResult = QuizResultModel(
-        categoryId:     _categoryId,
-        categoryName:   _categoryName,
+        categoryId: _categoryId,
+        categoryName: _categoryName,
         totalQuestions: totalItems,
         correctAnswers: correct,
-        scorePercentOverride:   percent,
-        takenAt:        DateTime.now(),
+        scorePercentOverride: percent,
+        takenAt: DateTime.now(),
       );
 
       _status = QuizStatus.finished;
@@ -293,7 +331,10 @@ class QuizProvider extends ChangeNotifier {
       if (index == null) continue;
 
       if (saved.optionId != null) {
-        _selectedOptionIds[index] = saved.optionId!;
+        _selectedOptionIds[index] = [saved.optionId!];
+      }
+      if (saved.selectedOptionIds.isNotEmpty) {
+        _selectedOptionIds[index] = List<int>.from(saved.selectedOptionIds)..sort();
       }
       final text = saved.textAnswer ?? saved.answer;
       if (text != null && text.isNotEmpty) {
@@ -309,5 +350,44 @@ class QuizProvider extends ChangeNotifier {
     final index = progress?.lastViewedQuestionIndex;
     if (index == null || index < 0 || index >= _questions.length) return;
     _currentIndex = index;
+  }
+
+  Future<void> loadLatestResult({bool force = false}) async {
+    if (_status == QuizStatus.loading) return;
+    if (!force && _lastResult != null) return;
+
+    try {
+      final histories = await _historyService.getHistory(perPage: 50);
+      if (histories.isEmpty) {
+        if (force && _lastResult != null) {
+          _lastResult = null;
+          notifyListeners();
+        }
+        return;
+      }
+
+      histories.sort((a, b) {
+        final aDate = a.submittedAt ??
+            a.startedAt ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        final bDate = b.submittedAt ??
+            b.startedAt ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        return bDate.compareTo(aDate);
+      });
+
+      final latest = histories.first;
+      _lastResult = QuizResultModel(
+        categoryId: latest.categoryId,
+        categoryName: latest.categoryName,
+        totalQuestions: latest.totalItems,
+        correctAnswers: latest.correctAnswers,
+        scorePercentOverride: latest.scorePercent.round(),
+        takenAt: latest.submittedAt ?? latest.startedAt ?? DateTime.now(),
+      );
+      notifyListeners();
+    } catch (_) {
+      // Keep the current UI stable if history hydration fails.
+    }
   }
 }

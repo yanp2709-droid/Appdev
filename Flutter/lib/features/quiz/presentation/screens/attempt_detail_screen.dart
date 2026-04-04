@@ -237,9 +237,12 @@ class _QuestionReview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = question.isCorrect ? AppColors.accent : Colors.red;
-    final statusIcon = question.isCorrect ? Icons.check_circle : Icons.cancel;
-    final statusText = question.isCorrect ? 'Correct' : 'Incorrect';
+    final statusColor =
+        question.isCorrect == true ? AppColors.accent : Colors.red;
+    final statusIcon =
+        question.isCorrect == true ? Icons.check_circle : Icons.cancel;
+    final statusText =
+        question.isCorrect == true ? 'Correct' : 'Incorrect';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -276,20 +279,37 @@ class _QuestionReview extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Column(
-                  children: [
-                    Icon(statusIcon, color: statusColor, size: 28),
-                    const SizedBox(height: 4),
-                    Text(
-                      statusText,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: statusColor,
+                if (question.isCorrect != null)
+                  Column(
+                    children: [
+                      Icon(statusIcon, color: statusColor, size: 28),
+                      const SizedBox(height: 4),
+                      Text(
+                        statusText,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: statusColor,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  )
+                else
+                  const Column(
+                    children: [
+                      Icon(Icons.visibility_off_outlined,
+                          color: AppColors.gray600, size: 28),
+                      SizedBox(height: 4),
+                      Text(
+                        'Review hidden',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.gray600,
+                        ),
+                      ),
+                    ],
+                  ),
               ],
             ),
             const SizedBox(height: 16),
@@ -310,6 +330,12 @@ class _QuestionReview extends StatelessWidget {
 
   Widget _buildShortAnswerReview(BuildContext context, AttemptQuestionDetail question) {
     final correctAnswer = _getCorrectAnswerText(question);
+    final canShowCorrectness = question.isCorrect != null;
+    final answerColor = question.isCorrect == true
+        ? AppColors.accent.withOpacity(0.1)
+        : Colors.red.withOpacity(0.1);
+    final answerBorderColor =
+        question.isCorrect == true ? AppColors.accent : Colors.red;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -322,13 +348,21 @@ class _QuestionReview extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: canShowCorrectness ? answerColor : Colors.grey[100],
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: canShowCorrectness ? answerBorderColor : Colors.grey[300]!,
+            ),
           ),
           child: Text(
             question.textAnswer ?? '(No answer)',
-            style: const TextStyle(fontSize: 14),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: canShowCorrectness ? FontWeight.w600 : FontWeight.w400,
+              color: canShowCorrectness
+                  ? (question.isCorrect == true ? AppColors.accent : Colors.red)
+                  : null,
+            ),
           ),
         ),
         if (correctAnswer != null) ...[
@@ -362,13 +396,14 @@ class _QuestionReview extends StatelessWidget {
       selectedOptions = question.options.where((o) => o.id == question.selectedOptionId).toList();
     }
     final correctAnswer = _getCorrectAnswerText(question);
+    final canShowCorrectness = question.isCorrect != null || correctAnswer != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ...question.options.map((option) {
           final isSelected = option.isSelected;
-          final isCorrect = option.isCorrect;
-          final isWrongSelection = isSelected && !isCorrect;
+          final isCorrect = option.isCorrect == true;
+          final isWrongSelection = canShowCorrectness && isSelected && !isCorrect;
 
           Color backgroundColor;
           Color borderColor;
@@ -415,9 +450,38 @@ class _QuestionReview extends StatelessWidget {
         const SizedBox(height: 8),
         Text('Your Answer:', style: Theme.of(context).textTheme.labelMedium),
         const SizedBox(height: 6),
-        Text(
-          selectedOptions.isNotEmpty ? selectedOptions.map((o) => o.text).join(', ') : '(No answer)',
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: question.isCorrect == true
+                ? AppColors.accent.withOpacity(0.1)
+                : question.isCorrect == false
+                    ? Colors.red.withOpacity(0.1)
+                    : Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: question.isCorrect == true
+                  ? AppColors.accent
+                  : question.isCorrect == false
+                      ? Colors.red
+                      : Colors.grey[300]!,
+            ),
+          ),
+          child: Text(
+            selectedOptions.isNotEmpty
+                ? selectedOptions.map((o) => o.text).join(', ')
+                : '(No answer)',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: question.isCorrect == true
+                  ? AppColors.accent
+                  : question.isCorrect == false
+                      ? Colors.red
+                      : null,
+            ),
+          ),
         ),
         if (correctAnswer != null) ...[
           const SizedBox(height: 8),
@@ -543,14 +607,15 @@ class _QuestionReview extends StatelessWidget {
   }
 
   String? _getCorrectAnswerText(AttemptQuestionDetail question) {
-    final correctOptions = question.options.where((o) => o.isCorrect).toList();
+    final correctOptions =
+        question.options.where((o) => o.isCorrect == true).toList();
     if (correctOptions.isNotEmpty) {
       return correctOptions.map((o) => o.text).join(', ');
     }
     if (question.correctOptionId != null) {
       final match = question.options.firstWhere(
         (o) => o.id == question.correctOptionId,
-        orElse: () => const AttemptOption(id: 0, text: '', isSelected: false, isCorrect: false),
+        orElse: () => const AttemptOption(id: 0, text: '', isSelected: false),
       );
       if (match.text.isNotEmpty) return match.text;
     }

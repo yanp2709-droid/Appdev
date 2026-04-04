@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Traits\ApiResponse;
 use App\Models\Question;
 use Illuminate\Http\Request;
 use App\Http\Requests\QuestionFetchRequest;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Cache;
 
 class QuestionController extends Controller
 {
+    use ApiResponse;
+
     /**
      * Display a listing of the resource.
      */
@@ -72,6 +75,26 @@ class QuestionController extends Controller
     public function show(Question $question)
     {
         //
+    }
+
+    public function preview(Request $request, Question $question)
+    {
+        if (!$request->user() || !($request->user()->isAdmin() || $request->user()->isTeacher())) {
+            return $this->forbidden('Only admins and teachers can preview question payloads.');
+        }
+
+        if (!$question->isPreviewReady()) {
+            return $this->error(
+                'validation_error',
+                'Question is not preview-ready.',
+                422,
+                $question->getValidationErrors()
+            );
+        }
+
+        return $this->success([
+            'question' => $question->getPreviewPayload($request->boolean('include_correct_answers')),
+        ], 'Question preview generated.');
     }
 
     /**

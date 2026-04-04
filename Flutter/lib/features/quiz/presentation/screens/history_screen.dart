@@ -356,7 +356,8 @@ class _QuestionHistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCorrect = question.isCorrect;
-    final statusColor = isCorrect ? AppColors.accent : Colors.red;
+    final statusColor =
+        isCorrect == true ? AppColors.accent : Colors.red;
     final userAnswer = _formatUserAnswer(question);
     final correctAnswer = _formatCorrectAnswer(question);
 
@@ -377,18 +378,59 @@ class _QuestionHistoryCard extends StatelessWidget {
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                 ),
-                Text(
-                  isCorrect ? 'Correct' : 'Incorrect',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: statusColor),
-                ),
+                if (isCorrect != null)
+                  Text(
+                    isCorrect ? 'Correct' : 'Incorrect',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: statusColor,
+                    ),
+                  )
+                else
+                  const Text(
+                    'Review hidden',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.gray600,
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 8),
             Text('Your Answer:', style: Theme.of(context).textTheme.labelMedium),
             const SizedBox(height: 4),
-            Text(
-              userAnswer,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isCorrect == true
+                    ? AppColors.accent.withOpacity(0.1)
+                    : isCorrect == false
+                        ? Colors.red.withOpacity(0.1)
+                        : Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isCorrect == true
+                      ? AppColors.accent
+                      : isCorrect == false
+                          ? Colors.red
+                          : Colors.grey[300]!,
+                ),
+              ),
+              child: Text(
+                userAnswer,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isCorrect == true
+                      ? AppColors.accent
+                      : isCorrect == false
+                          ? Colors.red
+                          : null,
+                ),
+              ),
             ),
             if (correctAnswer != null) ...[
               const SizedBox(height: 8),
@@ -426,12 +468,12 @@ class _QuestionHistoryCard extends StatelessWidget {
       ordered.sort((a, b) => a.orderIndex!.compareTo(b.orderIndex!));
       return ordered.map((o) => o.text).join(' > ');
     }
-    final correct = question.options.where((o) => o.isCorrect).toList();
+    final correct = question.options.where((o) => o.isCorrect == true).toList();
     if (correct.isNotEmpty) return correct.map((o) => o.text).join(', ');
     if (question.correctOptionId != null) {
       final match = question.options.firstWhere(
         (o) => o.id == question.correctOptionId,
-        orElse: () => const AttemptOption(id: 0, text: '', isSelected: false, isCorrect: false),
+        orElse: () => const AttemptOption(id: 0, text: '', isSelected: false),
       );
       if (match.text.isNotEmpty) return match.text;
     }

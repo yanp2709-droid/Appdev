@@ -2,14 +2,14 @@ class AttemptOption {
   final int id;
   final String text;
   final bool isSelected;
-  final bool isCorrect;
+  final bool? isCorrect;
   final int? orderIndex;
 
   const AttemptOption({
     required this.id,
     required this.text,
     required this.isSelected,
-    required this.isCorrect,
+    this.isCorrect,
     this.orderIndex,
   });
 
@@ -18,18 +18,18 @@ class AttemptOption {
       id: (json['id'] as num?)?.toInt() ?? 0,
       text: json['text'] as String? ?? '',
       isSelected: json['is_selected'] as bool? ?? false,
-      isCorrect: json['is_correct'] as bool? ?? false,
+      isCorrect: json['is_correct'] as bool?,
       orderIndex: (json['order_index'] as num?)?.toInt(),
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'text': text,
-    'is_selected': isSelected,
-    'is_correct': isCorrect,
-    'order_index': orderIndex,
-  };
+        'id': id,
+        'text': text,
+        'is_selected': isSelected,
+        'is_correct': isCorrect,
+        'order_index': orderIndex,
+      };
 }
 
 class AttemptQuestionDetail {
@@ -42,7 +42,7 @@ class AttemptQuestionDetail {
   final int? correctOptionId;
   final String? textAnswer;
   final bool isAnswered;
-  final bool isCorrect;
+  final bool? isCorrect;
   final int? answerId;
 
   const AttemptQuestionDetail({
@@ -55,7 +55,7 @@ class AttemptQuestionDetail {
     this.correctOptionId,
     this.textAnswer,
     required this.isAnswered,
-    required this.isCorrect,
+    this.isCorrect,
     this.answerId,
   });
 
@@ -74,24 +74,24 @@ class AttemptQuestionDetail {
       correctOptionId: (json['correct_option_id'] as num?)?.toInt(),
       textAnswer: json['text_answer'] as String?,
       isAnswered: json['is_answered'] as bool? ?? false,
-      isCorrect: json['is_correct'] as bool? ?? false,
+      isCorrect: json['is_correct'] as bool?,
       answerId: (json['answer_id'] as num?)?.toInt(),
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'question_id': questionId,
-    'question_text': questionText,
-    'question_type': questionType,
-    'points': points,
-    'options': options.map((o) => o.toJson()).toList(),
-    'selected_option_id': selectedOptionId,
-    'correct_option_id': correctOptionId,
-    'text_answer': textAnswer,
-    'is_answered': isAnswered,
-    'is_correct': isCorrect,
-    'answer_id': answerId,
-  };
+        'question_id': questionId,
+        'question_text': questionText,
+        'question_type': questionType,
+        'points': points,
+        'options': options.map((o) => o.toJson()).toList(),
+        'selected_option_id': selectedOptionId,
+        'correct_option_id': correctOptionId,
+        'text_answer': textAnswer,
+        'is_answered': isAnswered,
+        'is_correct': isCorrect,
+        'answer_id': answerId,
+      };
 }
 
 class AttemptDetailModel {
@@ -146,28 +146,28 @@ class AttemptDetailModel {
   }
 
   Map<String, dynamic> toJson() => {
-    'attempt': {
-      'id': id,
-      'quiz_id': quizId,
-      'category_id': categoryId,
-      'category_name': categoryName,
-      'status': status,
-      'started_at': startedAt?.toIso8601String(),
-      'submitted_at': submittedAt?.toIso8601String(),
-      'total_items': totalItems,
-      'answered_count': answeredCount,
-      'correct_answers': correctAnswers,
-      'score_percent': scorePercent,
-    },
-    'questions': questions.map((q) => q.toJson()).toList(),
-  };
+        'attempt': {
+          'id': id,
+          'quiz_id': quizId,
+          'category_id': categoryId,
+          'category_name': categoryName,
+          'status': status,
+          'started_at': startedAt?.toIso8601String(),
+          'submitted_at': submittedAt?.toIso8601String(),
+          'total_items': totalItems,
+          'answered_count': answeredCount,
+          'correct_answers': correctAnswers,
+          'score_percent': scorePercent,
+        },
+        'questions': questions.map((q) => q.toJson()).toList(),
+      };
 
   static DateTime? _parseDate(dynamic value) {
     if (value == null) return null;
-    if (value is DateTime) return value;
+    if (value is DateTime) return value.toLocal();
     if (value is String) {
       try {
-        return DateTime.parse(value);
+        return DateTime.parse(value).toLocal();
       } catch (_) {
         return null;
       }

@@ -88,6 +88,7 @@ class QuizAttemptService {
     required int attemptId,
     required int questionId,
     int? optionId,
+    List<int>? optionIds,
     String? textAnswer,
     bool? isBookmarked,
   }) async {
@@ -97,6 +98,7 @@ class QuizAttemptService {
         data: {
           'question_id': questionId,
           if (optionId != null) 'option_id': optionId,
+          if (optionIds != null) 'option_ids': optionIds,
           if (textAnswer != null && textAnswer.trim().isNotEmpty)
             'text_answer': textAnswer.trim(),
           if (isBookmarked != null) 'is_bookmarked': isBookmarked,

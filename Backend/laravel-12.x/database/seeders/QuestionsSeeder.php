@@ -35,7 +35,7 @@ class QuestionsSeeder extends Seeder
 
     private function createProgrammingQuiz()
     {
-        $quiz = Quiz::create([
+        $quiz = $this->createQuiz([
             'title' => 'Programming Basics Quiz',
             'category_id' => 1,
             'difficulty' => 'Easy',
@@ -73,7 +73,7 @@ class QuestionsSeeder extends Seeder
 
     private function createHardwareQuiz()
     {
-        $quiz = Quiz::create([
+        $quiz = $this->createQuiz([
             'title' => 'Computer Hardware Quiz',
             'category_id' => 2,
             'difficulty' => 'Easy',
@@ -106,7 +106,7 @@ class QuestionsSeeder extends Seeder
 
     private function createNetworkingQuiz()
     {
-        $quiz = Quiz::create([
+        $quiz = $this->createQuiz([
             'title' => 'Networking Basics Quiz',
             'category_id' => 3,
             'difficulty' => 'Easy',
@@ -139,7 +139,7 @@ class QuestionsSeeder extends Seeder
 
     private function createGeneralITQuiz()
     {
-        $quiz = Quiz::create([
+        $quiz = $this->createQuiz([
             'title' => 'General IT Knowledge Quiz',
             'category_id' => 4,
             'difficulty' => 'Easy',
@@ -169,6 +169,18 @@ class QuestionsSeeder extends Seeder
     /* ========================================================= */
     /* ================= HELPER METHODS ======================== */
     /* ========================================================= */
+
+    private function createQuiz(array $attributes): Quiz
+    {
+        return Quiz::updateOrCreate(
+            ['title' => $attributes['title']],
+            array_merge($attributes, [
+                'show_score_immediately' => true,
+                'show_answers_after_submit' => true,
+                'show_correct_answers_after_submit' => true,
+            ])
+        );
+    }
 
     private function mcq($quiz, $text, $options)
     {

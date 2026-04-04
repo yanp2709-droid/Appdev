@@ -15,9 +15,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey      = GlobalKey<FormState>();
-  final _emailCtrl    = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -28,7 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    final auth    = context.read<AuthProvider>();
+    final auth = context.read<AuthProvider>();
     final success = await auth.login(
       _emailCtrl.text.trim(),
       _passwordCtrl.text,
@@ -51,7 +52,8 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 // ── Logo ──────────────────────────────────────────────────
                 Container(
-                  width: 72, height: 72,
+                  width: 72,
+                  height: 72,
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(18),
@@ -63,7 +65,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 14),
                 const Text('TechQuiz',
                     style: TextStyle(
-                      color: Colors.white, fontSize: 28,
+                      color: Colors.white,
+                      fontSize: 28,
                       fontWeight: FontWeight.w800,
                     )),
                 const SizedBox(height: 6),
@@ -98,7 +101,20 @@ class _LoginScreenState extends State<LoginScreen> {
                           key: const Key('passwordField'),
                           hint: 'Password',
                           controller: _passwordCtrl,
-                          obscureText: true,
+                          obscureText: _obscurePassword,
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded,
+                              color: AppColors.gray600,
+                            ),
+                          ),
                           validator: Validators.password,
                         ),
                         const SizedBox(height: 16),

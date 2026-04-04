@@ -45,26 +45,26 @@ class AttemptHistoryModel {
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'quiz_id': quizId,
-    'category_id': categoryId,
-    'category_name': categoryName,
-    'status': status,
-    'started_at': startedAt?.toIso8601String(),
-    'submitted_at': submittedAt?.toIso8601String(),
-    'duration_minutes': durationMinutes,
-    'total_items': totalItems,
-    'answered_count': answeredCount,
-    'correct_answers': correctAnswers,
-    'score_percent': scorePercent,
-  };
+        'id': id,
+        'quiz_id': quizId,
+        'category_id': categoryId,
+        'category_name': categoryName,
+        'status': status,
+        'started_at': startedAt?.toIso8601String(),
+        'submitted_at': submittedAt?.toIso8601String(),
+        'duration_minutes': durationMinutes,
+        'total_items': totalItems,
+        'answered_count': answeredCount,
+        'correct_answers': correctAnswers,
+        'score_percent': scorePercent,
+      };
 
   static DateTime? _parseDate(dynamic value) {
     if (value == null) return null;
-    if (value is DateTime) return value;
+    if (value is DateTime) return value.toLocal();
     if (value is String) {
       try {
-        return DateTime.parse(value);
+        return DateTime.parse(value).toLocal();
       } catch (_) {
         return null;
       }

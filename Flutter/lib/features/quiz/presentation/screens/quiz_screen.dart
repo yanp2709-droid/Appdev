@@ -121,7 +121,9 @@ class _QuizScreenState extends State<QuizScreen> {
 
     // ── ACTIVE QUIZ ───────────────────────────────────────────
     final question = quiz.currentQuestion!;
-    final selectedOptionId = quiz.answers[quiz.currentIndex];
+    final selectedOptionIds = quiz.selectedOptionIdsFor(quiz.currentIndex);
+    final selectedOptionId =
+        selectedOptionIds.length == 1 ? selectedOptionIds.first : null;
     final answeredIndex = selectedOptionId == null
         ? -1
         : question.options.indexWhere((o) => o.id == selectedOptionId);
@@ -332,6 +334,100 @@ class _QuizScreenState extends State<QuizScreen> {
                         child: const Text('Save Answer'),
                       ),
                     ),
+                  ] else if (question.questionType == 'multi_select') ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.2),
+                        ),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.checklist_rounded,
+                              color: AppColors.primary, size: 18),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Select all answers that apply.',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ...List.generate(question.options.length, (i) {
+                      final option = question.options[i];
+                      final isSelected =
+                          quiz.isOptionSelected(quiz.currentIndex, option.id);
+                      return GestureDetector(
+                        onTap: quiz.isExpired
+                            ? null
+                            : () {
+                                context
+                                    .read<QuizProvider>()
+                                    .toggleMultiSelectOption(i);
+                                setState(() => _showUnansweredWarning = false);
+                              },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.primary
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.gray200,
+                              width: isSelected ? 2 : 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isSelected
+                                    ? Icons.check_box_rounded
+                                    : Icons.check_box_outline_blank_rounded,
+                                color: isSelected
+                                    ? Colors.white
+                                    : AppColors.gray600,
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Text(
+                                  option.optionText,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : AppColors.textDark,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
                   ] else ...[
                     // Options
                     ...List.generate(question.options.length, (i) {
@@ -379,7 +475,7 @@ class _QuizScreenState extends State<QuizScreen> {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    ['A', 'B', 'C', 'D'][i],
+                                    String.fromCharCode(65 + i),
                                     style: TextStyle(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 13,
