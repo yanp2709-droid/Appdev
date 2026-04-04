@@ -13,14 +13,31 @@ class QuizScreen extends StatefulWidget {
   State<QuizScreen> createState() => _QuizScreenState();
 }
 
-class _QuizScreenState extends State<QuizScreen> {
+class _QuizScreenState extends State<QuizScreen> with WidgetsBindingObserver {
   bool _showUnansweredWarning = false;
   final TextEditingController _textController = TextEditingController();
   int? _lastQuestionId;
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final quiz = context.read<QuizProvider>();
+      if (quiz.status == QuizStatus.active) {
+        quiz.refreshAttemptStatus();
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _textController.dispose();
     super.dispose();
   }
@@ -120,17 +137,40 @@ class _QuizScreenState extends State<QuizScreen> {
 
     // ── ACTIVE QUIZ ───────────────────────────────────────────
     final question = quiz.currentQuestion!;
+    final isShortAnswer = question.questionType == 'short_answer';
+    final isMultiSelect = question.questionType == 'multi_select';
+    final isTrueFalse = question.questionType == 'true_false';
+
     final selectedOptionId = quiz.answers[quiz.currentIndex];
+    final displayedOptions = isTrueFalse
+        ? question.options.take(2).toList()
+        : question.options;
     final answeredIndex = selectedOptionId == null
         ? -1
-        : question.options.indexWhere((o) => o.id == selectedOptionId);
+        : displayedOptions.indexWhere((o) => o.id == selectedOptionId);
+
+    // For multi-select questions, get all selected option IDs
+    final selectedOptionIds = quiz.multiAnswers[quiz.currentIndex] ?? <int>{};
+    final selectedIndices = <int>{};
+    for (int i = 0; i < question.options.length; i++) {
+      if (selectedOptionIds.contains(question.options[i].id)) {
+        selectedIndices.add(i);
+      }
+    }
+
     final hasTextAnswer = (quiz.textAnswers[quiz.currentIndex] ?? '').isNotEmpty;
+    final hasMultiAnswer = selectedOptionIds.isNotEmpty;
+    final isAnswered = isShortAnswer
+        ? hasTextAnswer
+        : isMultiSelect
+            ? hasMultiAnswer
+            : selectedOptionId != null;
     final progress = (quiz.currentIndex + 1) / quiz.totalQuestions;
     final isFirst  = quiz.currentIndex == 0;
 
     if (_lastQuestionId != question.id) {
       _lastQuestionId = question.id;
-      if (question.questionType == 'short_answer') {
+      if (isShortAnswer) {
         _textController.text =
             quiz.textAnswers[quiz.currentIndex] ?? '';
       }
@@ -198,6 +238,23 @@ class _QuizScreenState extends State<QuizScreen> {
             color: AppColors.primary,
             minHeight: 6,
           ),
+          if (quiz.saveStatusLabel.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  quiz.saveStatusLabel,
+                  style: TextStyle(
+                    color: quiz.saveStatus == SaveStatus.retrying
+                        ? AppColors.danger
+                        : AppColors.gray600,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
 
           Expanded(
             child: SingleChildScrollView(
@@ -228,6 +285,33 @@ class _QuizScreenState extends State<QuizScreen> {
                               'Time is up. You can no longer answer.',
                               style: TextStyle(
                                   color: AppColors.danger, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (quiz.isSubmitted) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: AppColors.primary.withOpacity(0.3)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.lock_outline,
+                              color: AppColors.primary, size: 18),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'This attempt is submitted and read-only.',
+                              style: TextStyle(
+                                  color: AppColors.primary, fontSize: 13),
                             ),
                           ),
                         ],
@@ -290,25 +374,28 @@ class _QuizScreenState extends State<QuizScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  if (question.questionType == 'short_answer') ...[
+                  if (isShortAnswer) ...[
                     TextField(
                       controller: _textController,
-                      enabled: !quiz.isExpired,
+                      enabled: !quiz.isLocked,
                       decoration: const InputDecoration(
                         hintText: 'Type your answer...',
                         border: OutlineInputBorder(),
                       ),
                       maxLines: 3,
-                      onChanged: (_) => setState(() => _showUnansweredWarning = false),
+                      onChanged: (value) {
+                        context.read<QuizProvider>().updateTextDraft(value);
+                        setState(() => _showUnansweredWarning = false);
+                      },
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: quiz.isExpired
+                        onPressed: quiz.isLocked
                             ? null
-                            : () async {
-                                await context
+                            : () {
+                                context
                                     .read<QuizProvider>()
                                     .answerText(_textController.text);
                                 setState(() => _showUnansweredWarning = false);
@@ -316,12 +403,172 @@ class _QuizScreenState extends State<QuizScreen> {
                         child: const Text('Save Answer'),
                       ),
                     ),
+                  ] else if (isMultiSelect) ...[
+                    // Multi-Select Options (Checkboxes)
+                    ...List.generate(question.options.length, (i) {
+                      final isSelected = selectedIndices.contains(i);
+                      return GestureDetector(
+                        onTap: quiz.isLocked
+                            ? null
+                            : () {
+                                context.read<QuizProvider>().answerQuestionMulti(i);
+                                setState(() => _showUnansweredWarning = false);
+                              },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.primary
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.gray200,
+                              width: isSelected ? 2 : 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(6),
+                                  color: isSelected
+                                      ? Colors.white.withOpacity(0.2)
+                                      : AppColors.gray100,
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : AppColors.gray400,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: isSelected
+                                      ? const Icon(Icons.check,
+                                          color: Colors.white, size: 18)
+                                      : null,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Text(
+                                  question.options[i].optionText,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : AppColors.textDark,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ] else if (isTrueFalse) ...[
+                    // True/False Options (Radio style, 2 options only)
+                    ...List.generate(displayedOptions.length, (i) {
+                      final option = displayedOptions[i];
+                      final isSelected = answeredIndex == i;
+                      final optionLabel = option.optionText.isNotEmpty
+                          ? option.optionText
+                          : (i == 0 ? 'True' : 'False');
+                      return GestureDetector(
+                        onTap: quiz.isLocked
+                            ? null
+                            : () {
+                                context.read<QuizProvider>().answerQuestion(
+                                  question.options.indexOf(option),
+                                );
+                                setState(() => _showUnansweredWarning = false);
+                              },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.primary
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.gray200,
+                              width: isSelected ? 2 : 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isSelected
+                                      ? Colors.white.withOpacity(0.2)
+                                      : AppColors.gray100,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    optionLabel[0],
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : AppColors.gray600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Text(
+                                  optionLabel,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : AppColors.textDark,
+                                  ),
+                                ),
+                              ),
+                              if (isSelected)
+                                const Icon(Icons.check_circle,
+                                    color: Colors.white, size: 20),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
                   ] else ...[
-                    // Options
+                    // MCQ Options (Radio style, single selection)
                     ...List.generate(question.options.length, (i) {
                       final isSelected = answeredIndex == i;
                       return GestureDetector(
-                        onTap: quiz.isExpired
+                        onTap: quiz.isLocked
                             ? null
                             : () {
                                 context.read<QuizProvider>().answerQuestion(i);
@@ -432,13 +679,13 @@ class _QuizScreenState extends State<QuizScreen> {
                 // Next / Finish button
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: quiz.isExpired ||
-                            _isSubmitting ||
-                            (question.questionType == 'short_answer'
-                                ? !hasTextAnswer
-                                : answeredIndex == -1)
+                    onPressed: quiz.isLocked || _isSubmitting
                         ? null
                         : () async {
+                            if (!isAnswered) {
+                              setState(() => _showUnansweredWarning = true);
+                              return;
+                            }
                             if (quiz.isLastQuestion) {
                               setState(() => _isSubmitting = true);
                               try {
@@ -455,9 +702,7 @@ class _QuizScreenState extends State<QuizScreen> {
                             }
                           },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: (question.questionType == 'short_answer'
-                              ? !hasTextAnswer
-                              : answeredIndex == -1)
+                      backgroundColor: !isAnswered
                           ? AppColors.gray200
                           : AppColors.accent,
                       minimumSize: const Size(double.infinity, 52),
@@ -477,9 +722,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         : Text(
                             quiz.isLastQuestion ? 'Finish Quiz' : 'Next Question',
                             style: TextStyle(
-                              color: (question.questionType == 'short_answer'
-                                      ? !hasTextAnswer
-                                      : answeredIndex == -1)
+                              color: !isAnswered
                                   ? AppColors.gray600
                                   : Colors.white,
                               fontWeight: FontWeight.w700,
