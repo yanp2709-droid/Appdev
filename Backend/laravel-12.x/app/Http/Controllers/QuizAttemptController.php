@@ -9,6 +9,7 @@ use App\Models\Question;
 use App\Models\Quiz;
 use App\Models\Quiz_attempt;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -70,6 +71,17 @@ class QuizAttemptController extends Controller
         }
         $now = now();
 
+        Quiz_attempt::where('student_id', $user->id)
+            ->where('quiz_id', $quiz->id)
+            ->where('status', self::STATUS_IN_PROGRESS)
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', $now)
+            ->update([
+                'status' => self::STATUS_EXPIRED,
+                'last_activity_at' => $now,
+                'updated_at' => $now,
+            ]);
+
         $activeAttempt = Quiz_attempt::where('student_id', $user->id)
             ->where('quiz_id', $quiz->id)
             ->where('status', self::STATUS_IN_PROGRESS)
@@ -79,11 +91,9 @@ class QuizAttemptController extends Controller
             ->first();
 
         if ($activeAttempt) {
-            return $this->error(
-                'active_attempt_exists',
-                'An active attempt already exists for this quiz.',
-                409,
-                $this->attemptMeta($activeAttempt)
+            return $this->success(
+                $this->buildAttemptPayload($activeAttempt->fresh(['quiz', 'answers']), null, true),
+                'Active attempt resumed.'
             );
         }
 
@@ -121,17 +131,17 @@ class QuizAttemptController extends Controller
             $query->limit($payload['limit']);
         }
 
-        $questions = $query->get()->map(function ($question) {
-            return $this->formatAttemptQuestion($question);
-        });
+        $questions = $query->get();
 
         $attempt->total_items = $questions->count();
+        $attempt->question_sequence = $questions->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+        $attempt->last_activity_at = $startedAt;
         $attempt->save();
 
-        return $this->success([
-            'attempt' => $this->attemptMeta($attempt),
-            'questions' => $questions,
-        ], 'Attempt started.');
+        return $this->success(
+            $this->buildAttemptPayload($attempt->fresh(['quiz', 'answers']), $questions, false),
+            'Attempt started.'
+        );
     }
 
     /**
@@ -281,6 +291,9 @@ class QuizAttemptController extends Controller
                 'option_ids.*' => 'integer|exists:question_options,id|distinct',
                 'answer' => 'nullable',
                 'text_answer' => 'nullable|string|max:5000',
+                'is_bookmarked' => 'nullable|boolean',
+                'last_viewed_question_id' => 'nullable|integer|exists:questions,id',
+                'last_viewed_question_index' => 'nullable|integer|min:0',
             ]);
 
             if ($baseValidator->fails()) {
@@ -316,29 +329,80 @@ class QuizAttemptController extends Controller
                 return $this->error('invalid_question', 'Question does not belong to this quiz.', 422);
             }
 
-            $normalizedAnswer = $this->normalizeSubmittedAnswer($question, $payload);
+            if (!empty($payload['last_viewed_question_id'])) {
+                $lastViewedQuestionBelongsToQuiz = Question::query()
+                    ->where('id', $payload['last_viewed_question_id'])
+                    ->where('category_id', $attempt->quiz->category_id)
+                    ->exists();
+
+                if (!$lastViewedQuestionBelongsToQuiz) {
+                    return $this->error('invalid_question', 'Question does not belong to this quiz.', 422);
+                }
+            }
+
+            $this->validateAutosavePayload($payload);
+
+            $hasAnswerPayload = $this->hasAnswerPayload($payload);
+            $normalizedAnswer = $hasAnswerPayload
+                ? $this->normalizeSubmittedAnswer($question, $payload)
+                : null;
+
+            $existingAnswer = Attempt_answer::query()
+                ->where('quiz_attempt_id', $attempt->id)
+                ->where('question_id', $question->id)
+                ->first();
+
+            $answerAttributes = [
+                'is_bookmarked' => (bool) ($payload['is_bookmarked'] ?? ($existingAnswer?->is_bookmarked ?? false)),
+            ];
+
+            if ($normalizedAnswer !== null) {
+                $answerAttributes = array_merge($answerAttributes, [
+                    'question_option_id' => $normalizedAnswer['question_option_id'],
+                    'selected_option_ids' => $normalizedAnswer['selected_option_ids'],
+                    'text_answer' => $normalizedAnswer['text_answer'],
+                    'answer_id' => null,
+                    'is_correct' => null,
+                ]);
+            }
 
             $answer = Attempt_answer::updateOrCreate(
                 [
                     'quiz_attempt_id' => $attempt->id,
                     'question_id' => $question->id,
                 ],
-                [
-                    'question_option_id' => $normalizedAnswer['question_option_id'],
-                    'selected_option_ids' => $normalizedAnswer['selected_option_ids'],
-                    'text_answer' => $normalizedAnswer['text_answer'],
-                    'answer_id' => null,
-                    'is_correct' => null,
-                ]
+                $answerAttributes
             );
+
+            $now = now();
+            $attempt->last_activity_at = $now;
+
+            if (!empty($payload['last_viewed_question_id'])) {
+                $attempt->last_viewed_question_id = (int) $payload['last_viewed_question_id'];
+            } else {
+                $attempt->last_viewed_question_id = $question->id;
+            }
+
+            if (array_key_exists('last_viewed_question_index', $payload)) {
+                $attempt->last_viewed_question_index = $payload['last_viewed_question_index'];
+            } else {
+                $attempt->last_viewed_question_index = $this->findQuestionIndex($attempt, $question->id);
+            }
+
+            $attempt->answered_count = $this->countAnsweredQuestions($attempt->id);
+            $attempt->save();
+            $attempt->refresh();
 
             return $this->success([
                 'answer_id' => $answer->id,
                 'attempt' => $this->attemptMeta($attempt),
                 'question_type' => Question::toApiQuestionType($question->question_type),
-                'selected_option_id' => $normalizedAnswer['question_option_id'],
-                'selected_option_ids' => $normalizedAnswer['selected_option_ids'] ?? [],
-                'text_answer' => $normalizedAnswer['text_answer'],
+                'selected_option_id' => count($this->selectedOptionIdsFromAnswer($answer)) === 1
+                    ? $this->selectedOptionIdsFromAnswer($answer)[0]
+                    : null,
+                'selected_option_ids' => $this->selectedOptionIdsFromAnswer($answer),
+                'text_answer' => $answer->text_answer,
+                'is_bookmarked' => (bool) $answer->is_bookmarked,
             ], 'Answer saved.');
         } catch (ValidationException $e) {
             return $this->validationError($e, 'Invalid request.');
@@ -365,6 +429,7 @@ class QuizAttemptController extends Controller
                 $attempt->status = self::STATUS_SUBMITTED;
                 $attempt->submitted_at = now();
                 $attempt->completed_at = $attempt->submitted_at;
+                $attempt->last_activity_at = $attempt->submitted_at;
                 $attempt->save();
 
                 $scorer->safeScore($attempt->id);
@@ -399,12 +464,14 @@ class QuizAttemptController extends Controller
         if ($totalItems === 0) {
             $totalItems = Question::where('category_id', $attempt->quiz->category_id)->count();
         }
-        $answeredCount = Attempt_answer::where('quiz_attempt_id', $attempt->id)->count();
+        $answeredCount = $this->countAnsweredQuestions($attempt->id);
 
         return $this->success([
             'attempt' => $this->attemptMeta($attempt),
             'answered_count' => $answeredCount,
             'total_items' => $totalItems,
+            'saved_answers' => $this->savedAnswersPayload($attempt),
+            'progress' => $this->progressPayload($attempt),
         ], 'Attempt status.');
     }
 
@@ -432,6 +499,9 @@ class QuizAttemptController extends Controller
             'submitted_at' => $attempt->submitted_at,
             'duration_minutes' => $durationMinutes,
             'remaining_seconds' => $this->remainingSeconds($attempt),
+            'last_activity_at' => $attempt->last_activity_at,
+            'last_viewed_question_id' => $attempt->last_viewed_question_id ? (int) $attempt->last_viewed_question_id : null,
+            'last_viewed_question_index' => $attempt->last_viewed_question_index,
         ];
     }
 
@@ -454,6 +524,7 @@ class QuizAttemptController extends Controller
         if ($attempt->expires_at && now()->greaterThan($attempt->expires_at)) {
             if ($attempt->status !== self::STATUS_EXPIRED) {
                 $attempt->status = self::STATUS_EXPIRED;
+                $attempt->last_activity_at = now();
                 $attempt->save();
             }
             return true;
@@ -470,6 +541,7 @@ class QuizAttemptController extends Controller
             'question_type' => Question::toApiQuestionType($question->question_type),
             'stored_question_type' => $question->question_type,
             'points' => $question->points,
+            'saved_answer' => null,
             'options' => $question->options->map(function ($option) {
                 return [
                     'id' => $option->id,
@@ -602,5 +674,147 @@ class QuizAttemptController extends Controller
         }
 
         return array_values(array_unique(array_map('intval', $selectedOptionIds)));
+    }
+
+    private function validateAutosavePayload(array $payload): void
+    {
+        if (
+            !$this->hasAnswerPayload($payload)
+            && !array_key_exists('is_bookmarked', $payload)
+            && !array_key_exists('last_viewed_question_id', $payload)
+            && !array_key_exists('last_viewed_question_index', $payload)
+        ) {
+            throw ValidationException::withMessages([
+                'answer' => 'Answer or progress data is required.',
+            ]);
+        }
+    }
+
+    private function hasAnswerPayload(array $payload): bool
+    {
+        return array_key_exists('option_id', $payload)
+            || array_key_exists('option_ids', $payload)
+            || array_key_exists('text_answer', $payload)
+            || array_key_exists('answer', $payload);
+    }
+
+    private function buildAttemptPayload(Quiz_attempt $attempt, ?Collection $questions = null, bool $resumed = false): array
+    {
+        $questions = $questions ?? $this->resolveAttemptQuestions($attempt);
+
+        return [
+            'attempt' => $this->attemptMeta($attempt),
+            'questions' => $this->questionsPayload($questions, $attempt),
+            'saved_answers' => $this->savedAnswersPayload($attempt),
+            'progress' => $this->progressPayload($attempt),
+            'resumed' => $resumed,
+        ];
+    }
+
+    private function resolveAttemptQuestions(Quiz_attempt $attempt): Collection
+    {
+        $questionIds = collect($attempt->question_sequence ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->filter();
+
+        if ($questionIds->isEmpty()) {
+            $questionIds = Question::where('category_id', $attempt->quiz->category_id)
+                ->orderBy('id')
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id);
+        }
+
+        $questions = Question::with('options')
+            ->whereIn('id', $questionIds->all())
+            ->get()
+            ->keyBy('id');
+
+        return $questionIds
+            ->map(fn (int $id) => $questions->get($id))
+            ->filter()
+            ->values();
+    }
+
+    private function questionsPayload(Collection $questions, Quiz_attempt $attempt): Collection
+    {
+        $answersByQuestionId = $attempt->relationLoaded('answers')
+            ? $attempt->answers->keyBy('question_id')
+            : Attempt_answer::where('quiz_attempt_id', $attempt->id)->get()->keyBy('question_id');
+
+        return $questions->values()->map(function (Question $question, int $index) use ($answersByQuestionId) {
+            $formatted = $this->formatAttemptQuestion($question);
+            $formatted['index'] = $index;
+            $formatted['saved_answer'] = $this->savedAnswerPayload($answersByQuestionId->get($question->id));
+
+            return $formatted;
+        });
+    }
+
+    private function savedAnswersPayload(Quiz_attempt $attempt): array
+    {
+        $answers = $attempt->relationLoaded('answers')
+            ? $attempt->answers
+            : Attempt_answer::where('quiz_attempt_id', $attempt->id)->get();
+
+        return $answers
+            ->mapWithKeys(function (Attempt_answer $answer) {
+                return [(string) $answer->question_id => $this->savedAnswerPayload($answer)];
+            })
+            ->all();
+    }
+
+    private function savedAnswerPayload(?Attempt_answer $answer): ?array
+    {
+        if (!$answer) {
+            return null;
+        }
+
+        $selectedOptionIds = $this->selectedOptionIdsFromAnswer($answer);
+
+        return [
+            'answer_id' => (int) $answer->id,
+            'question_id' => (int) $answer->question_id,
+            'selected_option_id' => count($selectedOptionIds) === 1 ? $selectedOptionIds[0] : null,
+            'selected_option_ids' => $selectedOptionIds,
+            'text_answer' => $answer->text_answer,
+            'is_bookmarked' => (bool) $answer->is_bookmarked,
+            'updated_at' => $answer->updated_at,
+        ];
+    }
+
+    private function progressPayload(Quiz_attempt $attempt): array
+    {
+        return [
+            'answered_count' => (int) ($attempt->answered_count ?? 0),
+            'last_viewed_question_id' => $attempt->last_viewed_question_id ? (int) $attempt->last_viewed_question_id : null,
+            'last_viewed_question_index' => $attempt->last_viewed_question_index,
+            'last_activity_at' => $attempt->last_activity_at,
+        ];
+    }
+
+    private function countAnsweredQuestions(int $attemptId): int
+    {
+        return Attempt_answer::query()
+            ->where('quiz_attempt_id', $attemptId)
+            ->where(function ($query) {
+                $query->whereNotNull('question_option_id')
+                    ->orWhereNotNull('selected_option_ids')
+                    ->orWhere(function ($nested) {
+                        $nested->whereNotNull('text_answer')
+                            ->where('text_answer', '<>', '');
+                    });
+            })
+            ->count();
+    }
+
+    private function findQuestionIndex(Quiz_attempt $attempt, int $questionId): ?int
+    {
+        $questionSequence = collect($attempt->question_sequence ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        $index = $questionSequence->search($questionId);
+
+        return $index === false ? null : (int) $index;
     }
 }

@@ -14,11 +14,13 @@ class Attempt_answer extends Model
         'selected_option_ids',
         'text_answer',
         'is_correct',
+        'is_bookmarked',
     ];
 
     protected $casts = [
         'selected_option_ids' => 'array',
         'is_correct' => 'boolean',
+        'is_bookmarked' => 'boolean',
     ];
 
     // Relations

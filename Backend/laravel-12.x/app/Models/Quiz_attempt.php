@@ -18,6 +18,10 @@ class Quiz_attempt extends Model
         'answered_count',
         'correct_answers',
         'score_percent',
+        'question_sequence',
+        'last_activity_at',
+        'last_viewed_question_id',
+        'last_viewed_question_index',
     ];
 
     protected $casts = [
@@ -25,6 +29,9 @@ class Quiz_attempt extends Model
         'expires_at' => 'datetime',
         'submitted_at' => 'datetime',
         'score_percent' => 'float',
+        'question_sequence' => 'array',
+        'last_activity_at' => 'datetime',
+        'last_viewed_question_index' => 'integer',
     ];
 
     /**
