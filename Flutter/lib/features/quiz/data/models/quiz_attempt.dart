@@ -6,6 +6,7 @@ class QuizAttempt {
   final DateTime? submittedAt;
   final int durationMinutes;
   final int remainingSeconds;
+  final bool allowReviewBeforeSubmit;
 
   const QuizAttempt({
     required this.id,
@@ -15,6 +16,7 @@ class QuizAttempt {
     required this.submittedAt,
     required this.durationMinutes,
     required this.remainingSeconds,
+    required this.allowReviewBeforeSubmit,
   });
 
   factory QuizAttempt.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,8 @@ class QuizAttempt {
       submittedAt: _parseDate(json['submitted_at']),
       durationMinutes: (json['duration_minutes'] as num?)?.toInt() ?? 0,
       remainingSeconds: (json['remaining_seconds'] as num?)?.toInt() ?? 0,
+      allowReviewBeforeSubmit:
+          (json['allow_review_before_submit'] as bool?) ?? true,
     );
   }
 

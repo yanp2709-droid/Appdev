@@ -3,14 +3,19 @@ import '../core/network/api_client.dart';
 import '../core/exceptions/api_exception.dart';
 import '../features/quiz/data/models/question.dart';
 import '../features/quiz/data/models/quiz_attempt.dart';
+import '../features/quiz/data/models/attempt_resume.dart';
 
 class AttemptStartResponse {
   final QuizAttempt attempt;
   final List<QuestionModel> questions;
+  final List<AttemptSavedAnswer> savedAnswers;
+  final AttemptProgress? progress;
 
   AttemptStartResponse({
     required this.attempt,
     required this.questions,
+    required this.savedAnswers,
+    required this.progress,
   });
 }
 
@@ -39,15 +44,27 @@ class QuizAttemptService {
       final payload = data['data'] as Map<String, dynamic>? ?? {};
       final attemptJson = payload['attempt'] as Map<String, dynamic>? ?? {};
       final questionsJson = payload['questions'] as List<dynamic>? ?? [];
+      final savedAnswersJson = payload['saved_answers'] as List<dynamic>? ??
+          (data['saved_answers'] as List<dynamic>?) ??
+          const <dynamic>[];
+      final progressJson = payload['progress'] as Map<String, dynamic>? ??
+          (data['progress'] as Map<String, dynamic>?);
 
       final attempt = QuizAttempt.fromJson(attemptJson);
       final questions = questionsJson
           .map((q) => QuestionModel.fromJson(q as Map<String, dynamic>))
           .toList();
+      final savedAnswers = savedAnswersJson
+          .whereType<Map<String, dynamic>>()
+          .map(AttemptSavedAnswer.fromJson)
+          .toList();
+      final progress = progressJson == null ? null : AttemptProgress.fromJson(progressJson);
 
       return AttemptStartResponse(
         attempt: attempt,
         questions: questions,
+        savedAnswers: savedAnswers,
+        progress: progress,
       );
     } on DioException catch (e) {
       final status = e.response?.statusCode;
@@ -72,6 +89,7 @@ class QuizAttemptService {
     required int questionId,
     int? optionId,
     String? textAnswer,
+    bool? isBookmarked,
   }) async {
     try {
       await apiClient.dio.post(
@@ -81,6 +99,7 @@ class QuizAttemptService {
           if (optionId != null) 'option_id': optionId,
           if (textAnswer != null && textAnswer.trim().isNotEmpty)
             'text_answer': textAnswer.trim(),
+          if (isBookmarked != null) 'is_bookmarked': isBookmarked,
         },
       );
     } on DioException catch (e) {

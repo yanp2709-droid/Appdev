@@ -18,6 +18,7 @@ class _QuizScreenState extends State<QuizScreen> {
   final TextEditingController _textController = TextEditingController();
   int? _lastQuestionId;
   bool _isSubmitting = false;
+  bool _isReviewOpen = false;
 
   @override
   void dispose() {
@@ -124,9 +125,9 @@ class _QuizScreenState extends State<QuizScreen> {
     final answeredIndex = selectedOptionId == null
         ? -1
         : question.options.indexWhere((o) => o.id == selectedOptionId);
-    final hasTextAnswer = (quiz.textAnswers[quiz.currentIndex] ?? '').isNotEmpty;
     final progress = (quiz.currentIndex + 1) / quiz.totalQuestions;
     final isFirst  = quiz.currentIndex == 0;
+    final isBookmarked = quiz.isBookmarked(quiz.currentIndex);
 
     if (_lastQuestionId != question.id) {
       _lastQuestionId = question.id;
@@ -142,6 +143,21 @@ class _QuizScreenState extends State<QuizScreen> {
         title: Text(
             'Question ${quiz.currentIndex + 1} of ${quiz.totalQuestions}'),
         actions: [
+          IconButton(
+            tooltip: isBookmarked ? 'Remove bookmark' : 'Bookmark question',
+            onPressed: quiz.isExpired
+                ? null
+                : () => context.read<QuizProvider>().toggleBookmark(),
+            icon: Icon(
+              isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+              color: isBookmarked ? AppColors.accent : Colors.white,
+            ),
+          ),
+          IconButton(
+            tooltip: 'Question palette',
+            onPressed: () => _showQuestionPalette(context, quiz),
+            icon: const Icon(Icons.grid_view_rounded, color: Colors.white),
+          ),
           Container(
             margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -432,34 +448,17 @@ class _QuizScreenState extends State<QuizScreen> {
                 // Next / Finish button
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: quiz.isExpired ||
-                            _isSubmitting ||
-                            (question.questionType == 'short_answer'
-                                ? !hasTextAnswer
-                                : answeredIndex == -1)
+                    onPressed: quiz.isExpired || _isSubmitting
                         ? null
                         : () async {
                             if (quiz.isLastQuestion) {
-                              setState(() => _isSubmitting = true);
-                              try {
-                                await context.read<QuizProvider>().submitAttempt();
-                                if (context.read<QuizProvider>().status ==
-                                    QuizStatus.finished) {
-                                  context.go('/quiz-result');
-                                }
-                              } finally {
-                                setState(() => _isSubmitting = false);
-                              }
+                              await _handleFinishPressed(context, quiz);
                             } else {
                               context.read<QuizProvider>().nextQuestion();
                             }
                           },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: (question.questionType == 'short_answer'
-                              ? !hasTextAnswer
-                              : answeredIndex == -1)
-                          ? AppColors.gray200
-                          : AppColors.accent,
+                      backgroundColor: AppColors.accent,
                       minimumSize: const Size(double.infinity, 52),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -477,11 +476,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         : Text(
                             quiz.isLastQuestion ? 'Finish Quiz' : 'Next Question',
                             style: TextStyle(
-                              color: (question.questionType == 'short_answer'
-                                      ? !hasTextAnswer
-                                      : answeredIndex == -1)
-                                  ? AppColors.gray600
-                                  : Colors.white,
+                              color: Colors.white,
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
                             ),
@@ -492,6 +487,431 @@ class _QuizScreenState extends State<QuizScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _handleFinishPressed(BuildContext context, QuizProvider quiz) async {
+    if (_isReviewOpen) return;
+    if (quiz.allowReviewBeforeSubmit) {
+      _isReviewOpen = true;
+      final shouldSubmit = await _showReviewSheet(context, quiz);
+      _isReviewOpen = false;
+      if (shouldSubmit == true) {
+        await _submitAttempt(context, quiz);
+      }
+      return;
+    }
+
+    if (quiz.unansweredCount > 0) {
+      final confirmed = await _confirmUnansweredSubmit(context, quiz.unansweredCount);
+      if (!confirmed) return;
+    }
+
+    await _submitAttempt(context, quiz);
+  }
+
+  Future<void> _submitAttempt(BuildContext context, QuizProvider quiz) async {
+    setState(() => _isSubmitting = true);
+    try {
+      await context.read<QuizProvider>().submitAttempt();
+      if (context.read<QuizProvider>().status == QuizStatus.finished) {
+        context.go('/quiz-result');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  Future<void> _showQuestionPalette(BuildContext context, QuizProvider quiz) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Question Palette',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Flexible(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    itemCount: quiz.totalQuestions,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 5,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                    ),
+                    itemBuilder: (context, index) {
+                      final isCurrent = index == quiz.currentIndex;
+                      final isAnswered = quiz.isQuestionAnswered(index);
+                      final isBookmarked = quiz.isBookmarked(index);
+                      final colors = _paletteColors(
+                        isCurrent: isCurrent,
+                        isAnswered: isAnswered,
+                        isBookmarked: isBookmarked,
+                      );
+                      return GestureDetector(
+                        onTap: () {
+                          quiz.jumpToQuestion(index);
+                          setState(() => _showUnansweredWarning = false);
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: colors.background,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: colors.border, width: 2),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: colors.text,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 6,
+                  children: const [
+                    _PaletteLegend(label: 'Current', color: AppColors.primary),
+                    _PaletteLegend(label: 'Answered', color: Color(0xFF16A34A)),
+                    _PaletteLegend(label: 'Bookmarked', color: Color(0xFFF59E0B)),
+                    _PaletteLegend(label: 'Unanswered', color: AppColors.gray200),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<bool?> _showReviewSheet(BuildContext context, QuizProvider quiz) async {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Review Before Submit',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _SummaryRow(
+                  total: quiz.totalQuestions,
+                  answered: quiz.answeredCount,
+                  unanswered: quiz.unansweredCount,
+                  bookmarked: quiz.bookmarkedCount,
+                ),
+                const SizedBox(height: 16),
+                Flexible(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    itemCount: quiz.totalQuestions,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 5,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                    ),
+                    itemBuilder: (context, index) {
+                      final isCurrent = index == quiz.currentIndex;
+                      final isAnswered = quiz.isQuestionAnswered(index);
+                      final isBookmarked = quiz.isBookmarked(index);
+                      final colors = _paletteColors(
+                        isCurrent: isCurrent,
+                        isAnswered: isAnswered,
+                        isBookmarked: isBookmarked,
+                      );
+                      return GestureDetector(
+                        onTap: () {
+                          quiz.jumpToQuestion(index);
+                          Navigator.pop(context, false);
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: colors.background,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: colors.border, width: 2),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: colors.text,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (quiz.unansweredCount > 0) {
+                      final confirmed = await _confirmUnansweredSubmit(
+                        context,
+                        quiz.unansweredCount,
+                      );
+                      if (!confirmed) return;
+                    }
+                    if (context.mounted) {
+                      Navigator.pop(context, true);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    minimumSize: const Size(double.infinity, 52),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    'Submit Quiz',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    minimumSize: const Size(double.infinity, 52),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    side: const BorderSide(color: AppColors.primary),
+                  ),
+                  child: const Text('Back to Quiz'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<bool> _confirmUnansweredSubmit(BuildContext context, int unanswered) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Submit With Unanswered?'),
+        content: Text('You have $unanswered unanswered question(s). Submit anyway?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Go Back'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Submit',
+              style: TextStyle(color: AppColors.danger),
+            ),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  _PaletteVisuals _paletteColors({
+    required bool isCurrent,
+    required bool isAnswered,
+    required bool isBookmarked,
+  }) {
+    if (isCurrent) {
+      return const _PaletteVisuals(
+        background: AppColors.primary,
+        border: AppColors.primaryDark,
+        text: Colors.white,
+      );
+    }
+    if (isBookmarked) {
+      return const _PaletteVisuals(
+        background: Color(0xFFFFF7ED),
+        border: Color(0xFFF59E0B),
+        text: AppColors.textDark,
+      );
+    }
+    if (isAnswered) {
+      return const _PaletteVisuals(
+        background: Color(0xFFDCFCE7),
+        border: Color(0xFF16A34A),
+        text: AppColors.textDark,
+      );
+    }
+    return const _PaletteVisuals(
+      background: AppColors.gray200,
+      border: AppColors.gray400,
+      text: AppColors.textDark,
+    );
+  }
+}
+
+class _PaletteVisuals {
+  final Color background;
+  final Color border;
+  final Color text;
+
+  const _PaletteVisuals({
+    required this.background,
+    required this.border,
+    required this.text,
+  });
+}
+
+class _PaletteLegend extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _PaletteLegend({
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: AppColors.gray600),
+        ),
+      ],
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  final int total;
+  final int answered;
+  final int unanswered;
+  final int bookmarked;
+
+  const _SummaryRow({
+    required this.total,
+    required this.answered,
+    required this.unanswered,
+    required this.bookmarked,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
+      children: [
+        _SummaryChip(label: 'Total', value: '$total', color: AppColors.gray200),
+        _SummaryChip(label: 'Answered', value: '$answered', color: const Color(0xFFDCFCE7)),
+        _SummaryChip(label: 'Unanswered', value: '$unanswered', color: AppColors.dangerBg),
+        _SummaryChip(label: 'Bookmarked', value: '$bookmarked', color: const Color(0xFFFFF7ED)),
+      ],
+    );
+  }
+}
+
+class _SummaryChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _SummaryChip({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        '$label: $value',
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textDark,
+        ),
       ),
     );
   }

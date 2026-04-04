@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../data/models/question.dart';
 import '../data/models/quiz_attempt.dart';
+import '../data/models/attempt_resume.dart';
 import '../data/quiz_result_model.dart';
 import '../../../services/quiz_attempt_service.dart';
 import '../../../core/exceptions/api_exception.dart';
@@ -19,6 +20,7 @@ class QuizProvider extends ChangeNotifier {
   int                   _currentIndex = 0;
   final Map<int, int>   _selectedOptionIds = {}; // questionIndex -> optionId
   final Map<int, String> _textAnswers = {}; // questionIndex -> text
+  final Map<int, bool> _bookmarks = {}; // questionIndex -> bookmarked
   int                   _categoryId   = 0;
   String                _categoryName = '';
   QuizResultModel?      _lastResult;
@@ -36,12 +38,36 @@ class QuizProvider extends ChangeNotifier {
   bool                  get isLastQuestion => _currentIndex == _questions.length - 1;
   Map<int, int>         get answers       => Map.unmodifiable(_selectedOptionIds);
   Map<int, String>      get textAnswers   => Map.unmodifiable(_textAnswers);
+  Map<int, bool>        get bookmarks     => Map.unmodifiable(_bookmarks);
   QuizResultModel?      get lastResult    => _lastResult;
   String?               get errorMessage  => _errorMessage;
   bool                  get hasEverTakenQuiz => _lastResult != null;
   int                   get remainingSeconds => _remainingSeconds;
   QuizAttempt?          get attempt => _attempt;
   bool                  get isExpired => _remainingSeconds <= 0;
+  bool                  get allowReviewBeforeSubmit =>
+      _attempt?.allowReviewBeforeSubmit ?? true;
+
+  bool isQuestionAnswered(int index) {
+    if (index < 0 || index >= _questions.length) return false;
+    final question = _questions[index];
+    if (question.questionType == 'short_answer') {
+      return (_textAnswers[index] ?? '').trim().isNotEmpty;
+    }
+    return _selectedOptionIds.containsKey(index);
+  }
+
+  bool isBookmarked(int index) => _bookmarks[index] ?? false;
+
+  int get answeredCount =>
+      List.generate(_questions.length, (i) => i)
+          .where(isQuestionAnswered)
+          .length;
+
+  int get bookmarkedCount =>
+      _bookmarks.values.where((value) => value).length;
+
+  int get unansweredCount => _questions.length - answeredCount;
 
   String get timerLabel {
     final secs = _remainingSeconds < 0 ? 0 : _remainingSeconds;
@@ -69,6 +95,10 @@ class QuizProvider extends ChangeNotifier {
       _currentIndex = 0;
       _selectedOptionIds.clear();
       _textAnswers.clear();
+      _bookmarks.clear();
+
+      _applySavedAnswers(response.savedAnswers);
+      _restoreProgress(response.progress);
 
       _remainingSeconds = _attempt?.remainingSeconds ?? 0;
       _startTicker();
@@ -110,6 +140,26 @@ class QuizProvider extends ChangeNotifier {
       attemptId: _attempt!.id,
       questionId: question.id,
       optionId: optionId,
+    );
+  }
+
+  void toggleBookmark({int? questionIndex}) {
+    if (_attempt == null) return;
+    if (isExpired) return;
+
+    final index = questionIndex ?? _currentIndex;
+    if (index < 0 || index >= _questions.length) return;
+    final question = _questions[index];
+
+    final current = _bookmarks[index] ?? false;
+    final next = !current;
+    _bookmarks[index] = next;
+    notifyListeners();
+
+    _attemptService.saveAnswer(
+      attemptId: _attempt!.id,
+      questionId: question.id,
+      isBookmarked: next,
     );
   }
 
@@ -161,6 +211,7 @@ class QuizProvider extends ChangeNotifier {
     _questions = [];
     _selectedOptionIds.clear();
     _textAnswers.clear();
+    _bookmarks.clear();
     _categoryId = 0;
     _categoryName = '';
     _errorMessage = null;
@@ -221,5 +272,42 @@ class QuizProvider extends ChangeNotifier {
   void _stopTicker() {
     _ticker?.cancel();
     _ticker = null;
+  }
+
+  void jumpToQuestion(int index) {
+    if (index < 0 || index >= _questions.length) return;
+    _currentIndex = index;
+    notifyListeners();
+  }
+
+  void _applySavedAnswers(List<AttemptSavedAnswer> savedAnswers) {
+    if (savedAnswers.isEmpty) return;
+
+    final indexByQuestionId = <int, int>{};
+    for (var i = 0; i < _questions.length; i++) {
+      indexByQuestionId[_questions[i].id] = i;
+    }
+
+    for (final saved in savedAnswers) {
+      final index = indexByQuestionId[saved.questionId];
+      if (index == null) continue;
+
+      if (saved.optionId != null) {
+        _selectedOptionIds[index] = saved.optionId!;
+      }
+      final text = saved.textAnswer ?? saved.answer;
+      if (text != null && text.isNotEmpty) {
+        _textAnswers[index] = text;
+      }
+      if (saved.isBookmarked != null) {
+        _bookmarks[index] = saved.isBookmarked!;
+      }
+    }
+  }
+
+  void _restoreProgress(AttemptProgress? progress) {
+    final index = progress?.lastViewedQuestionIndex;
+    if (index == null || index < 0 || index >= _questions.length) return;
+    _currentIndex = index;
   }
 }
