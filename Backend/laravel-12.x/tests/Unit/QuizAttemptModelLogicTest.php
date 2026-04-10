@@ -4,10 +4,13 @@ namespace Tests\Unit;
 
 use App\Models\Quiz_attempt;
 use Carbon\Carbon;
-use PHPUnit\Framework\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class QuizAttemptModelLogicTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected function tearDown(): void
     {
         Carbon::setTestNow();
@@ -62,3 +65,4 @@ class QuizAttemptModelLogicTest extends TestCase
         $this->assertSame(15, $attempt->getDurationMinutes());
     }
 }
+

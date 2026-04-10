@@ -30,7 +30,9 @@ class ViewCategoryQuestions extends ViewRecord
         return [
             CreateAction::make('newQuestion')
                 ->label('New Question')
-                ->url(QuestionResource::getUrl('create')),
+                ->url(function () {
+                    return QuestionResource::getUrl('create', ['category_id' => $this->getRecord()->id]);
+                }),
             Action::make('importCsv')
                 ->label('Import CSV')
                 ->form([

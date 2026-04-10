@@ -55,7 +55,7 @@ class AdminStatisticsApiTest extends TestCase
         $response = $this->getJson('/api/admin/statistics/dashboard');
 
         // Should be forbidden or unauthorized
-        $this->assertIn($response->status(), [401, 403]);
+        $this->assertContains($response->status(), [401, 403]);
     }
 
     /** @test */

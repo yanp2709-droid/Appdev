@@ -9,3 +9,10 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* Reduce spacing between Filament form sections */
+@layer components {
+    .fi-section + .fi-section {
+        @apply mt-3 !important;
+    }
+}

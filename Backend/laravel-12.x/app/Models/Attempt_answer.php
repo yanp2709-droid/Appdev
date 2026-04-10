@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Attempt_answer extends Model
 {
@@ -18,10 +19,47 @@ class Attempt_answer extends Model
     ];
 
     protected $casts = [
-        'selected_option_ids' => 'array',
         'is_correct' => 'boolean',
         'is_bookmarked' => 'boolean',
     ];
+
+    /**
+     * Get selected option IDs with fallback to question_option_id
+     */
+    protected function selectedOptionIds(): Attribute
+    {
+        return Attribute::make(
+            get: function ($value) {
+                $decoded = null;
+                
+                // Handle the raw value from attributes
+                if ($value !== null) {
+                    if (is_array($value)) {
+                        $decoded = $value;
+                    } else {
+                        $decoded = json_decode($value, true) ?: null;
+                    }
+                }
+
+                if (is_array($decoded)) {
+                    return array_values(array_map('intval', $decoded));
+                }
+
+                // Fallback to question_option_id
+                if (!empty($this->attributes['question_option_id'])) {
+                    return [(int) $this->attributes['question_option_id']];
+                }
+
+                return [];
+            },
+            set: function ($value) {
+                if (is_array($value)) {
+                    return json_encode($value);
+                }
+                return $value;
+            }
+        );
+    }
 
     // Relations
     public function quizAttempt()
@@ -42,22 +80,5 @@ class Attempt_answer extends Model
     public function questionOption()
     {
         return $this->belongsTo(QuestionOption::class, 'question_option_id');
-    }
-
-    public function getSelectedOptionIdsAttribute($value): array
-    {
-        if ($value !== null) {
-            $decoded = is_array($value) ? $value : json_decode($value, true);
-
-            if (is_array($decoded)) {
-                return array_values(array_map('intval', $decoded));
-            }
-        }
-
-        if (!empty($this->attributes['question_option_id'])) {
-            return [(int) $this->attributes['question_option_id']];
-        }
-
-        return [];
     }
 }

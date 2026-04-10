@@ -24,7 +24,7 @@ class QuizFactory extends Factory
         return [
             'title' => $this->faker->word() . ' Quiz',
             'category_id' => Category::factory(),
-            'teacher_id' => User::factory()->teacher(),
+            'teacher_id' => User::factory()->state(['role' => 'teacher']),
             'difficulty' => $this->faker->randomElement(['Easy', 'Medium', 'Hard']),
             'duration_minutes' => $this->faker->numberBetween(10, 60),
             'timer_enabled' => true,

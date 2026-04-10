@@ -9,6 +9,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Set;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Auth;
 
 class QuizForm
 {
@@ -30,7 +31,10 @@ class QuizForm
                             ->label('Teacher')
                             ->relationship('teacher', 'name')
                             ->required()
-                            ->searchable(),
+                            ->searchable()
+                            ->disabled(fn () => Auth::user()?->role === 'teacher')
+                            ->default(fn () => Auth::user()?->role === 'teacher' ? Auth::user()->id : null)
+                            ->dehydrated(),
                         Select::make('difficulty')
                             ->options([
                                 'Easy' => 'Easy',
@@ -42,9 +46,13 @@ class QuizForm
                     ->columns(2),
                 Section::make('Delivery Settings')
                     ->schema([
-                        Toggle::make('shuffle_questions')->default(false),
-                        Toggle::make('shuffle_options')->default(false),
-                        Toggle::make('timer_enabled')->default(true)->live(),
+                        Toggle::make('timer_enabled')
+                            ->default(true)
+                            ->live(),
+                        Toggle::make('shuffle_questions')
+                            ->default(false),
+                        Toggle::make('shuffle_options')
+                            ->default(false),
                         TextInput::make('duration_minutes')
                             ->numeric()
                             ->minValue(1)
@@ -58,7 +66,7 @@ class QuizForm
                             ->nullable()
                             ->helperText('Leave blank to allow unlimited attempts.'),
                     ])
-                    ->columns(2),
+                    ->columns(1),
                 Section::make('Review Settings')
                     ->schema([
                         Toggle::make('allow_review_before_submit')
@@ -67,16 +75,11 @@ class QuizForm
                             ->default(true),
                         Toggle::make('show_answers_after_submit')
                             ->default(false)
-                            ->live()
-                            ->afterStateUpdated(function (Set $set, $state): void {
-                                if (!$state) {
-                                    $set('show_correct_answers_after_submit', false);
-                                }
-                            }),
+                            ->live(),
                         Toggle::make('show_correct_answers_after_submit')
                             ->default(false)
-                            ->disabled(fn (callable $get) => !(bool) $get('show_answers_after_submit'))
-                            ->dehydrated(true),
+                            ->visible(fn (callable $get) => (bool) $get('show_answers_after_submit'))
+                            ->helperText('Shows correct answers after quiz submission'),
                     ])
                     ->columns(2),
             ]);

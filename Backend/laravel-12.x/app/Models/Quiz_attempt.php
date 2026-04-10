@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Quiz_attempt extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'student_id',
         'quiz_id',
