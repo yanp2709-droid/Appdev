@@ -27,7 +27,7 @@ class QuestionLogicTest extends TestCase
         $this->assertSame('short_answer', Question::toApiQuestionType('short_answer'));
         $this->assertNull(Question::toApiQuestionType('essay'));
     }
-
+    
     public function test_mcq_requires_exactly_one_correct_option(): void
     {
         $question = new Question(['question_type' => Question::TYPE_MCQ]);

@@ -104,7 +104,7 @@ class Quiz extends Model
             $errors[] = 'Quiz difficulty must be Easy, Medium, or Hard.';
         }
 
-        $timerEnabled = (bool) ($payload['timer_enabled'] ?? false);
+        $timerEnabled = (bool) ($payload['timer_enabled'] ?? true);
         $durationMinutes = $payload['duration_minutes'] ?? null;
 
         if ($timerEnabled && ($durationMinutes === null || $durationMinutes === '')) {

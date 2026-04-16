@@ -7,8 +7,8 @@ use App\Models\Question;
 use App\Models\QuestionOption;
 use App\Services\Scoring\QuizAttemptScorer;
 use Illuminate\Database\Eloquent\Collection;
-use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use Tests\TestCase;
 
 class QuizAttemptScorerLogicTest extends TestCase
 {

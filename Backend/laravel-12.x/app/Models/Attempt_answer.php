@@ -46,7 +46,7 @@ class Attempt_answer extends Model
                 }
 
                 // Fallback to question_option_id
-                if (!empty($this->attributes['question_option_id'])) {
+                if (isset($this->attributes['question_option_id']) && !empty($this->attributes['question_option_id'])) {
                     return [(int) $this->attributes['question_option_id']];
                 }
 

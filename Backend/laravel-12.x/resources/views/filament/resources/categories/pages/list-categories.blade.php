@@ -67,7 +67,7 @@
             color: #111827;
         }
 
-        .category-delete {
+        .category-disable {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -83,11 +83,32 @@
             cursor: pointer;
         }
 
-        .category-delete:hover {
+        .category-disable:hover {
             background: #ffe4e6;
-            color: #fff;
             border-color: #e11d48;
             color: #9f1239;
+        }
+
+        .category-enable {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 7px 11px;
+            border-radius: 999px;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            color: #047857;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 62px;
+            cursor: pointer;
+        }
+
+        .category-enable:hover {
+            background: #d1fae5;
+            border-color: #34d399;
+            color: #065f46;
         }
 
         .category-title {
@@ -165,7 +186,7 @@
             color: #64748b;
         }
 
-        .delete-modal-overlay {
+        .status-modal-overlay {
             position: fixed;
             inset: 0;
             background: rgba(15, 23, 42, 0.45);
@@ -176,7 +197,7 @@
             z-index: 1000;
         }
 
-        .delete-modal {
+        .status-modal {
             width: 100%;
             max-width: 560px;
             background: #fff;
@@ -186,7 +207,7 @@
             position: relative;
         }
 
-        .delete-modal-close {
+        .status-modal-close {
             position: absolute;
             top: 18px;
             right: 18px;
@@ -201,7 +222,7 @@
             cursor: pointer;
         }
 
-        .delete-modal-icon-wrap {
+        .status-modal-icon-wrap {
             width: 56px;
             height: 56px;
             border-radius: 999px;
@@ -212,7 +233,7 @@
             margin: 0 auto 18px;
         }
 
-        .delete-modal-title {
+        .status-modal-title {
             margin: 0;
             text-align: center;
             font-size: 20px;
@@ -220,21 +241,21 @@
             color: #111827;
         }
 
-        .delete-modal-copy {
+        .status-modal-copy {
             margin: 12px 0 28px;
             text-align: center;
             font-size: 15px;
             color: #6b7280;
         }
 
-        .delete-modal-actions {
+        .status-modal-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 14px;
         }
 
-        .delete-modal-cancel,
-        .delete-modal-confirm {
+        .status-modal-cancel,
+        .status-modal-confirm {
             height: 48px;
             border-radius: 14px;
             font-size: 15px;
@@ -242,13 +263,13 @@
             cursor: pointer;
         }
 
-        .delete-modal-cancel {
+        .status-modal-cancel {
             background: #fff;
             color: #111827;
             border: 1px solid #e5e7eb;
         }
 
-        .delete-modal-confirm {
+        .status-modal-confirm {
             background: #ef4444;
             color: #fff;
             border: none;
@@ -256,8 +277,8 @@
     </style>
 
     <div
-        x-data="{ deleteModalOpen: false, deleteCategoryId: null, deleteCategoryName: '' }"
-        x-on:keydown.escape.window="deleteModalOpen = false"
+        x-data="{ statusModalOpen: false, categoryAction: 'disable', categoryId: null, categoryName: '' }"
+        x-on:keydown.escape.window="statusModalOpen = false"
     >
     <div class="categories-grid">
         @forelse ($categories as $category)
@@ -271,11 +292,11 @@
                 <div class="category-actions">
                     <button
                         type="button"
-                        class="category-delete"
-                        aria-label="Delete {{ $category->name }}"
-                        x-on:click.prevent.stop="deleteModalOpen = true; deleteCategoryId = {{ $category->id }}; deleteCategoryName = @js($category->name)"
+                        class="{{ $category->is_published ? 'category-disable' : 'category-enable' }}"
+                        aria-label="{{ $category->is_published ? 'Disable' : 'Enable' }} {{ $category->name }}"
+                        x-on:click.prevent.stop="statusModalOpen = true; categoryAction = '{{ $category->is_published ? 'disable' : 'enable' }}'; categoryId = {{ $category->id }}; categoryName = @js($category->name)"
                     >
-                        Delete
+                        {{ $category->is_published ? 'Disable' : 'Enable' }}
                     </button>
 
                     <a
@@ -318,49 +339,53 @@
 
     <div
         x-cloak
-        x-show="deleteModalOpen"
-        class="delete-modal-overlay"
-        x-on:click.self="deleteModalOpen = false"
+        x-show="statusModalOpen"
+        class="status-modal-overlay"
+        x-on:click.self="statusModalOpen = false"
     >
-        <div class="delete-modal">
+        <div class="status-modal">
             <button
                 type="button"
-                class="delete-modal-close"
-                x-on:click="deleteModalOpen = false"
-                aria-label="Close delete confirmation"
+                class="status-modal-close"
+                x-on:click="statusModalOpen = false"
+                aria-label="Close category status confirmation"
             >
                 ×
             </button>
 
-            <div class="delete-modal-icon-wrap">
+            <div class="status-modal-icon-wrap" x-bind:style="categoryAction === 'enable' ? 'background: #d1fae5;' : 'background: #fee2e2;'">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M8 7V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1m-9 0h10m-9 0 1 11a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2l1-11m-6 3v6m4-6v6" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path x-show="categoryAction === 'disable'" d="M8 7V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1m-9 0h10m-9 0 1 11a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2l1-11m-6 3v6m4-6v6" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path x-show="categoryAction === 'enable'" d="M5 12l4 4L19 6" stroke="#059669" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
 
-            <h3 class="delete-modal-title">
-                Delete <span x-text="deleteCategoryName"></span>
+            <h3 class="status-modal-title">
+                <span x-text="categoryAction === 'disable' ? 'Disable' : 'Enable'"></span>
+                <span x-text="categoryName"></span>
             </h3>
 
-            <p class="delete-modal-copy">
-                Are you sure you would like to do this?
+            <p class="status-modal-copy" x-text="categoryAction === 'disable'
+                ? 'This category will be hidden from students when taking quizzes, but existing history will stay available.'
+                : 'This category will be visible to students when taking quizzes again.'">
             </p>
 
-            <div class="delete-modal-actions">
+            <div class="status-modal-actions">
                 <button
                     type="button"
-                    class="delete-modal-cancel"
-                    x-on:click="deleteModalOpen = false"
+                    class="status-modal-cancel"
+                    x-on:click="statusModalOpen = false"
                 >
                     Cancel
                 </button>
 
                 <button
                     type="button"
-                    class="delete-modal-confirm"
-                    x-on:click="$wire.deleteCategory(deleteCategoryId); deleteModalOpen = false"
+                    class="status-modal-confirm"
+                    x-bind:style="categoryAction === 'enable' ? 'background: #059669;' : ''"
+                    x-on:click="categoryAction === 'disable' ? $wire.disableCategory(categoryId) : $wire.enableCategory(categoryId); statusModalOpen = false"
                 >
-                    Delete
+                    <span x-text="categoryAction === 'disable' ? 'Disable' : 'Enable'"></span>
                 </button>
             </div>
         </div>

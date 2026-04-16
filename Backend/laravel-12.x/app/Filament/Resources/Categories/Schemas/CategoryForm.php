@@ -26,13 +26,6 @@ class CategoryForm
                     ->rows(4)
                     ->placeholder('Describe the category...'),
 
-                TextInput::make('time_limit_minutes')
-                    ->label('Time Limit (Minutes)')
-                    ->numeric()
-                    ->minValue(1)
-                    ->default(15)
-                    ->helperText('Quiz duration for this category'),
-
                 Toggle::make('is_published')
                     ->label('Published')
                     ->default(true)

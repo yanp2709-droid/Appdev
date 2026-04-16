@@ -125,7 +125,8 @@ class QuizAttemptController extends Controller
         $startedAt = $now;
         $expiresAt = null;
 
-        if ($quiz->timer_enabled) {
+        // Only set expiration if timer is explicitly enabled and duration is positive
+        if ((bool) $quiz->timer_enabled && $durationMinutes > 0) {
             $expiresAt = $startedAt->copy()->addMinutes($durationMinutes);
         }
 
@@ -184,8 +185,17 @@ class QuizAttemptController extends Controller
 
         $attemptsData = $attempts->getCollection()->map(function (Quiz_attempt $attempt) {
             $durationMinutes = $attempt->getDurationMinutes();
+            
+            // If no duration calculated from attempt times, use quiz configuration with fallbacks
             if ($durationMinutes === null) {
                 $durationMinutes = (int) ($attempt->quiz->duration_minutes ?? self::DEFAULT_DURATION_MINUTES);
+                if ($durationMinutes <= 0) {
+                    $category = $attempt->quiz->category;
+                    $durationMinutes = (int) ($category->time_limit_minutes ?? self::DEFAULT_DURATION_MINUTES);
+                }
+                if ($durationMinutes <= 0) {
+                    $durationMinutes = self::DEFAULT_DURATION_MINUTES;
+                }
             }
 
             return [
@@ -274,7 +284,7 @@ class QuizAttemptController extends Controller
                     'selected_option_id' => $selectedOptionId ? (int) $selectedOptionId : null,
                     'selected_option_ids' => $selectedOptionIds,
                     'correct_option_id' => $canReview && $showCorrectAnswers ? $correctOptionId : null,
-                    'correct_option_ids' => $canReview && $showCorrectAnswers ? $correctOptionIds : [],
+                    'correct_option_ids' => !($canReview && $showCorrectAnswers) ? [] : (array)$correctOptionIds,
                     'text_answer' => $answer->text_answer,
                     'is_answered' => !empty($selectedOptionIds) || !empty($answer->text_answer),
                     'is_correct' => $canReview && $showCorrectAnswers ? (bool) ($answer->is_correct ?? false) : null,
@@ -487,11 +497,64 @@ class QuizAttemptController extends Controller
 
         $this->expireIfNeeded($attempt);
 
+        // Load relationships for building the full response
+        $attempt->load(['quiz.category', 'answers.question.options', 'answers.questionOption']);
+
         $totalItems = $attempt->total_items ?? 0;
         if ($totalItems === 0) {
             $totalItems = Question::where('category_id', $attempt->quiz->category_id)->count();
         }
         $answeredCount = $this->countAnsweredQuestions($attempt->id);
+
+        $canReview = $this->canReviewAttemptDetails($attempt);
+        $showCorrectAnswers = $this->shouldShowCorrectAnswers($attempt);
+
+        $questions = $attempt->answers
+            ->sortBy('id')
+            ->map(function (Attempt_answer $answer) use ($canReview, $showCorrectAnswers) {
+                $question = $answer->question;
+                if (!$question) {
+                    return null;
+                }
+
+                $selectedOptionIds = $this->selectedOptionIdsFromAnswer($answer);
+                $selectedOptionId = count($selectedOptionIds) === 1 ? $selectedOptionIds[0] : null;
+                $correctOptionIds = $question->options
+                    ->where('is_correct', true)
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->values()
+                    ->all();
+                $correctOptionId = count($correctOptionIds) === 1 ? $correctOptionIds[0] : null;
+
+                return [
+                    'question_id' => $question->id,
+                    'question_text' => $question->question_text,
+                    'question_type' => Question::toApiQuestionType($question->question_type),
+                    'stored_question_type' => $question->question_type,
+                    'points' => (int) ($question->points ?? 0),
+                    'options' => $question->options->map(function ($option) use ($selectedOptionIds, $correctOptionIds, $canReview, $showCorrectAnswers) {
+                        return [
+                            'id' => $option->id,
+                            'text' => $option->option_text,
+                            'is_selected' => in_array((int) $option->id, $selectedOptionIds, true),
+                            'is_correct' => $canReview && $showCorrectAnswers && in_array((int) $option->id, $correctOptionIds, true),
+                            'order_index' => $option->order_index,
+                        ];
+                    })->values(),
+                    'selected_option_id' => $selectedOptionId ? (int) $selectedOptionId : null,
+                    'selected_option_ids' => $selectedOptionIds,
+                    'correct_option_id' => $canReview && $showCorrectAnswers ? $correctOptionId : null,
+                    'correct_option_ids' => !($canReview && $showCorrectAnswers) ? [] : (array)$correctOptionIds,
+                    'text_answer' => $answer->text_answer,
+                    'is_answered' => !empty($selectedOptionIds) || !empty($answer->text_answer),
+                    'is_correct' => $canReview && $showCorrectAnswers ? (bool) ($answer->is_correct ?? false) : null,
+                    'score_impact' => $canReview && $showCorrectAnswers ? ((bool) ($answer->is_correct ?? false) ? (int) ($question->points ?? 0) : 0) : 0,
+                    'answer_id' => (int) $answer->id,
+                ];
+            })
+            ->filter()
+            ->values();
 
         return $this->success([
             'attempt' => $this->attemptMeta($attempt),
@@ -499,6 +562,7 @@ class QuizAttemptController extends Controller
             'total_items' => $totalItems,
             'saved_answers' => $this->savedAnswersPayload($attempt),
             'progress' => $this->progressPayload($attempt),
+            'questions' => $questions,
         ], 'Attempt status.');
     }
 
@@ -827,13 +891,24 @@ class QuizAttemptController extends Controller
 
     private function quizSettingsPayload(Quiz $quiz): array
     {
+        // Calculate the actual duration that will be used for the quiz attempt
+        // This ensures the frontend sees the same duration that will actually be used
+        $durationMinutes = (int) ($quiz->duration_minutes ?? self::DEFAULT_DURATION_MINUTES);
+        if ($durationMinutes <= 0) {
+            $category = Category::find($quiz->category_id);
+            $durationMinutes = (int) ($category->time_limit_minutes ?? self::DEFAULT_DURATION_MINUTES);
+        }
+        if ($durationMinutes <= 0) {
+            $durationMinutes = self::DEFAULT_DURATION_MINUTES;
+        }
+
         return [
             'shuffle_questions' => (bool) $quiz->shuffle_questions,
             'shuffle_options' => (bool) $quiz->shuffle_options,
             'max_attempts' => $quiz->max_attempts,
             'attempt_limit' => $quiz->max_attempts,
             'timer_enabled' => (bool) $quiz->timer_enabled,
-            'duration_minutes' => $quiz->duration_minutes,
+            'duration_minutes' => $durationMinutes,
             'allow_review_before_submit' => (bool) $quiz->allow_review_before_submit,
             'show_score_immediately' => (bool) $quiz->show_score_immediately,
             'show_answers_after_submit' => (bool) $quiz->show_answers_after_submit,

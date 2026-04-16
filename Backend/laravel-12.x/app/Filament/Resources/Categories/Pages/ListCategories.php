@@ -29,7 +29,7 @@ class ListCategories extends ListRecords
             ->get();
     }
 
-    public function deleteCategory(int $categoryId): void
+    public function disableCategory(int $categoryId): void
     {
         $category = Category::query()->find($categoryId);
 
@@ -39,11 +39,34 @@ class ListCategories extends ListRecords
 
         $categoryName = $category->name;
 
-        $category->delete();
+        $category->update([
+            'is_published' => false,
+        ]);
 
         Notification::make()
-            ->title('Category deleted')
-            ->body("{$categoryName} was deleted successfully.")
+            ->title('Category disabled')
+            ->body("{$categoryName} is now hidden from students taking quizzes.")
+            ->success()
+            ->send();
+    }
+
+    public function enableCategory(int $categoryId): void
+    {
+        $category = Category::query()->find($categoryId);
+
+        if (! $category) {
+            return;
+        }
+
+        $categoryName = $category->name;
+
+        $category->update([
+            'is_published' => true,
+        ]);
+
+        Notification::make()
+            ->title('Category enabled')
+            ->body("{$categoryName} is visible to students taking quizzes again.")
             ->success()
             ->send();
     }
