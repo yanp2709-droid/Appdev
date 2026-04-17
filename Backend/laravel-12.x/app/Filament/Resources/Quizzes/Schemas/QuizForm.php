@@ -6,7 +6,6 @@ use App\Models\Quiz;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Set;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Auth;
@@ -69,10 +68,6 @@ class QuizForm
                     ->columns(1),
                 Section::make('Review Settings')
                     ->schema([
-                        Toggle::make('allow_review_before_submit')
-                            ->default(false),
-                        Toggle::make('show_score_immediately')
-                            ->default(true),
                         Toggle::make('show_answers_after_submit')
                             ->default(false)
                             ->live(),

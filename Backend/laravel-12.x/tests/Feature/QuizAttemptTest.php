@@ -138,6 +138,137 @@ class QuizAttemptTest extends TestCase
     }
 
     /**
+     * Test student can quit an active attempt and start fresh with a reset timer.
+     */
+    public function test_student_can_quit_attempt_and_restart_with_fresh_timer()
+    {
+        Carbon::setTestNow(now());
+
+        $startResponse = $this->actingAs($this->student)->postJson('/api/quiz/attempt', [
+            'quiz_id' => $this->quiz->id,
+        ]);
+
+        $startResponse->assertStatus(200);
+        $firstAttemptId = $startResponse->json('data.attempt.id');
+
+        Carbon::setTestNow(now()->addMinutes(5));
+
+        $quitResponse = $this->actingAs($this->student)
+            ->postJson("/api/quiz/attempts/{$firstAttemptId}/quit");
+
+        $quitResponse->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.attempt.id', $firstAttemptId)
+            ->assertJsonPath('data.attempt.status', 'expired');
+
+        $this->assertDatabaseHas('quiz_attempts', [
+            'id' => $firstAttemptId,
+            'status' => 'expired',
+        ]);
+
+        $restartResponse = $this->actingAs($this->student)->postJson('/api/quiz/attempt', [
+            'quiz_id' => $this->quiz->id,
+        ]);
+
+        $restartResponse->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.resumed', false);
+
+        $secondAttemptId = $restartResponse->json('data.attempt.id');
+        $this->assertNotSame($firstAttemptId, $secondAttemptId);
+        $this->assertSame(15.0, $restartResponse->json('data.attempt.duration_minutes'));
+        $this->assertGreaterThan(0, $restartResponse->json('data.attempt.remaining_seconds'));
+    }
+
+    /**
+     * Test only the first submitted attempt in a category exposes a score.
+     */
+    public function test_only_first_submitted_attempt_in_category_is_scored()
+    {
+        $firstAttempt = Quiz_attempt::create([
+            'student_id' => $this->student->id,
+            'quiz_id' => $this->quiz->id,
+            'status' => 'in_progress',
+            'started_at' => now()->subMinutes(20),
+            'expires_at' => now()->addMinutes(10),
+            'total_items' => 3,
+            'score' => 0,
+        ]);
+
+        foreach (Question::where('category_id', $this->category->id)->get() as $question) {
+            $correctOption = QuestionOption::where('question_id', $question->id)
+                ->where('is_correct', true)
+                ->first();
+
+            Attempt_answer::create([
+                'quiz_attempt_id' => $firstAttempt->id,
+                'question_id' => $question->id,
+                'question_option_id' => $correctOption?->id,
+                'selected_option_ids' => $correctOption ? [$correctOption->id] : [],
+                'is_correct' => true,
+            ]);
+        }
+
+        $firstResponse = $this->actingAs($this->student)
+            ->postJson("/api/quiz/attempts/{$firstAttempt->id}/submit");
+
+        $firstResponse->assertStatus(200)
+            ->assertJsonPath('data.is_scored_attempt', true)
+            ->assertJsonPath('data.is_practice_attempt', false);
+
+        $secondAttempt = Quiz_attempt::create([
+            'student_id' => $this->student->id,
+            'quiz_id' => $this->quiz->id,
+            'status' => 'in_progress',
+            'started_at' => now()->subMinutes(5),
+            'expires_at' => now()->addMinutes(10),
+            'total_items' => 3,
+            'score' => 0,
+        ]);
+
+        foreach (Question::where('category_id', $this->category->id)->get() as $question) {
+            $correctOption = QuestionOption::where('question_id', $question->id)
+                ->where('is_correct', true)
+                ->first();
+
+            Attempt_answer::create([
+                'quiz_attempt_id' => $secondAttempt->id,
+                'question_id' => $question->id,
+                'question_option_id' => $correctOption?->id,
+                'selected_option_ids' => $correctOption ? [$correctOption->id] : [],
+                'is_correct' => true,
+            ]);
+        }
+
+        $secondResponse = $this->actingAs($this->student)
+            ->postJson("/api/quiz/attempts/{$secondAttempt->id}/submit");
+
+        $secondResponse->assertStatus(200)
+            ->assertJsonPath('data.is_scored_attempt', false)
+            ->assertJsonPath('data.is_practice_attempt', true)
+            ->assertJsonPath('data.score', null);
+
+        $historyResponse = $this->actingAs($this->student)
+            ->getJson('/api/quiz/attempts');
+
+        $historyResponse->assertStatus(200);
+
+        $attempts = collect($historyResponse->json('data.attempts'));
+        $firstHistory = $attempts->firstWhere('id', $firstAttempt->id);
+        $secondHistory = $attempts->firstWhere('id', $secondAttempt->id);
+
+        $this->assertNotNull($firstHistory);
+        $this->assertNotNull($secondHistory);
+        $this->assertTrue($firstHistory['is_scored_attempt']);
+        $this->assertFalse($firstHistory['is_practice_attempt']);
+        $this->assertSame(100.0, $firstHistory['score_percent']);
+        $this->assertFalse($secondHistory['is_scored_attempt']);
+        $this->assertTrue($secondHistory['is_practice_attempt']);
+        $this->assertNull($secondHistory['score_percent']);
+        $this->assertNull($secondHistory['correct_answers']);
+    }
+
+    /**
      * Test student cannot start more attempts than configured by the quiz
      */
     public function test_student_cannot_start_more_attempts_than_configured()
@@ -249,6 +380,60 @@ class QuizAttemptTest extends TestCase
             ->assertJsonPath('data.attempt.score_percent', null)
             ->assertJsonPath('data.questions.0.correct_option_id', null)
             ->assertJsonPath('data.questions.0.correct_option_ids', []);
+    }
+
+    /**
+     * Test submitted attempt detail does not expose review when answer review is disabled.
+     */
+    public function test_submitted_attempt_detail_returns_no_questions_when_review_is_disabled()
+    {
+        $quiz = Quiz::factory()->create([
+            'category_id' => $this->category->id,
+            'teacher_id' => $this->teacher->id,
+            'duration_minutes' => 15,
+            'show_answers_after_submit' => false,
+            'show_correct_answers_after_submit' => false,
+        ]);
+
+        $question = Question::factory()->create([
+            'category_id' => $this->category->id,
+            'question_type' => 'mcq',
+            'points' => 5,
+        ]);
+
+        $option = QuestionOption::factory()->create([
+            'question_id' => $question->id,
+            'is_correct' => true,
+        ]);
+
+        $attempt = Quiz_attempt::create([
+            'student_id' => $this->student->id,
+            'quiz_id' => $quiz->id,
+            'status' => 'submitted',
+            'started_at' => now()->subMinutes(15),
+            'expires_at' => now(),
+            'submitted_at' => now(),
+            'total_items' => 1,
+            'answered_count' => 1,
+            'correct_answers' => 1,
+            'score_percent' => 100,
+            'score' => 1,
+        ]);
+
+        Attempt_answer::create([
+            'quiz_attempt_id' => $attempt->id,
+            'question_id' => $question->id,
+            'question_option_id' => $option->id,
+            'selected_option_ids' => [$option->id],
+            'is_correct' => true,
+        ]);
+
+        $response = $this->actingAs($this->student)->getJson("/api/quiz/attempts/{$attempt->id}/detail");
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.attempt.can_review_answers', false)
+            ->assertJsonPath('data.attempt.show_correct_answers', false)
+            ->assertJsonCount(0, 'data.questions');
     }
 
     /**
@@ -870,6 +1055,54 @@ class QuizAttemptTest extends TestCase
 
         $response->assertStatus(404)
                  ->assertJsonPath('error.code', 'quiz_not_found');
+    }
+
+    /**
+     * Test attempt by category auto-creates a default quiz when questions exist.
+     */
+    public function test_attempt_by_category_creates_default_quiz_when_missing()
+    {
+        $category = Category::factory()->create([
+            'time_limit_minutes' => 12,
+        ]);
+
+        $question = Question::factory()->create([
+            'category_id' => $category->id,
+            'question_type' => 'mcq',
+            'points' => 5,
+        ]);
+
+        QuestionOption::factory()->count(4)->create([
+            'question_id' => $question->id,
+            'is_correct' => false,
+        ]);
+
+        QuestionOption::where('question_id', $question->id)
+            ->first()
+            ->update(['is_correct' => true]);
+
+        $this->assertDatabaseMissing('quizzes', [
+            'category_id' => $category->id,
+        ]);
+
+        $response = $this->actingAs($this->student)->postJson('/api/quiz/attempt', [
+            'category_id' => $category->id,
+        ]);
+
+        $quizId = Quiz::where('category_id', $category->id)->value('id');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.attempt.status', 'in_progress')
+            ->assertJsonPath('data.attempt.duration_minutes', 12.0)
+            ->assertJsonPath('data.attempt.quiz_id', $quizId);
+
+        $this->assertDatabaseHas('quizzes', [
+            'category_id' => $category->id,
+            'title' => $category->name . ' Quiz',
+            'difficulty' => 'Easy',
+            'duration_minutes' => 12,
+        ]);
     }
 
     /**

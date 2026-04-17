@@ -61,6 +61,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/quiz/attempts', [QuizAttemptController::class, 'history']);
         Route::post('/quiz/attempts/{attempt}/answer', [QuizAttemptController::class, 'saveAnswer'])->whereNumber('attempt');
         Route::post('/quiz/attempts/{attempt}/submit', [QuizAttemptController::class, 'submit'])->whereNumber('attempt');
+        Route::post('/quiz/attempts/{attempt}/quit', [QuizAttemptController::class, 'quit'])->whereNumber('attempt');
         Route::get('/quiz/attempts/{attempt}/detail', [QuizAttemptController::class, 'detail'])->whereNumber('attempt');
         Route::get('/quiz/attempts/{attempt}', [QuizAttemptController::class, 'status'])->whereNumber('attempt');
     });
