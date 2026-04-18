@@ -21,13 +21,16 @@ class AdminDashboardController extends Controller
         $totalStudents = User::where('role', 'student')->count();
         $totalAttempts = Quiz_attempt::count();
         $submittedAttempts = Quiz_attempt::where('status', 'submitted')->count();
-        $avgScore = Quiz_attempt::where('status', 'submitted')->avg('score_percent') ?? 0;
+        $gradedSubmittedAttempts = Quiz_attempt::where('status', 'submitted')
+            ->where('attempt_type', Quiz_attempt::TYPE_GRADED);
+        $avgScore = $gradedSubmittedAttempts->avg('score_percent') ?? 0;
 
         return $this->success([
             'statistics' => [
                 'total_students' => $totalStudents,
                 'total_attempts' => $totalAttempts,
                 'submitted_attempts' => $submittedAttempts,
+                'official_graded_attempts' => $gradedSubmittedAttempts->count(),
                 'average_score' => round($avgScore, 2),
             ],
         ], 'Dashboard statistics retrieved.');
@@ -55,6 +58,8 @@ class AdminDashboardController extends Controller
         $studentsData = $students->getCollection()->map(function ($student) {
             $attempts = Quiz_attempt::where('student_id', $student->id);
             $submittedAttempts = (clone $attempts)->where('status', 'submitted');
+            $gradedAttempts = (clone $submittedAttempts)->where('attempt_type', Quiz_attempt::TYPE_GRADED);
+            $practiceAttempts = (clone $submittedAttempts)->where('attempt_type', Quiz_attempt::TYPE_PRACTICE);
 
             return [
                 'id' => $student->id,
@@ -63,7 +68,9 @@ class AdminDashboardController extends Controller
                 'created_at' => $student->created_at,
                 'total_attempts' => $attempts->count(),
                 'submitted_attempts' => $submittedAttempts->count(),
-                'average_score' => round($submittedAttempts->avg('score_percent') ?? 0, 2),
+                'official_graded_attempts' => $gradedAttempts->count(),
+                'practice_attempts' => $practiceAttempts->count(),
+                'average_score' => round($gradedAttempts->avg('score_percent') ?? 0, 2),
             ];
         });
 
@@ -93,6 +100,8 @@ class AdminDashboardController extends Controller
 
         $attempts = Quiz_attempt::where('student_id', $studentId)->with('quiz.category');
         $submittedAttempts = (clone $attempts)->where('status', 'submitted');
+        $gradedAttempts = (clone $submittedAttempts)->where('attempt_type', Quiz_attempt::TYPE_GRADED);
+        $practiceAttempts = (clone $submittedAttempts)->where('attempt_type', Quiz_attempt::TYPE_PRACTICE);
 
         $studentData = [
             'id' => $student->id,
@@ -101,11 +110,13 @@ class AdminDashboardController extends Controller
             'created_at' => $student->created_at,
             'total_attempts' => $attempts->count(),
             'submitted_attempts' => $submittedAttempts->count(),
+            'official_graded_attempts' => $gradedAttempts->count(),
+            'practice_attempts' => $practiceAttempts->count(),
             'in_progress_attempts' => (clone $attempts)->where('status', 'in_progress')->count(),
             'expired_attempts' => (clone $attempts)->where('status', 'expired')->count(),
-            'average_score' => round($submittedAttempts->avg('score_percent') ?? 0, 2),
-            'highest_score' => round($submittedAttempts->max('score_percent') ?? 0, 2),
-            'lowest_score' => round($submittedAttempts->min('score_percent') ?? 0, 2),
+            'average_score' => round($gradedAttempts->avg('score_percent') ?? 0, 2),
+            'highest_score' => round($gradedAttempts->max('score_percent') ?? 0, 2),
+            'lowest_score' => round($gradedAttempts->min('score_percent') ?? 0, 2),
         ];
 
         return $this->success([
@@ -150,6 +161,7 @@ class AdminDashboardController extends Controller
                 'student_email' => $attempt->student->email,
                 'quiz_id' => $attempt->quiz_id,
                 'category_name' => $attempt->quiz->category->name ?? 'Unknown',
+                'attempt_type' => $attempt->attempt_type ?? Quiz_attempt::TYPE_GRADED,
                 'status' => $attempt->status,
                 'started_at' => $attempt->started_at,
                 'submitted_at' => $attempt->submitted_at,
@@ -193,6 +205,7 @@ class AdminDashboardController extends Controller
                 return [
                     'id' => $attempt->id,
                     'category' => $attempt->quiz->category->name ?? 'Unknown',
+                    'attempt_type' => $attempt->attempt_type ?? Quiz_attempt::TYPE_GRADED,
                     'score' => $attempt->score_percent,
                     'submitted_at' => $attempt->submitted_at,
                 ];
@@ -229,6 +242,7 @@ class AdminDashboardController extends Controller
             ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
             ->join('categories', 'quizzes.category_id', '=', 'categories.id')
             ->where('quiz_attempts.status', 'submitted')
+            ->where('quiz_attempts.attempt_type', Quiz_attempt::TYPE_GRADED)
             ->groupBy('categories.id', 'categories.name')
             ->select(
                 'categories.id',

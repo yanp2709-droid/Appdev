@@ -8,9 +8,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Quiz_attempt extends Model
 {
     use HasFactory;
+
+    public const TYPE_GRADED = 'graded';
+    public const TYPE_PRACTICE = 'practice';
+
     protected $fillable = [
         'student_id',
         'quiz_id',
+        'attempt_type',
         'score',
         'status',
         'started_at',
@@ -30,6 +35,7 @@ class Quiz_attempt extends Model
         'started_at' => 'datetime',
         'expires_at' => 'datetime',
         'submitted_at' => 'datetime',
+        'attempt_type' => 'string',
         'score_percent' => 'float',
         'question_sequence' => 'array',
         'last_activity_at' => 'datetime',
@@ -59,6 +65,16 @@ class Quiz_attempt extends Model
     public function answers()
     {
         return $this->hasMany(Attempt_answer::class);
+    }
+
+    public function isGradedAttempt(): bool
+    {
+        return $this->attempt_type === self::TYPE_GRADED;
+    }
+
+    public function isPracticeAttempt(): bool
+    {
+        return $this->attempt_type === self::TYPE_PRACTICE;
     }
 
     /**

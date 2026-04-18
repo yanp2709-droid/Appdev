@@ -181,13 +181,14 @@ class QuizAttemptTest extends TestCase
     }
 
     /**
-     * Test only the first submitted attempt in a category exposes a score.
+     * Test graded attempts remain official while practice attempts stay separate.
      */
-    public function test_only_first_submitted_attempt_in_category_is_scored()
+    public function test_graded_attempt_is_official_and_practice_attempts_remain_separate()
     {
         $firstAttempt = Quiz_attempt::create([
             'student_id' => $this->student->id,
             'quiz_id' => $this->quiz->id,
+            'attempt_type' => Quiz_attempt::TYPE_GRADED,
             'status' => 'in_progress',
             'started_at' => now()->subMinutes(20),
             'expires_at' => now()->addMinutes(10),
@@ -214,11 +215,13 @@ class QuizAttemptTest extends TestCase
 
         $firstResponse->assertStatus(200)
             ->assertJsonPath('data.is_scored_attempt', true)
-            ->assertJsonPath('data.is_practice_attempt', false);
+            ->assertJsonPath('data.is_practice_attempt', false)
+            ->assertJsonPath('data.attempt.attempt_type', Quiz_attempt::TYPE_GRADED);
 
         $secondAttempt = Quiz_attempt::create([
             'student_id' => $this->student->id,
             'quiz_id' => $this->quiz->id,
+            'attempt_type' => Quiz_attempt::TYPE_PRACTICE,
             'status' => 'in_progress',
             'started_at' => now()->subMinutes(5),
             'expires_at' => now()->addMinutes(10),
@@ -246,7 +249,8 @@ class QuizAttemptTest extends TestCase
         $secondResponse->assertStatus(200)
             ->assertJsonPath('data.is_scored_attempt', false)
             ->assertJsonPath('data.is_practice_attempt', true)
-            ->assertJsonPath('data.score', null);
+            ->assertJsonPath('data.attempt.attempt_type', Quiz_attempt::TYPE_PRACTICE)
+            ->assertJsonPath('data.score.score_percent', 100.0);
 
         $historyResponse = $this->actingAs($this->student)
             ->getJson('/api/quiz/attempts');
@@ -261,11 +265,50 @@ class QuizAttemptTest extends TestCase
         $this->assertNotNull($secondHistory);
         $this->assertTrue($firstHistory['is_scored_attempt']);
         $this->assertFalse($firstHistory['is_practice_attempt']);
+        $this->assertSame(Quiz_attempt::TYPE_GRADED, $firstHistory['attempt_type']);
         $this->assertSame(100.0, $firstHistory['score_percent']);
         $this->assertFalse($secondHistory['is_scored_attempt']);
         $this->assertTrue($secondHistory['is_practice_attempt']);
-        $this->assertNull($secondHistory['score_percent']);
-        $this->assertNull($secondHistory['correct_answers']);
+        $this->assertSame(Quiz_attempt::TYPE_PRACTICE, $secondHistory['attempt_type']);
+        $this->assertSame(100.0, $secondHistory['score_percent']);
+        $this->assertSame(3, $secondHistory['correct_answers']);
+    }
+
+    public function test_second_graded_attempt_is_blocked_but_practice_mode_is_allowed()
+    {
+        Quiz_attempt::create([
+            'student_id' => $this->student->id,
+            'quiz_id' => $this->quiz->id,
+            'attempt_type' => Quiz_attempt::TYPE_GRADED,
+            'status' => 'submitted',
+            'started_at' => now()->subMinutes(20),
+            'submitted_at' => now()->subMinutes(10),
+            'expires_at' => now()->subMinutes(5),
+            'total_items' => 3,
+            'score' => 3,
+            'correct_answers' => 3,
+            'score_percent' => 100,
+        ]);
+
+        $blockedResponse = $this->actingAs($this->student)->postJson('/api/quiz/attempt', [
+            'quiz_id' => $this->quiz->id,
+            'attempt_type' => Quiz_attempt::TYPE_GRADED,
+        ]);
+
+        $blockedResponse->assertStatus(403)
+            ->assertJsonPath('error.code', 'graded_attempt_already_used')
+            ->assertJsonPath('error.details.graded_attempt_available', false)
+            ->assertJsonPath('error.details.practice_attempt_available', true);
+
+        $practiceResponse = $this->actingAs($this->student)->postJson('/api/quiz/attempt', [
+            'quiz_id' => $this->quiz->id,
+            'attempt_type' => Quiz_attempt::TYPE_PRACTICE,
+        ]);
+
+        $practiceResponse->assertStatus(200)
+            ->assertJsonPath('data.attempt.attempt_type', Quiz_attempt::TYPE_PRACTICE)
+            ->assertJsonPath('data.attempt_availability.graded_attempt_available', false)
+            ->assertJsonPath('data.attempt_availability.practice_attempt_available', true);
     }
 
     /**

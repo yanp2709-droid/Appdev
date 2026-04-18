@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../data/models/question.dart';
 import '../data/models/quiz_attempt.dart';
 import '../data/models/attempt_resume.dart';
+import '../data/models/attempt_history.dart';
 import '../data/quiz_result_model.dart';
 import '../../../services/quiz_attempt_service.dart';
 import '../../../services/attempt_history_service.dart';
@@ -28,6 +29,12 @@ class QuizProvider extends ChangeNotifier {
   QuizResultModel? _lastResult;
   String? _errorMessage;
   QuizAttempt? _attempt;
+  AttemptAvailability _attemptAvailability = const AttemptAvailability(
+    gradedAttemptAvailable: true,
+    practiceAttemptAvailable: true,
+    gradedAttemptUsed: false,
+  );
+  bool _isCheckingAttemptAvailability = false;
   Timer? _ticker;
   int _remainingSeconds = 0;
 
@@ -47,8 +54,12 @@ class QuizProvider extends ChangeNotifier {
   bool get hasEverTakenQuiz => _lastResult != null;
   int get remainingSeconds => _remainingSeconds;
   QuizAttempt? get attempt => _attempt;
+  AttemptAvailability get attemptAvailability => _attemptAvailability;
+  bool get isCheckingAttemptAvailability => _isCheckingAttemptAvailability;
   bool get isExpired => _remainingSeconds <= 0;
   bool get allowReviewBeforeSubmit => _attempt?.allowReviewBeforeSubmit ?? true;
+  bool get isPracticeAttempt => _attempt?.isPracticeAttempt ?? false;
+  bool get isGradedAttempt => _attempt?.isGradedAttempt ?? false;
 
   bool isQuestionAnswered(int index) {
     if (index < 0 || index >= _questions.length) return false;
@@ -78,8 +89,32 @@ class QuizProvider extends ChangeNotifier {
     return '$m:$s';
   }
 
+  Future<void> refreshAttemptAvailability(int categoryId) async {
+    _isCheckingAttemptAvailability = true;
+    notifyListeners();
+
+    try {
+      _attemptAvailability = await _attemptService.getAttemptAvailability(
+        categoryId: categoryId,
+      );
+    } catch (_) {
+      _attemptAvailability = const AttemptAvailability(
+        gradedAttemptAvailable: true,
+        practiceAttemptAvailable: true,
+        gradedAttemptUsed: false,
+      );
+    } finally {
+      _isCheckingAttemptAvailability = false;
+      notifyListeners();
+    }
+  }
+
   /// Starts quiz attempt and loads questions
-  Future<void> startQuiz(int categoryId, String categoryName) async {
+  Future<void> startQuiz(
+    int categoryId,
+    String categoryName, {
+    required String attemptType,
+  }) async {
     _status = QuizStatus.loading;
     _errorMessage = null;
     _categoryId = categoryId;
@@ -89,8 +124,10 @@ class QuizProvider extends ChangeNotifier {
     try {
       final response = await _attemptService.startAttempt(
         categoryId: categoryId,
+        attemptType: attemptType,
       );
       _attempt = response.attempt;
+      _attemptAvailability = response.availability;
       _questions = response.questions;
       _currentIndex = 0;
       _selectedOptionIds.clear();
@@ -114,6 +151,15 @@ class QuizProvider extends ChangeNotifier {
         _status = QuizStatus.error;
         _errorMessage =
             'An active attempt already exists for this quiz. Tap to continue?';
+      } else if (e.statusCode == 403 &&
+          e.type == 'graded_attempt_already_used') {
+        _status = QuizStatus.error;
+        _attemptAvailability = const AttemptAvailability(
+          gradedAttemptAvailable: false,
+          practiceAttemptAvailable: true,
+          gradedAttemptUsed: true,
+        );
+        _errorMessage = e.message;
       } else {
         _status = QuizStatus.error;
         _errorMessage = 'Failed to load quiz: ${e.message}';
@@ -253,6 +299,11 @@ class QuizProvider extends ChangeNotifier {
     _categoryName = '';
     _errorMessage = null;
     _attempt = null;
+    _attemptAvailability = const AttemptAvailability(
+      gradedAttemptAvailable: true,
+      practiceAttemptAvailable: true,
+      gradedAttemptUsed: false,
+    );
     _remainingSeconds = 0;
     if (clearLastResult) {
       _lastResult = null;
@@ -269,6 +320,13 @@ class QuizProvider extends ChangeNotifier {
           await _attemptService.submitAttempt(attemptId: _attempt!.id);
       final data = (response['data'] as Map<String, dynamic>?) ?? {};
       final score = (data['score'] as Map<String, dynamic>?) ?? {};
+      final attemptData = (data['attempt'] as Map<String, dynamic>?) ?? {};
+      final attemptType =
+          attemptData['attempt_type'] as String? ?? _attempt?.attemptType ?? 'graded';
+      final isOfficialGradedAttempt =
+          data['is_official_graded_attempt'] as bool? ??
+          data['is_scored_attempt'] as bool? ??
+          (attemptType == 'graded');
 
       final totalItems = score['total_items'] as int? ?? _questions.length;
       final correct = score['correct_answers'] as int? ?? 0;
@@ -279,9 +337,17 @@ class QuizProvider extends ChangeNotifier {
         categoryName: _categoryName,
         totalQuestions: totalItems,
         correctAnswers: correct,
+        attemptType: attemptType,
+        isOfficialGradedAttempt: isOfficialGradedAttempt,
         scorePercentOverride: percent,
         takenAt: DateTime.now(),
       );
+
+      final availabilityJson =
+          data['attempt_availability'] as Map<String, dynamic>?;
+      if (availabilityJson != null) {
+        _attemptAvailability = AttemptAvailability.fromJson(availabilityJson);
+      }
 
       _status = QuizStatus.finished;
       _stopTicker();
@@ -377,13 +443,20 @@ class QuizProvider extends ChangeNotifier {
       });
 
       final latest = histories.first;
+      final latestOfficial = histories.cast<AttemptHistoryModel?>().firstWhere(
+            (attempt) => attempt?.isOfficialGradedAttempt == true,
+            orElse: () => null,
+          );
+      final preferred = latestOfficial ?? latest;
       _lastResult = QuizResultModel(
-        categoryId: latest.categoryId,
-        categoryName: latest.categoryName,
-        totalQuestions: latest.totalItems,
-        correctAnswers: latest.correctAnswers,
-        scorePercentOverride: latest.scorePercent.round(),
-        takenAt: latest.submittedAt ?? latest.startedAt ?? DateTime.now(),
+        categoryId: preferred.categoryId,
+        categoryName: preferred.categoryName,
+        totalQuestions: preferred.totalItems,
+        correctAnswers: preferred.correctAnswers ?? 0,
+        attemptType: preferred.attemptType,
+        isOfficialGradedAttempt: preferred.isOfficialGradedAttempt,
+        scorePercentOverride: preferred.scorePercent?.round(),
+        takenAt: preferred.submittedAt ?? preferred.startedAt ?? DateTime.now(),
       );
       notifyListeners();
     } catch (_) {

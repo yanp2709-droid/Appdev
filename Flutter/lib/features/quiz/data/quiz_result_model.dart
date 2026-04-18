@@ -5,6 +5,8 @@ class QuizResultModel {
   final String categoryName;
   final int    totalQuestions;
   final int    correctAnswers;
+  final String attemptType;
+  final bool   isOfficialGradedAttempt;
   final int?   scorePercentOverride;
   final DateTime takenAt;
 
@@ -13,6 +15,8 @@ class QuizResultModel {
     required this.categoryName,
     required this.totalQuestions,
     required this.correctAnswers,
+    required this.attemptType,
+    required this.isOfficialGradedAttempt,
     this.scorePercentOverride,
     required this.takenAt,
   });
@@ -20,4 +24,6 @@ class QuizResultModel {
   int get scorePercent =>
       scorePercentOverride ??
       (totalQuestions == 0 ? 0 : ((correctAnswers / totalQuestions) * 100).round());
+
+  bool get isPracticeAttempt => attemptType == 'practice';
 }

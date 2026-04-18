@@ -42,10 +42,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     context.read<CategoriesProvider>().fetch();
   }
 
-  void _selectCategory(CategoryModel category) {
+  Future<void> _selectCategory(CategoryModel category) async {
     setState(() {
       _selectedCategory = category;
     });
+    await context.read<QuizProvider>().refreshAttemptAvailability(category.id);
   }
 
   void _showSelectCategoryDialog() {
@@ -62,12 +63,13 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     });
   }
 
-  Future<void> _startQuiz() async {
+  Future<void> _startQuiz(String attemptType) async {
     if (_selectedCategory == null) return;
 
     await context.read<QuizProvider>().startQuiz(
       _selectedCategory!.id,
       _selectedCategory!.name,
+      attemptType: attemptType,
     );
 
     if (mounted) {
@@ -341,50 +343,129 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 48),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: Consumer<QuizProvider>(
-                builder: (context, quizProvider, _) {
-                  final isLoading = quizProvider.status == QuizStatus.loading;
+            Consumer<QuizProvider>(
+              builder: (context, quizProvider, _) {
+                final isLoading = quizProvider.status == QuizStatus.loading;
+                final isChecking = quizProvider.isCheckingAttemptAvailability;
+                final availability = quizProvider.attemptAvailability;
+                final gradedAvailable = availability.gradedAttemptAvailable;
 
-                  return ElevatedButton(
-                    onPressed: isLoading ? null : _startQuiz,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: gradedAvailable
+                            ? AppColors.primary.withOpacity(0.08)
+                            : Colors.orange.withOpacity(0.10),
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: gradedAvailable
+                              ? AppColors.primary.withOpacity(0.2)
+                              : Colors.orange.withOpacity(0.35),
+                        ),
                       ),
-                      elevation: 4,
-                      disabledBackgroundColor: AppColors.gray200,
-                    ),
-                    child: isLoading
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.play_arrow, size: 24, color: Colors.white),
-                              SizedBox(width: 12),
-                              Text(
-                                'Start Quiz',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                      child: isChecking
+                          ? const Row(
+                              children: [
+                                SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
                                 ),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Checking graded attempt availability...',
+                                    style: TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              gradedAvailable
+                                  ? availability.allowedGradedAttempts > 1
+                                      ? 'Your teacher enabled more graded tries. You currently have ${availability.remainingGradedAttempts} graded attempt(s) available.'
+                                      : 'Your official graded attempt is still available. Practice mode is always available.'
+                                  : 'Your graded attempt has already been used. You may still continue in Practice Mode.',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
                               ),
-                            ],
+                            ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: isLoading || isChecking || !gradedAvailable
+                            ? null
+                            : () => _startQuiz('graded'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                  );
-                },
-              ),
+                          elevation: 4,
+                          disabledBackgroundColor: AppColors.gray200,
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.verified_rounded, size: 22, color: Colors.white),
+                                  SizedBox(width: 12),
+                                  Text(
+                                    'Start Graded Quiz',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: OutlinedButton.icon(
+                        onPressed: isLoading || isChecking
+                            ? null
+                            : () => _startQuiz('practice'),
+                        icon: const Icon(Icons.school_outlined),
+                        label: const Text('Practice Mode'),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.accent),
+                          foregroundColor: AppColors.accent,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Practice attempts are unlimited and do not affect your official graded result.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF6B7280),
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -524,4 +605,3 @@ class _ShimmerList extends StatelessWidget {
     );
   }
 }
-

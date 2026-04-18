@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Question;
 use App\Models\Quiz;
 use App\Models\Quiz_attempt;
+use App\Models\QuizRetakeAllowance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,8 @@ class QuizAttemptController extends Controller
     private const STATUS_IN_PROGRESS = 'in_progress';
     private const STATUS_SUBMITTED = 'submitted';
     private const STATUS_EXPIRED = 'expired';
+    private const TYPE_GRADED = Quiz_attempt::TYPE_GRADED;
+    private const TYPE_PRACTICE = Quiz_attempt::TYPE_PRACTICE;
     private const DEFAULT_DURATION_MINUTES = Quiz::DEFAULT_DURATION_MINUTES;
 
     public function attempt(Request $request)
@@ -29,6 +32,7 @@ class QuizAttemptController extends Controller
         $validator = Validator::make($request->all(), [
             'quiz_id' => 'nullable|integer',
             'category_id' => 'nullable|exists:categories,id',
+            'attempt_type' => 'nullable|string|in:' . self::TYPE_GRADED . ',' . self::TYPE_PRACTICE,
             'limit' => 'nullable|integer|min:1|max:200',
             'random' => 'nullable|boolean',
         ]);
@@ -43,6 +47,7 @@ class QuizAttemptController extends Controller
         }
 
         $payload = $validator->validated();
+        $attemptType = $payload['attempt_type'] ?? self::TYPE_GRADED;
 
         if (empty($payload['quiz_id']) && empty($payload['category_id'])) {
             return $this->error(
@@ -73,6 +78,7 @@ class QuizAttemptController extends Controller
 
         Quiz_attempt::where('student_id', $user->id)
             ->where('quiz_id', $quiz->id)
+            ->where('attempt_type', $attemptType)
             ->where('status', self::STATUS_IN_PROGRESS)
             ->whereNotNull('expires_at')
             ->where('expires_at', '<=', $now)
@@ -84,6 +90,7 @@ class QuizAttemptController extends Controller
 
         $activeAttempt = Quiz_attempt::where('student_id', $user->id)
             ->where('quiz_id', $quiz->id)
+            ->where('attempt_type', $attemptType)
             ->where('status', self::STATUS_IN_PROGRESS)
             ->where(function ($query) use ($now) {
                 $query->whereNull('expires_at')->orWhere('expires_at', '>', $now);
@@ -97,9 +104,19 @@ class QuizAttemptController extends Controller
             );
         }
 
-        if (!empty($quiz->max_attempts)) {
+        if ($attemptType === self::TYPE_GRADED && !$this->hasAvailableGradedAttempt($user->id, $quiz->id)) {
+            return $this->error(
+                'graded_attempt_already_used',
+                'You have already used your graded attempt for this quiz. You may still continue in practice mode.',
+                403,
+                $this->attemptAvailabilityPayload($user->id, $quiz->id)
+            );
+        }
+
+        if ($attemptType === self::TYPE_GRADED && !empty($quiz->max_attempts)) {
             $attemptCount = Quiz_attempt::where('student_id', $user->id)
                 ->where('quiz_id', $quiz->id)
+                ->where('attempt_type', self::TYPE_GRADED)
                 ->count();
 
             if ($attemptCount >= $quiz->max_attempts) {
@@ -133,6 +150,7 @@ class QuizAttemptController extends Controller
         $attempt = Quiz_attempt::create([
             'student_id' => $user->id,
             'quiz_id' => $quiz->id,
+            'attempt_type' => $attemptType,
             'score' => 0,
             'status' => self::STATUS_IN_PROGRESS,
             'started_at' => $startedAt,
@@ -160,8 +178,48 @@ class QuizAttemptController extends Controller
 
         return $this->success(
             $this->buildAttemptPayload($attempt->fresh(['quiz', 'answers']), $questions, false),
-            'Attempt started.'
+            $attemptType === self::TYPE_GRADED ? 'Graded attempt started.' : 'Practice attempt started.'
         );
+    }
+
+    public function availability(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'quiz_id' => 'nullable|integer|exists:quizzes,id',
+            'category_id' => 'nullable|integer|exists:categories,id',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error(
+                'validation_error',
+                'Invalid request.',
+                422,
+                $validator->errors()
+            );
+        }
+
+        $payload = $validator->validated();
+
+        if (empty($payload['quiz_id']) && empty($payload['category_id'])) {
+            return $this->error(
+                'validation_error',
+                'quiz_id or category_id is required.',
+                422
+            );
+        }
+
+        $quiz = !empty($payload['quiz_id'])
+            ? Quiz::find($payload['quiz_id'])
+            : $this->resolveQuizForCategory(Category::find($payload['category_id']));
+
+        if (!$quiz) {
+            return $this->error('quiz_not_found', 'Quiz not found.', 404);
+        }
+
+        return $this->success([
+            'quiz_id' => $quiz->id,
+            'attempt_availability' => $this->attemptAvailabilityPayload($request->user()->id, $quiz->id),
+        ], 'Attempt availability retrieved.');
     }
 
     private function resolveQuizForCategory(Category $category): ?Quiz
@@ -230,13 +288,18 @@ class QuizAttemptController extends Controller
                 }
             }
 
+            $isOfficialGradedAttempt = $this->isOfficialGradedAttempt($attempt);
+            $canExposeScore = $this->canExposeAttemptScore($attempt);
+
             return [
                 'id' => $attempt->id,
                 'quiz_id' => $attempt->quiz_id,
                 'category_id' => $attempt->quiz->category_id ?? 0,
                 'category_name' => $attempt->quiz->category->name ?? 'Unknown',
-                'is_scored_attempt' => $this->isScoredAttempt($attempt),
-                'is_practice_attempt' => !$this->isScoredAttempt($attempt),
+                'attempt_type' => $attempt->attempt_type ?? self::TYPE_GRADED,
+                'is_scored_attempt' => $isOfficialGradedAttempt,
+                'is_official_graded_attempt' => $isOfficialGradedAttempt,
+                'is_practice_attempt' => $attempt->isPracticeAttempt(),
                 'can_review_answers' => $this->canReviewAttemptDetails($attempt),
                 'show_correct_answers' => $this->shouldShowCorrectAnswers($attempt),
                 'status' => $attempt->status,
@@ -245,8 +308,8 @@ class QuizAttemptController extends Controller
                 'duration_minutes' => $durationMinutes,
                 'total_items' => (int) ($attempt->total_items ?? 0),
                 'answered_count' => (int) ($attempt->answered_count ?? 0),
-                'correct_answers' => $this->isScoredAttempt($attempt) ? (int) ($attempt->correct_answers ?? 0) : null,
-                'score_percent' => $this->isScoredAttempt($attempt) ? (float) ($attempt->score_percent ?? 0) : null,
+                'correct_answers' => $canExposeScore ? (int) ($attempt->correct_answers ?? 0) : null,
+                'score_percent' => $canExposeScore ? (float) ($attempt->score_percent ?? 0) : null,
             ];
         });
 
@@ -340,8 +403,10 @@ class QuizAttemptController extends Controller
                 'quiz_id' => $attempt->quiz_id,
                 'category_id' => $attempt->quiz->category_id ?? 0,
                 'category_name' => $attempt->quiz->category->name ?? 'Unknown',
-                'is_scored_attempt' => $this->isScoredAttempt($attempt),
-                'is_practice_attempt' => !$this->isScoredAttempt($attempt),
+                'attempt_type' => $attempt->attempt_type ?? self::TYPE_GRADED,
+                'is_scored_attempt' => $this->isOfficialGradedAttempt($attempt),
+                'is_official_graded_attempt' => $this->isOfficialGradedAttempt($attempt),
+                'is_practice_attempt' => $attempt->isPracticeAttempt(),
                 'can_review_answers' => $canReview,
                 'show_correct_answers' => $showCorrectAnswers,
                 'status' => $attempt->status,
@@ -537,9 +602,9 @@ class QuizAttemptController extends Controller
 
             $attempt = $attempt->fresh();
 
-            $isScoredAttempt = $this->isScoredAttempt($attempt);
+            $isOfficialGradedAttempt = $this->isOfficialGradedAttempt($attempt);
             $scorePayload = null;
-            if ($isScoredAttempt && $attempt->quiz->show_score_immediately) {
+            if ($this->shouldShowAttemptScore($attempt)) {
                 $scorePayload = [
                     'total_items' => $attempt->total_items,
                     'answered_count' => $attempt->answered_count,
@@ -550,10 +615,12 @@ class QuizAttemptController extends Controller
 
             return $this->success([
                 'attempt' => $this->attemptMeta($attempt),
-                'is_scored_attempt' => $isScoredAttempt,
-                'is_practice_attempt' => !$isScoredAttempt,
+                'is_scored_attempt' => $isOfficialGradedAttempt,
+                'is_official_graded_attempt' => $isOfficialGradedAttempt,
+                'is_practice_attempt' => $attempt->isPracticeAttempt(),
                 'score' => $scorePayload,
-            ], $isScoredAttempt ? 'Attempt submitted.' : 'Practice attempt submitted.');
+                'attempt_availability' => $this->attemptAvailabilityPayload($attempt->student_id, $attempt->quiz_id),
+            ], $attempt->isPracticeAttempt() ? 'Practice attempt submitted.' : 'Graded attempt submitted.');
         } catch (\Throwable $e) {
             return $this->error('scoring_failed', 'Scoring failed. Please retry.', 500);
         }
@@ -634,6 +701,7 @@ class QuizAttemptController extends Controller
             'saved_answers' => $this->savedAnswersPayload($attempt),
             'progress' => $this->progressPayload($attempt),
             'questions' => $questions,
+            'attempt_availability' => $this->attemptAvailabilityPayload($attempt->student_id, $attempt->quiz_id),
         ], 'Attempt status.');
     }
 
@@ -655,6 +723,9 @@ class QuizAttemptController extends Controller
         return [
             'id' => $attempt->id,
             'quiz_id' => $attempt->quiz_id,
+            'attempt_type' => $attempt->attempt_type ?? self::TYPE_GRADED,
+            'is_graded_attempt' => $attempt->isGradedAttempt(),
+            'is_practice_attempt' => $attempt->isPracticeAttempt(),
             'status' => $attempt->status,
             'started_at' => $attempt->started_at,
             'expires_at' => $attempt->expires_at,
@@ -875,6 +946,7 @@ class QuizAttemptController extends Controller
             'questions' => $this->questionsPayload($questions, $attempt),
             'saved_answers' => $this->savedAnswersPayload($attempt),
             'progress' => $this->progressPayload($attempt),
+            'attempt_availability' => $this->attemptAvailabilityPayload($attempt->student_id, $attempt->quiz_id),
             'resumed' => $resumed,
         ];
     }
@@ -1016,26 +1088,64 @@ class QuizAttemptController extends Controller
 
     private function canExposeAttemptScore(Quiz_attempt $attempt): bool
     {
-        return $this->isScoredAttempt($attempt) && $this->shouldShowAttemptScore($attempt);
+        return $attempt->status === self::STATUS_SUBMITTED && $this->shouldShowAttemptScore($attempt);
     }
 
     private function isScoredAttempt(Quiz_attempt $attempt): bool
     {
-        if ($attempt->status !== self::STATUS_SUBMITTED) {
-            return false;
-        }
+        return $this->isOfficialGradedAttempt($attempt);
+    }
 
-        $firstScoredAttemptId = Quiz_attempt::query()
-            ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
-            ->where('quiz_attempts.student_id', $attempt->student_id)
-            ->where('quizzes.category_id', $attempt->quiz->category_id)
-            ->where('quiz_attempts.status', self::STATUS_SUBMITTED)
-            ->whereNotNull('quiz_attempts.submitted_at')
-            ->orderBy('quiz_attempts.submitted_at')
-            ->orderBy('quiz_attempts.id')
-            ->value('quiz_attempts.id');
+    private function isOfficialGradedAttempt(Quiz_attempt $attempt): bool
+    {
+        return $attempt->status === self::STATUS_SUBMITTED && $attempt->isGradedAttempt();
+    }
 
-        return (int) $firstScoredAttemptId === (int) $attempt->id;
+    private function hasSubmittedGradedAttempt(int $studentId, int $quizId): bool
+    {
+        return $this->submittedGradedAttemptCount($studentId, $quizId) > 0;
+    }
+
+    private function hasAvailableGradedAttempt(int $studentId, int $quizId): bool
+    {
+        return $this->submittedGradedAttemptCount($studentId, $quizId) < $this->allowedGradedAttemptCount($studentId, $quizId);
+    }
+
+    private function submittedGradedAttemptCount(int $studentId, int $quizId): int
+    {
+        return Quiz_attempt::query()
+            ->where('student_id', $studentId)
+            ->where('quiz_id', $quizId)
+            ->where('attempt_type', self::TYPE_GRADED)
+            ->where('status', self::STATUS_SUBMITTED)
+            ->count();
+    }
+
+    private function allowedGradedAttemptCount(int $studentId, int $quizId): int
+    {
+        $additionalAttempts = (int) QuizRetakeAllowance::query()
+            ->where('student_id', $studentId)
+            ->where('quiz_id', $quizId)
+            ->value('additional_graded_attempts');
+
+        return 1 + max($additionalAttempts, 0);
+    }
+
+    private function attemptAvailabilityPayload(int $studentId, int $quizId): array
+    {
+        $submittedGradedAttempts = $this->submittedGradedAttemptCount($studentId, $quizId);
+        $allowedGradedAttempts = $this->allowedGradedAttemptCount($studentId, $quizId);
+        $remainingGradedAttempts = max($allowedGradedAttempts - $submittedGradedAttempts, 0);
+        $gradedAttemptUsed = $remainingGradedAttempts === 0;
+
+        return [
+            'graded_attempt_available' => $remainingGradedAttempts > 0,
+            'practice_attempt_available' => true,
+            'graded_attempt_used' => $gradedAttemptUsed,
+            'remaining_graded_attempts' => $remainingGradedAttempts,
+            'allowed_graded_attempts' => $allowedGradedAttempts,
+            'submitted_graded_attempts' => $submittedGradedAttempts,
+        ];
     }
 
     private function countAnsweredQuestions(int $attemptId): int

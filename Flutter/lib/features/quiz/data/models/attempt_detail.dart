@@ -99,13 +99,16 @@ class AttemptDetailModel {
   final int quizId;
   final int categoryId;
   final String categoryName;
+  final String attemptType;
+  final bool isOfficialGradedAttempt;
+  final bool isPracticeAttempt;
   final String status;
   final DateTime? startedAt;
   final DateTime? submittedAt;
   final int totalItems;
   final int answeredCount;
-  final int correctAnswers;
-  final double scorePercent;
+  final int? correctAnswers;
+  final double? scorePercent;
   final List<AttemptQuestionDetail> questions;
 
   const AttemptDetailModel({
@@ -113,6 +116,9 @@ class AttemptDetailModel {
     required this.quizId,
     required this.categoryId,
     required this.categoryName,
+    required this.attemptType,
+    required this.isOfficialGradedAttempt,
+    required this.isPracticeAttempt,
     required this.status,
     required this.startedAt,
     required this.submittedAt,
@@ -134,13 +140,19 @@ class AttemptDetailModel {
       quizId: (attemptData['quiz_id'] as num?)?.toInt() ?? 0,
       categoryId: (attemptData['category_id'] as num?)?.toInt() ?? 0,
       categoryName: attemptData['category_name'] as String? ?? '',
+      attemptType: attemptData['attempt_type'] as String? ?? 'graded',
+      isOfficialGradedAttempt:
+          attemptData['is_official_graded_attempt'] as bool? ??
+              attemptData['is_scored_attempt'] as bool? ??
+              false,
+      isPracticeAttempt: attemptData['is_practice_attempt'] as bool? ?? false,
       status: attemptData['status'] as String? ?? '',
       startedAt: _parseDate(attemptData['started_at']),
       submittedAt: _parseDate(attemptData['submitted_at']),
       totalItems: (attemptData['total_items'] as num?)?.toInt() ?? 0,
       answeredCount: (attemptData['answered_count'] as num?)?.toInt() ?? 0,
-      correctAnswers: (attemptData['correct_answers'] as num?)?.toInt() ?? 0,
-      scorePercent: (attemptData['score_percent'] as num?)?.toDouble() ?? 0.0,
+      correctAnswers: (attemptData['correct_answers'] as num?)?.toInt(),
+      scorePercent: (attemptData['score_percent'] as num?)?.toDouble(),
       questions: questionsList,
     );
   }
@@ -151,6 +163,9 @@ class AttemptDetailModel {
           'quiz_id': quizId,
           'category_id': categoryId,
           'category_name': categoryName,
+          'attempt_type': attemptType,
+          'is_official_graded_attempt': isOfficialGradedAttempt,
+          'is_practice_attempt': isPracticeAttempt,
           'status': status,
           'started_at': startedAt?.toIso8601String(),
           'submitted_at': submittedAt?.toIso8601String(),

@@ -28,6 +28,8 @@ trait ApiResponse
         'quiz_not_found' => 404,
         'attempt_not_found' => 404,
         'active_attempt_exists' => 409,
+        'graded_attempt_already_used' => 403,
+        'attempt_limit_reached' => 403,
         'attempt_submitted' => 409,
         'attempt_expired' => 410,
         'invalid_question' => 422,

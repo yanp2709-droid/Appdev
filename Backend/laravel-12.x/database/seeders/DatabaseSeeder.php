@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
             // 4️⃣ Questions (creates quizzes + questions + options)
             QuestionsSeeder::class,
             // 5️⃣ Student user (depends on roles)
-            StudentUserSeeder::class,
+            StudentId2302Seeder::class,
 
         ]);
     }

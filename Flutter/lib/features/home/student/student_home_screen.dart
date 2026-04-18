@@ -193,9 +193,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           children: [
                             Expanded(
                               child: _ScoreCard(
-                                label: 'Latest Score',
+                                label: lastResult.isOfficialGradedAttempt
+                                    ? 'Official Score'
+                                    : 'Latest Practice Score',
                                 value: '${lastResult.scorePercent}%',
-                                subtitle: 'Your most recent result',
+                                subtitle: lastResult.isOfficialGradedAttempt
+                                    ? 'Your recorded graded result'
+                                    : 'Your most recent practice result',
                                 color: AppColors.primary,
                                 icon: Icons.bar_chart_rounded,
                               ),

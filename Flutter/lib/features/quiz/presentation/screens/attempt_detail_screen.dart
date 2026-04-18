@@ -137,9 +137,9 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
 
   Widget _buildScoreSummary(AttemptDetailModel detail, int? categoryAttemptCount) {
     final scorePercent = detail.scorePercent;
-    final scoreColor = scorePercent >= 70
+    final scoreColor = (scorePercent ?? 0) >= 70
         ? AppColors.accent
-        : scorePercent >= 50
+        : (scorePercent ?? 0) >= 50
             ? Colors.orange
             : Colors.red;
 
@@ -158,6 +158,28 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
             ),
           ),
           const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: detail.isPracticeAttempt
+                  ? Colors.orange.withOpacity(0.14)
+                  : Colors.white.withOpacity(0.14),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              detail.isPracticeAttempt
+                  ? 'Practice Attempt'
+                  : 'Official Graded Attempt',
+              style: TextStyle(
+                color: detail.isPracticeAttempt
+                    ? Colors.orange.shade100
+                    : Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
           Text(
             'Attempts in this category: ${categoryAttemptCount?.toString() ?? 'Unknown'}',
             style: const TextStyle(
@@ -172,12 +194,14 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
             children: [
               _SummaryItem(
                 label: 'Score',
-                value: '${scorePercent.toStringAsFixed(1)}%',
+                value: scorePercent == null
+                    ? 'Hidden'
+                    : '${scorePercent.toStringAsFixed(1)}%',
                 color: scoreColor,
               ),
               _SummaryItem(
                 label: 'Correct',
-                value: '${detail.correctAnswers}/${detail.totalItems}',
+                value: '${detail.correctAnswers ?? '--'}/${detail.totalItems}',
                 color: AppColors.accent,
               ),
               _SummaryItem(

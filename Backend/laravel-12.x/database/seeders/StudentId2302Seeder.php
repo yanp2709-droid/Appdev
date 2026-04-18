@@ -9,9 +9,28 @@ class StudentId2302Seeder extends Seeder
 {
     public function run(): void
     {
+        User::updateOrCreate(
+            ['email' => 'ian@gmail.com'],
+            [
+                'name' => 'Ian Kenneth',
+                'first_name' => 'Ian',
+                'last_name' => 'Kenneth',
+                'email_verified_at' => now(),
+                'password' => bcrypt('password'),
+                'role' => 'student',
+                'student_id' => '2302999',
+                'section' => 'AIA',
+                'year_level' => '1',
+                'course' => 'BSIT',
+                'privacy_consent' => true,
+                'is_protected' => false,
+            ]
+        );
+
         // Remove all existing students with 7-digit student_id starting with 2302
         User::where('role', 'student')
             ->where('student_id', 'like', '2302%')
+            ->where('email', '!=', 'ian@gmail.com')
             ->whereRaw('LENGTH(student_id) = 7')
             ->delete();
 

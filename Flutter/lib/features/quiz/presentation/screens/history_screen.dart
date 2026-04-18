@@ -193,6 +193,11 @@ class _CategorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final officialAttempts =
+        attempts.where((attempt) => attempt.isOfficialGradedAttempt).toList();
+    final practiceAttempts =
+        attempts.where((attempt) => attempt.isPracticeAttempt).toList();
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 1,
@@ -210,13 +215,43 @@ class _CategorySection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            ...attempts.map((attempt) {
-              return _AttemptDetailCard(
-                attempt: attempt,
-                onTap: () => onAttemptTap(attempt.id),
-                detailFuture: detailFutureFor(attempt.id),
-              );
-            }).toList(),
+            if (officialAttempts.isNotEmpty) ...[
+              const Text(
+                'Official Graded Attempt',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.gray600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...officialAttempts.map((attempt) {
+                return _AttemptDetailCard(
+                  attempt: attempt,
+                  onTap: () => onAttemptTap(attempt.id),
+                  detailFuture: detailFutureFor(attempt.id),
+                );
+              }),
+            ],
+            if (practiceAttempts.isNotEmpty) ...[
+              if (officialAttempts.isNotEmpty) const SizedBox(height: 8),
+              const Text(
+                'Practice Attempts',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.gray600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...practiceAttempts.map((attempt) {
+                return _AttemptDetailCard(
+                  attempt: attempt,
+                  onTap: () => onAttemptTap(attempt.id),
+                  detailFuture: detailFutureFor(attempt.id),
+                );
+              }),
+            ],
           ],
         ),
       ),
@@ -237,9 +272,11 @@ class _AttemptDetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scoreColor = attempt.scorePercent >= 70
+    final scoreValue = attempt.scorePercent;
+    final correctAnswers = attempt.correctAnswers;
+    final scoreColor = (scoreValue ?? 0) >= 70
         ? AppColors.accent
-        : attempt.scorePercent >= 50
+        : (scoreValue ?? 0) >= 50
             ? Colors.orange
             : Colors.red;
 
@@ -260,7 +297,9 @@ class _AttemptDetailCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    '${attempt.scorePercent.toStringAsFixed(0)}%',
+                    scoreValue == null
+                        ? (attempt.isPracticeAttempt ? 'Practice' : 'Hidden')
+                        : '${scoreValue.toStringAsFixed(0)}%',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
@@ -268,6 +307,25 @@ class _AttemptDetailCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (attempt.isPracticeAttempt) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Practice Only',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.orange.shade900,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -276,7 +334,9 @@ class _AttemptDetailCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${attempt.correctAnswers}/${attempt.totalItems}',
+                  correctAnswers == null
+                      ? '--/${attempt.totalItems}'
+                      : '$correctAnswers/${attempt.totalItems}',
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                 ),
               ],

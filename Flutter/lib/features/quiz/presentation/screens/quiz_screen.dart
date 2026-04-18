@@ -282,6 +282,53 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                   ],
 
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: quiz.isPracticeAttempt
+                          ? Colors.orange.withOpacity(0.10)
+                          : AppColors.primary.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: quiz.isPracticeAttempt
+                            ? Colors.orange.withOpacity(0.35)
+                            : AppColors.primary.withOpacity(0.22),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          quiz.isPracticeAttempt
+                              ? Icons.school_outlined
+                              : Icons.verified_rounded,
+                          color: quiz.isPracticeAttempt
+                              ? Colors.orange.shade800
+                              : AppColors.primary,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            quiz.isPracticeAttempt
+                                ? 'Practice Attempt: this run is not graded and will not change your official score.'
+                                : 'Graded Attempt: this is your official recorded quiz attempt.',
+                            style: TextStyle(
+                              color: quiz.isPracticeAttempt
+                                  ? Colors.orange.shade900
+                                  : AppColors.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                   // Question card
                   Container(
                     padding: const EdgeInsets.all(24),

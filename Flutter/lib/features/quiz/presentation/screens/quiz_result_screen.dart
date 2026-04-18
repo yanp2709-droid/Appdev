@@ -20,6 +20,7 @@ class QuizResultScreen extends StatelessWidget {
 
     final score     = result.scorePercent;
     final isPassing = score >= 50;
+    final isPractice = result.isPracticeAttempt;
 
     return Scaffold(
       backgroundColor: AppColors.gray100,
@@ -84,6 +85,33 @@ class QuizResultScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
+
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isPractice
+                      ? Colors.orange.withOpacity(0.10)
+                      : AppColors.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isPractice
+                        ? Colors.orange.withOpacity(0.35)
+                        : AppColors.primary.withOpacity(0.2),
+                  ),
+                ),
+                child: Text(
+                  isPractice
+                      ? 'Practice Attempt: this score is for review only and does not affect your official graded result.'
+                      : 'Official Graded Attempt: this is your recorded quiz result.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isPractice ? Colors.orange.shade900 : AppColors.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
 
               // Category name
               Text(
