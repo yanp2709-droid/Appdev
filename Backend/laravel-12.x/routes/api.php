@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\QuizzesController;
 use App\Http\Controllers\QuizAttemptController;
 use App\Http\Controllers\CategoriesController;
@@ -14,8 +15,7 @@ use App\Http\Controllers\Api\AuthController as ApiAuthController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
-|--------------------------------------------------------------------------
-|
+|-------------------------------------------------------------------------- 
 | Here is where you can register API routes for your TechQuiz app.
 |
 */
@@ -34,6 +34,7 @@ Route::prefix('auth')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
+        Route::post('/change-password', [AuthController::class, 'changePassword']);
     });
 });
 
@@ -92,4 +93,10 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('/statistics/attempts', [AdminDashboardController::class, 'attempts']);
     Route::get('/statistics/attempt-history', [AdminDashboardController::class, 'studentAttemptHistory']);
     Route::get('/statistics/categories', [AdminDashboardController::class, 'categoryStats']);
+});
+
+// Admin User Management routes
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin/users')->group(function () {
+    Route::get('/', [AdminUserController::class, 'index']);
+    Route::patch('/{user}/password', [AdminUserController::class, 'updatePassword']);
 });

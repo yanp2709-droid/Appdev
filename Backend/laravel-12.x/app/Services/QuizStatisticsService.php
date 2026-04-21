@@ -141,12 +141,18 @@ class QuizStatisticsService
     /**
      * Get category summary cards for the statistics page
      */
-    public function getCategoryCardStatistics(): array
+    public function getCategoryCardStatistics(?string $dateFrom = null, ?string $dateTo = null): array
     {
-        $stats = DB::table('categories')
+        $query = DB::table('categories')
             ->join('quizzes', 'quizzes.category_id', '=', 'categories.id')
-            ->join('quiz_attempts', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
-            ->select(
+            ->join('quiz_attempts', 'quiz_attempts.quiz_id', '=', 'quizzes.id');
+
+        // Apply date filtering if provided
+        if ($dateFrom && $dateTo) {
+            $query->whereBetween('quiz_attempts.created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
+        }
+
+        $stats = $query->select(
                 'categories.id',
                 'categories.name',
                 DB::raw('COUNT(quiz_attempts.id) as total_attempts'),
@@ -183,7 +189,7 @@ class QuizStatisticsService
     /**
      * Get category detail data for the selected statistics card
      */
-    public function getCategoryDetailStatistics(int $categoryId): array
+    public function getCategoryDetailStatistics(int $categoryId, ?string $dateFrom = null, ?string $dateTo = null): array
     {
         $category = Category::find($categoryId);
 
@@ -191,19 +197,25 @@ class QuizStatisticsService
             return [];
         }
 
-        $summary = collect($this->getCategoryCardStatistics())
+        $summary = collect($this->getCategoryCardStatistics($dateFrom, $dateTo))
             ->firstWhere('category_id', $categoryId);
 
         if (! $summary) {
             return [];
         }
 
-        $users = DB::table('quiz_attempts')
+        $query = DB::table('quiz_attempts')
             ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
             ->join('users', 'quiz_attempts.student_id', '=', 'users.id')
             ->where('quizzes.category_id', $categoryId)
-            ->where('users.role', 'student')
-            ->groupBy('users.id', 'users.name', 'users.email')
+            ->where('users.role', 'student');
+
+        // Apply date filtering if provided
+        if ($dateFrom && $dateTo) {
+            $query->whereBetween('quiz_attempts.created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
+        }
+
+        $users = $query->groupBy('users.id', 'users.name', 'users.email')
             ->select(
                 'users.id',
                 'users.name',

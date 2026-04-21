@@ -34,15 +34,32 @@ class StudentId2302Seeder extends Seeder
             ->whereRaw('LENGTH(student_id) = 7')
             ->delete();
 
+        $firstNames = [
+            'Juan', 'Maria', 'Jose', 'Ana', 'Pedro', 'Rosa', 'Miguel', 'Carmen', 'Antonio', 'Isabella',
+            'Luis', 'Sofia', 'Carlos', 'Elena', 'Diego', 'Lucia', 'Francisco', 'Paula', 'Manuel', 'Laura',
+            'Fernando', 'Sara', 'Rafael', 'Clara', 'David', 'Marta', 'Alejandro', 'Noemi', 'Javier', 'Beatriz',
+            'Roberto', 'Pilar', 'Enrique', 'Teresa', 'Alberto', 'Celia', 'Victor', 'Lidia', 'Gabriel', 'Alma',
+            'Marco', 'Luz', 'Ramon', 'Eva', 'Oscar', 'Nina', 'Hugo', 'Iris', 'Leo', 'Mia'
+        ];
+
+        $lastNames = [
+            'Dela Cruz', 'Santos', 'Garcia', 'Reyes', 'Torres', 'Ramos', 'Perez', 'Mendoza', 'Cruz', 'Gonzales',
+            'Hernandez', 'Lopez', 'Villanueva', 'Tan', 'Lim', 'Sy', 'Go', 'Chan', 'Ong', 'Diaz',
+            'Flores', 'Aquino', 'Castro', 'Ortiz', 'Navarro', 'Silva', 'Bautista', 'Padilla', 'Rocha', 'Salvador',
+            'Tiongson', 'Velasco', 'Yambao', 'Zamora', 'Cabello', 'Dominguez', 'Encarnacion', 'Fortuna', 'Gomez', 'Halili'
+        ];
+
         $students = [];
         for ($i = 0; $i < 200; $i++) {
+            $fn = $firstNames[$i % count($firstNames)];
+            $ln = $lastNames[$i % count($lastNames)];
             // Generate 7-digit student_id starting with 2302 (e.g., 2302001, 2302002, ...)
             $studentId = '2302' . str_pad((string)($i + 1), 3, '0', STR_PAD_LEFT); // 2302001 to 2302199
             $email = $studentId . '@lnu.edu.ph';
             $students[] = [
-                'name' => 'Student ' . ($i + 1),
-                'first_name' => 'Student',
-                'last_name' => (string)($i + 1),
+                'name' => $fn . ' ' . $ln,
+                'first_name' => $fn,
+                'last_name' => $ln,
                 'email' => $email,
                 'email_verified_at' => now(),
                 'password' => bcrypt('password'),
@@ -60,3 +77,4 @@ class StudentId2302Seeder extends Seeder
         User::insert($students);
     }
 }
+

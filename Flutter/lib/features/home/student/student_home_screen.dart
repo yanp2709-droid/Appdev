@@ -424,7 +424,7 @@ class _StudentDrawer extends StatelessWidget {
                 context.go('/categories');
               },
             ),
-            _DrawerTile(
+_DrawerTile(
               icon: Icons.history_rounded,
               label: 'History',
               isActive: currentRoute == '/history',
@@ -433,6 +433,7 @@ class _StudentDrawer extends StatelessWidget {
                 context.go('/history');
               },
             ),
+
             const Spacer(),
             const Divider(color: Colors.white24, height: 1),
             Consumer<AuthProvider>(

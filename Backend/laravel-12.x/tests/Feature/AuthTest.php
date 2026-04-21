@@ -46,4 +46,65 @@ class AuthTest extends TestCase
 
         $response->assertStatus(200);
     }
+
+    /**
+     * Test user can change password.
+     */
+    public function test_user_can_change_password()
+    {
+        $user = User::factory()->create([
+            'password' => bcrypt('oldpassword')
+        ]);
+
+        $token = $user->createToken('test')->plainTextToken;
+
+        $response = $this->withHeader(
+            'Authorization',
+            "Bearer $token"
+        )->postJson('/api/auth/change-password', [
+            'current_password' => 'oldpassword',
+            'password' => 'newpassword123',
+            'password_confirmation' => 'newpassword123'
+        ]);
+
+        $response->assertStatus(200)
+                 ->assertJson([
+                     'success' => true,
+                     'message' => 'Password updated successfully'
+                 ]);
+
+        // Verify password was actually changed
+        $user->refresh();
+        $this->assertTrue(password_verify('newpassword123', $user->password));
+    }
+
+    /**
+     * Test change password fails with wrong current password.
+     */
+    public function test_change_password_fails_with_wrong_current_password()
+    {
+        $user = User::factory()->create([
+            'password' => bcrypt('oldpassword')
+        ]);
+
+        $token = $user->createToken('test')->plainTextToken;
+
+        $response = $this->withHeader(
+            'Authorization',
+            "Bearer $token"
+        )->postJson('/api/auth/change-password', [
+            'current_password' => 'wrongpassword',
+            'password' => 'newpassword123',
+            'password_confirmation' => 'newpassword123'
+        ]);
+
+        $response->assertStatus(422)
+                 ->assertJson([
+                     'success' => false,
+                     'error' => [
+                         'code' => 'invalid_current_password',
+                         'message' => 'Current password is incorrect'
+                     ]
+                 ]);
+    }
 }

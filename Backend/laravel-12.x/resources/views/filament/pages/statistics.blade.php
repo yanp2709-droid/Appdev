@@ -9,6 +9,25 @@
         $maxScore = max(1, (float) $users->max('best_score'));
     @endphp
 
+    <div class="stats-filters mb-6">
+        <form wire:submit.prevent="updateFilters" class="flex gap-4 items-end">
+            <div>
+                <label for="dateFrom" class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                <input type="date" id="dateFrom" wire:model.live="dateFrom"
+                       class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label for="dateTo" class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                <input type="date" id="dateTo" wire:model.live="dateTo"
+                       class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <button type="button" wire:click="resetFilters"
+                    class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                Reset
+            </button>
+        </form>
+    </div>
+
     <style>
         .stats-shell {
             display: flex;

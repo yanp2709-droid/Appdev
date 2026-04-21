@@ -79,6 +79,27 @@ $service->getTopStudents($limit = 10)
 ```
 Returns top performing students with their average scores
 
+#### Category Card Statistics
+```php
+$service->getCategoryCardStatistics($dateFrom = null, $dateTo = null)
+```
+Returns summary cards for each category with attempt counts and scores
+- **Parameters**: 
+  - `$dateFrom`: Start date (Y-m-d format) - optional
+  - `$dateTo`: End date (Y-m-d format) - optional
+- **Filters**: When dates provided, only includes attempts created between those dates
+
+#### Category Detail Statistics
+```php
+$service->getCategoryDetailStatistics($categoryId, $dateFrom = null, $dateTo = null)
+```
+Returns detailed student performance data for a specific category
+- **Parameters**: 
+  - `$categoryId`: Category ID (required)
+  - `$dateFrom`: Start date (Y-m-d format) - optional
+  - `$dateTo`: End date (Y-m-d format) - optional
+- **Filters**: When dates provided, only includes attempts created between those dates
+
 ### 2. API Endpoints
 All endpoints require admin authentication (`role:admin`)
 
@@ -128,16 +149,32 @@ Returns statistics grouped by category
 
 #### Statistics Dashboard Page
 **Location**: `app/Filament/Pages/Statistics.php`
-**Navigation**: Admin panel → Statistics (sidebar)
+**Navigation**: Admin panel → Overall Analytics (sidebar)
+
+**Features**:
+- **Date Range Filtering**: Filter all statistics by custom date range
+  - From Date / To Date inputs at the top of the page
+  - Defaults to last 30 days
+  - Real-time filtering with Livewire
+  - Reset button to clear filters
 
 Displays:
-1. **Dashboard Stats Overview Widget**: High-level metrics
+1. **Category Cards**: Clickable cards showing category performance metrics
+   - Total attempts, completion rate, highest/lowest scores
+   - Filtered by selected date range
+
+2. **Category Detail View**: When a category card is selected
+   - Student performance table for that category
+   - Best/worst performers
+   - All metrics filtered by date range
+
+3. **Dashboard Stats Overview Widget**: High-level metrics
    - Total Students
    - Total Attempts
    - Submitted Attempts
    - Average Score
 
-2. **Category Performance Widget**: Bar chart showing average scores by category
+4. **Category Performance Widget**: Bar chart showing average scores by category
 
 3. **Student Performance Analytics Widget**: Detailed table of all students with:
    - Name and Email
@@ -187,7 +224,46 @@ public function quizAttempts()
 }
 ```
 
-### 5. Value Formatting
+### 5. Date Range Filtering Implementation
+
+#### Overview
+The date range filtering feature allows administrators to view statistics for specific time periods, enabling better analysis of quiz performance trends over time.
+
+#### Implementation Details
+
+**Livewire Properties** (in `Statistics.php`):
+```php
+public ?string $dateFrom = null;
+public ?string $dateTo = null;
+```
+
+**Default Date Range**:
+- Automatically sets to last 30 days on page load
+- Uses Carbon for date calculations
+
+**Reactive Filtering**:
+- `updatedDateFrom()` and `updatedDateTo()` methods trigger re-rendering
+- Uses `wire:model.live` for real-time updates
+- `resetFilters()` method clears all filters
+
+**Service Layer Updates**:
+- `getCategoryCardStatistics($dateFrom, $dateTo)` - accepts optional date parameters
+- `getCategoryDetailStatistics($categoryId, $dateFrom, $dateTo)` - accepts optional date parameters
+- Date filtering uses `whereBetween('created_at', [$dateFrom, $dateTo])` on quiz_attempts table
+
+**UI Components**:
+- Date input form at top of statistics page
+- Reset button to clear filters
+- Form validation ensures valid date ranges
+
+#### Database Queries
+Date filtering is applied at the query level:
+```sql
+WHERE quiz_attempts.created_at BETWEEN ? AND ?
+```
+This ensures efficient filtering and maintains performance with large datasets.
+
+### 6. Value Formatting
 
 All score values are:
 - **Type**: Numeric (float)
@@ -219,6 +295,9 @@ Tests for the service layer:
 - Category grouping
 - Performance distribution
 - Difficulty analysis
+- **Date range filtering** (new)
+  - `it_filters_category_card_statistics_by_date_range`
+  - `it_filters_category_detail_statistics_by_date_range`
 - Empty state handling
 
 ### API Tests: `AdminStatisticsApiTest`

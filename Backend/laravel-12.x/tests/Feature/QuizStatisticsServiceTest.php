@@ -309,4 +309,68 @@ class QuizStatisticsServiceTest extends TestCase
         $this->assertEquals(0, $stats['average_score']);
         $this->assertEquals(0, $stats['completion_rate']);
     }
+
+    /** @test */
+    public function it_filters_category_card_statistics_by_date_range()
+    {
+        $category = Category::factory()->create();
+        $quiz = Quiz::factory()->create(['category_id' => $category->id]);
+        $student = User::factory()->create(['role' => 'student']);
+
+        // Create attempts on different dates
+        Quiz_attempt::factory()->create([
+            'student_id' => $student->id,
+            'quiz_id' => $quiz->id,
+            'status' => 'submitted',
+            'score_percent' => 80.00,
+            'created_at' => '2024-01-15 10:00:00', // Within range
+        ]);
+
+        Quiz_attempt::factory()->create([
+            'student_id' => $student->id,
+            'quiz_id' => $quiz->id,
+            'status' => 'submitted',
+            'score_percent' => 90.00,
+            'created_at' => '2024-02-15 10:00:00', // Outside range
+        ]);
+
+        // Test with date range that includes only the first attempt
+        $stats = $this->service->getCategoryCardStatistics('2024-01-01', '2024-01-31');
+
+        $this->assertCount(1, $stats);
+        $this->assertEquals(1, $stats[0]['total_attempts']);
+        $this->assertEquals(80.00, $stats[0]['highest_score']);
+    }
+
+    /** @test */
+    public function it_filters_category_detail_statistics_by_date_range()
+    {
+        $category = Category::factory()->create();
+        $quiz = Quiz::factory()->create(['category_id' => $category->id]);
+        $student = User::factory()->create(['role' => 'student']);
+
+        // Create attempts on different dates
+        Quiz_attempt::factory()->create([
+            'student_id' => $student->id,
+            'quiz_id' => $quiz->id,
+            'status' => 'submitted',
+            'score_percent' => 80.00,
+            'created_at' => '2024-01-15 10:00:00', // Within range
+        ]);
+
+        Quiz_attempt::factory()->create([
+            'student_id' => $student->id,
+            'quiz_id' => $quiz->id,
+            'status' => 'submitted',
+            'score_percent' => 90.00,
+            'created_at' => '2024-02-15 10:00:00', // Outside range
+        ]);
+
+        // Test with date range that includes only the first attempt
+        $detail = $this->service->getCategoryDetailStatistics($category->id, '2024-01-01', '2024-01-31');
+
+        $this->assertCount(1, $detail['users']);
+        $this->assertEquals(1, $detail['users'][0]['total_attempts']);
+        $this->assertEquals(80.00, $detail['users'][0]['best_score']);
+    }
 }

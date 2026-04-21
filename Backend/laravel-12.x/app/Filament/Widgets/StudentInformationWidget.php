@@ -15,7 +15,7 @@ class StudentInformationWidget extends BaseWidget
 
     protected static ?int $sort = 1;
 
-    protected static ?string $heading = 'Recent Students';
+    protected static ?string $heading = 'Recent Registered Students';
 
     public function table(Table $table): Table
     {
@@ -66,9 +66,10 @@ class StudentInformationWidget extends BaseWidget
                     ->label('Quiz Attempts')
                     ->sortable(),
                 TextColumn::make('created_at')
-                    ->label('Joined')
-                    ->dateTime('M d, Y')
+                    ->label('Registered')
+                    ->dateTime('M j, Y - g:i A')
                     ->sortable(),
             ]);
     }
 }
+

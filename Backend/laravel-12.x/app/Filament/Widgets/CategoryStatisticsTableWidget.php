@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class CategoryStatisticsTableWidget extends BaseWidget
 {
-    protected static ?string $heading = 'Category Statistics';
+    protected static ?string $heading = 'Category Overall Analytics';
 
     protected static bool $isLazy = false;
 

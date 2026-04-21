@@ -119,4 +119,21 @@ class AuthService {
       // 401 expected/handled, silently ignore
     }
   }
-}
+
+  /// Get all users (admin only)
+  /// 
+  /// Returns: List of users
+  /// Throws: ApiException
+  Future<List<Map<String, dynamic>>> getAllUsers() async {
+    try {
+      final response = await apiClient.dio.get('/admin/users');
+      final data = response.data;
+      return List<Map<String, dynamic>>.from(data['data'] ?? data);
+    } on DioException catch (e) {
+      throw apiClient.handleException(e);
+    }
+  }
+
+  }
+
+

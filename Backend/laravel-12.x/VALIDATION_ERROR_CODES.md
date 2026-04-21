@@ -55,6 +55,8 @@ class MyController extends Controller
 | import_rejected | 422 | File import validation |
 | file_invalid | 422 | File format error |
 | server_error | 500 | Unexpected error |
+| invalid_current_password | 422 | Current password verification failed |
+| password_change_failed | 500 | Password update error |
 
 ## Response Format
 

@@ -10,7 +10,7 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class StudentStatsWidget extends BaseWidget
 {
-    protected static ?string $heading = 'Student Statistics';
+    protected static ?string $heading = 'Student Overall Analytics';
 
     protected static ?int $sort = 2;
 
