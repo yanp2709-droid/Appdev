@@ -2,7 +2,6 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Widgets\AverageScoreCardWidget;
 use App\Filament\Widgets\CategoryPerformanceWidget;
 use App\Filament\Widgets\DashboardStatsOverview;
 use App\Filament\Widgets\RecentAttemptsWidget;
@@ -23,7 +22,6 @@ class AdminDashboard extends Dashboard
     {
         return [
             DashboardStatsOverview::class, // total students, total attempts
-            AverageScoreCardWidget::class, // school-year average score card
             StudentInformationWidget::class, // recent students
             CategoryPerformanceWidget::class, // category performance
         ];
