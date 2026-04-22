@@ -2,11 +2,16 @@
 
 namespace App\Filament\Widgets;
 
+use Filament\Forms\Components\DatePicker;
+use Filament\Schemas\Schema;
 use Filament\Widgets\ChartWidget;
+use Filament\Widgets\ChartWidget\Concerns\HasFiltersSchema;
 use Illuminate\Support\Facades\DB;
 
 class CategoryPerformanceWidget extends ChartWidget
 {
+    use HasFiltersSchema;
+
     protected ?string $heading = 'Category Performance';
 
     protected static ?int $sort = 4;
@@ -17,19 +22,38 @@ class CategoryPerformanceWidget extends ChartWidget
 
     protected int | string | array $columnSpan = 1;
 
+    protected bool $hasDeferredFilters = true;
+
+    public function filtersSchema(Schema $schema): Schema
+    {
+        return $schema->components([
+            DatePicker::make('date_from')
+                ->label('From')
+                ->default(now()->subDays(30)->toDateString()),
+            DatePicker::make('date_to')
+                ->label('To')
+                ->default(now()->toDateString()),
+        ]);
+    }
+
     protected function getData(): array
     {
+        $dateFrom = $this->filters['date_from'] ?? null;
+        $dateTo = $this->filters['date_to'] ?? null;
+
         $stats = DB::table('quiz_attempts')
             ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
             ->join('categories', 'quizzes.category_id', '=', 'categories.id')
+            ->when($dateFrom, fn ($query) => $query->whereDate('quiz_attempts.created_at', '>=', $dateFrom))
+            ->when($dateTo, fn ($query) => $query->whereDate('quiz_attempts.created_at', '<=', $dateTo))
             ->groupBy('categories.id', 'categories.name')
-            ->select('categories.name', DB::raw('AVG(quiz_attempts.score_percent) as average_score'))
-            ->orderByDesc('average_score')
+            ->select('categories.name', DB::raw('COUNT(quiz_attempts.id) as total_attempts'))
+            ->orderByDesc('total_attempts')
             ->limit(5)
             ->get();
 
         $labels = $stats->pluck('name')->toArray();
-        $scores = $stats->pluck('average_score')->map(fn ($score) => round($score ?? 0, 2))->toArray();
+        $scores = $stats->pluck('total_attempts')->map(fn ($count) => (int) ($count ?? 0))->toArray();
 
         // Handle empty data case
         if (empty($labels)) {
@@ -40,7 +64,7 @@ class CategoryPerformanceWidget extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Average Score %',
+                    'label' => 'Quiz Attempts',
                     'data' => $scores,
                     'backgroundColor' => [
                         '#f87171',
