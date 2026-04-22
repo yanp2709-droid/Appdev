@@ -17,8 +17,7 @@ class DashboardStatsOverview extends BaseWidget
     {
         $totalStudents = User::where('role', 'student')->count();
         $totalAttempts = Quiz_attempt::count();
-        $submittedAttempts = Quiz_attempt::count(); // Show all attempts
-        $averageScore = Quiz_attempt::avg('score_percent') ?? 0;
+        $submittedAttempts = Quiz_attempt::where('status', 'submitted')->count();
 
         return [
             Stat::make('Total Students', $totalStudents)
@@ -32,14 +31,9 @@ class DashboardStatsOverview extends BaseWidget
                 ->color('info'),
 
             Stat::make('Submitted Attempts', $submittedAttempts)
-                ->description('Total attempts')
+                ->description('Completed and graded attempts')
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('primary'),
-
-            Stat::make('Average Score', round($averageScore, 2) . '%')
-                ->description('Overall class average')
-                ->descriptionIcon('heroicon-m-chart-bar')
-                ->color('warning'),
         ];
     }
 }
