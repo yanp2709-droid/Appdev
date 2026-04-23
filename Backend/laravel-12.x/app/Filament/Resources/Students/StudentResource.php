@@ -4,10 +4,12 @@ namespace App\Filament\Resources\Students;
 
 use App\Filament\Resources\Students\Pages\ListStudents;
 use App\Filament\Resources\Students\Pages\ViewStudent;
+use App\Filament\Resources\Students\Pages\CreateStudent;
 use App\Models\User;
 use App\Models\Quiz_attempt;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Schema;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
@@ -130,7 +132,21 @@ class StudentResource extends Resource
     {
         return [
             'index' => ListStudents::route('/'),
+            'create' => CreateStudent::route('/create'),
             'view' => ViewStudent::route('/{record}'),
         ];
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->schema([
+            TextInput::make('first_name')->label('First Name')->required(),
+            TextInput::make('last_name')->label('Last Name')->required(),
+            TextInput::make('email')->label('Email Address')->email()->required(),
+            TextInput::make('section')->label('Section')->required(),
+            TextInput::make('student_id')->label('Student ID')->required(),
+            TextInput::make('year_level')->label('Year Level')->required(),
+            TextInput::make('course')->label('Course')->required(),
+        ]);
     }
 }
