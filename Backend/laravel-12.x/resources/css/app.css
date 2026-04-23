@@ -15,4 +15,16 @@
     .fi-section + .fi-section {
         @apply mt-3 !important;
     }
+
+    .fi-sidebar-item.fi-sidebar-item-has-url > .fi-sidebar-item-btn:hover {
+        @apply bg-gray-100 shadow-sm ring-1 ring-gray-200 dark:bg-white/5 dark:ring-white/10;
+    }
+
+    .fi-sidebar-item.fi-sidebar-item-has-url > .fi-sidebar-item-btn:hover > .fi-sidebar-item-label {
+        @apply text-gray-900 dark:text-white;
+    }
+
+    .fi-sidebar-item.fi-sidebar-item-has-url > .fi-sidebar-item-btn:hover > .fi-icon {
+        @apply text-primary-600 dark:text-primary-400;
+    }
 }

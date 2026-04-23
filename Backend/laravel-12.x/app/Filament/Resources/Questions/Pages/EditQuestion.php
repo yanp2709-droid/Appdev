@@ -11,6 +11,11 @@ class EditQuestion extends EditRecord
 {
     protected static string $resource = QuestionResource::class;
 
+    public function hasResourceBreadcrumbs(): bool
+    {
+        return false;
+    }
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $errors = Question::validatePayload($data, $this->record);

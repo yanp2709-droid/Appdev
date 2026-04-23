@@ -256,8 +256,8 @@
             <p class="quiz-hero-kicker">Overall Analytics</p>
             <h1 class="quiz-hero-title">Quiz Analytics Dashboard</h1>
             <p class="quiz-hero-copy">
-                Track each quiz's attempts, unique students, highest score, and lowest score in one place.
-                This page gives you a quick summary across all quizzes.
+                Track each quiz's attempt volume in one place. This page highlights the most attempted quiz,
+                the least attempted quiz, and the total number of students behind the data.
             </p>
         </div>
 
@@ -275,15 +275,9 @@
             </div>
 
             <div class="quiz-metric">
-                <span class="quiz-metric-label">Unique Students</span>
+                <span class="quiz-metric-label">Total Students</span>
                 <div class="quiz-metric-value">{{ number_format((int) ($overall['total_students'] ?? 0)) }}</div>
                 <div class="quiz-metric-note">Students registered in the platform</div>
-            </div>
-
-            <div class="quiz-metric">
-                <span class="quiz-metric-label">Completion Rate</span>
-                <div class="quiz-metric-value">{{ number_format((float) ($overall['completion_rate'] ?? 0), 2) }}%</div>
-                <div class="quiz-metric-note">Submitted attempts vs total attempts</div>
             </div>
         </div>
 
@@ -354,7 +348,6 @@
                             <th>Users Attempted</th>
                             <th>Highest Score</th>
                             <th>Lowest Score</th>
-                            <th>Completion Rate</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -363,13 +356,12 @@
                                 <td><strong>{{ $card['category_name'] }}</strong></td>
                                 <td>{{ number_format((int) ($card['total_attempts'] ?? 0)) }}</td>
                                 <td>{{ number_format((int) ($card['attempted_users'] ?? 0)) }}</td>
-                                <td>{{ number_format((float) ($card['highest_score'] ?? 0), 2) }}%</td>
-                                <td>{{ number_format((float) ($card['lowest_score'] ?? 0), 2) }}%</td>
-                                <td>{{ number_format((float) ($card['completion_rate'] ?? 0), 2) }}%</td>
+                                <td>{{ is_null($card['highest_score'] ?? null) ? 'None' : number_format((float) $card['highest_score'], 2) }}</td>
+                                <td>{{ is_null($card['lowest_score'] ?? null) ? 'None' : number_format((float) $card['lowest_score'], 2) }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td class="quiz-table-empty" colspan="6">No quiz attempt data is available yet.</td>
+                                <td class="quiz-table-empty" colspan="5">No quiz attempt data is available yet.</td>
                             </tr>
                         @endforelse
                     </tbody>

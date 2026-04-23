@@ -2,43 +2,158 @@
 
 namespace App\Filament\Resources\Questions\Pages;
 
+use App\Filament\Resources\Categories\CategoryResource;
 use App\Filament\Resources\Questions\QuestionResource;
 use App\Models\Question;
-use Illuminate\Validation\ValidationException;
-use Filament\Resources\Pages\CreateRecord;
-use Filament\Notifications\Notification;
 use Exception;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Validation\ValidationException;
 
 class CreateQuestion extends CreateRecord
 {
     protected static string $resource = QuestionResource::class;
 
+    public ?string $questionTypeOverride = null;
+
+    public array $preparedQuestionData = [];
+
+    public function createTrueFalse(): void
+    {
+        $this->questionTypeOverride = Question::TYPE_TRUE_FALSE;
+        $this->create();
+    }
+
+    public function createTrueFalseAnother(): void
+    {
+        $this->questionTypeOverride = Question::TYPE_TRUE_FALSE;
+        $this->create(another: true);
+    }
+
+    public function createMultipleChoice(): void
+    {
+        $this->questionTypeOverride = Question::TYPE_MCQ;
+        $this->create();
+    }
+
+    public function createMultipleChoiceAnother(): void
+    {
+        $this->questionTypeOverride = Question::TYPE_MCQ;
+        $this->create(another: true);
+    }
+
+    public function createMultiSelect(): void
+    {
+        $this->questionTypeOverride = Question::TYPE_MULTI_SELECT;
+        $this->create();
+    }
+
+    public function createMultiSelectAnother(): void
+    {
+        $this->questionTypeOverride = Question::TYPE_MULTI_SELECT;
+        $this->create(another: true);
+    }
+
+    public function createShortAnswer(): void
+    {
+        $this->questionTypeOverride = Question::TYPE_SHORT_ANSWER;
+        $this->create();
+    }
+
+    public function createShortAnswerAnother(): void
+    {
+        $this->questionTypeOverride = Question::TYPE_SHORT_ANSWER;
+        $this->create(another: true);
+    }
+
+    protected function getFormActions(): array
+    {
+        return [];
+    }
+
+    public function hasResourceBreadcrumbs(): bool
+    {
+        return false;
+    }
+
+    protected function preserveFormDataWhenCreatingAnother(array $data): array
+    {
+        $sectionKey = match ($this->questionTypeOverride) {
+            Question::TYPE_TRUE_FALSE => 'true_false',
+            Question::TYPE_MCQ => 'multiple_choice',
+            Question::TYPE_MULTI_SELECT => 'multi_select',
+            Question::TYPE_SHORT_ANSWER => 'short_answer',
+            default => null,
+        };
+
+        if ($sectionKey === null) {
+            return [];
+        }
+
+        $categoryId = data_get($data, $sectionKey . '.category_id');
+
+        if (empty($categoryId)) {
+            return [];
+        }
+
+        return [
+            $sectionKey => [
+                'category_id' => $categoryId,
+            ],
+        ];
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         try {
-            // Ensure category_id is set
-            if (empty($data['category_id'])) {
+            $questionType = $this->questionTypeOverride;
+            $sectionKey = match ($questionType) {
+                Question::TYPE_TRUE_FALSE => 'true_false',
+                Question::TYPE_MCQ => 'multiple_choice',
+                Question::TYPE_MULTI_SELECT => 'multi_select',
+                Question::TYPE_SHORT_ANSWER => 'short_answer',
+                default => null,
+            };
+
+            if ($questionType === null || $sectionKey === null) {
+                throw new Exception('Question type is required.');
+            }
+
+            $sectionData = $data[$sectionKey] ?? [];
+            $normalizedData = array_merge($data, $sectionData);
+
+            if (empty($normalizedData['category_id'])) {
                 throw new Exception('Category is required.');
             }
 
-            // Extract options before validation (options array should not be in Question fillable)
-            $options = $data['options'] ?? [];
-            
-            // Remove options from data as it's not a fillable field on Question
-            unset($data['options']);
-
-            // Validate the question data (without options)
-            $dataToValidate = $data;
-            $dataToValidate['options'] = $options; // Add back for validation
-            
-            $errors = Question::validatePayload($dataToValidate);
-
-            if (!empty($errors)) {
-                throw new Exception(implode(", ", $errors));
+            if (empty($normalizedData['points'])) {
+                $normalizedData['points'] = 5;
             }
 
-            // Just return the question fields (options will be handled in afterCreate)
-            return $data;
+            $normalizedData['question_type'] = $questionType;
+
+            if ($questionType === Question::TYPE_SHORT_ANSWER) {
+                $normalizedData['answer_key'] = $sectionData['answer_key'] ?? null;
+            } else {
+                $normalizedData['options'] = $sectionData['options'] ?? [];
+            }
+
+            unset(
+                $normalizedData['true_false'],
+                $normalizedData['multiple_choice'],
+                $normalizedData['multi_select'],
+                $normalizedData['short_answer'],
+            );
+
+            $errors = Question::validatePayload($normalizedData);
+
+            if (! empty($errors)) {
+                throw new Exception(implode(', ', $errors));
+            }
+
+            $this->preparedQuestionData = $normalizedData;
+
+            return $normalizedData;
         } catch (Exception $e) {
             throw ValidationException::withMessages([
                 'question_text' => [$e->getMessage()],
@@ -49,22 +164,24 @@ class CreateQuestion extends CreateRecord
     protected function afterCreate(): void
     {
         try {
-            $data = $this->form->getState();
+            $data = $this->preparedQuestionData;
             $options = $data['options'] ?? [];
 
-            if (!empty($options) && is_array($options)) {
+            if (! empty($options) && is_array($options)) {
                 foreach ($options as $index => $optionData) {
-                    if (!isset($optionData['option_text']) || empty($optionData['option_text'])) {
+                    if (! isset($optionData['option_text']) || empty($optionData['option_text'])) {
                         continue;
                     }
 
                     $this->record->options()->create([
                         'option_text' => $optionData['option_text'],
-                        'is_correct' => !empty($optionData['is_correct']),
+                        'is_correct' => ! empty($optionData['is_correct']),
                         'order_index' => $index,
                     ]);
                 }
             }
+
+            $this->preparedQuestionData = [];
         } catch (Exception $e) {
             Notification::make()
                 ->danger()
@@ -76,13 +193,13 @@ class CreateQuestion extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        $categoryId = $this->data['category_id'] ?? null;
+        $categoryId = $this->preparedQuestionData['category_id'] ?? $this->data['category_id'] ?? null;
+
         if ($categoryId) {
-            // Redirect to the category's question list
-            return \App\Filament\Resources\Categories\CategoryResource::getUrl('questions', ['record' => $categoryId]);
+            return CategoryResource::getUrl('questions', ['record' => $categoryId]);
         }
-        // Fallback to categories index if category_id is missing
-        return \App\Filament\Resources\Categories\CategoryResource::getUrl('index');
+
+        return CategoryResource::getUrl('index');
     }
 
     protected function getCreatedNotification(): ?Notification
@@ -93,4 +210,3 @@ class CreateQuestion extends CreateRecord
             ->body('Question created successfully!');
     }
 }
-
