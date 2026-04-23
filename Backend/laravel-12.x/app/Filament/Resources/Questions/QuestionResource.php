@@ -14,6 +14,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
+
 class QuestionResource extends Resource
 {
     protected static ?string $model = Question::class;
@@ -22,9 +23,15 @@ class QuestionResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'question_text';
 
-    protected static ?string $navigationLabel = 'Questions';
+    // Remove from navigation
+    protected static ?string $navigationLabel = null;
 
     protected static ?int $navigationSort = 2;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
 
     public static function form(Schema $schema): Schema
     {

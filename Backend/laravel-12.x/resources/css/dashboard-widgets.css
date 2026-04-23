@@ -1,0 +1,84 @@
+/* Dashboard Widget Actions Styles */
+
+.dashboard-widget-container {
+    @apply relative group;
+}
+
+.dashboard-widget-container:hover {
+    @apply shadow-lg transition-shadow duration-200;
+}
+
+.widget-actions {
+    @apply absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20;
+}
+
+.widget-action-btn {
+    @apply inline-flex items-center justify-center w-9 h-9 rounded-md text-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110;
+}
+
+.widget-action-btn.refresh {
+    @apply bg-blue-500 hover:bg-blue-600;
+}
+
+.widget-action-btn.delete {
+    @apply bg-red-500 hover:bg-red-600;
+}
+
+.widget-action-btn:active {
+    @apply scale-95;
+}
+
+.widget-action-icon {
+    @apply w-4 h-4;
+}
+
+/* Loading state */
+.widget-loading {
+    @apply opacity-50 pointer-events-none;
+}
+
+.widget-loading::after {
+    content: '';
+    @apply absolute inset-0 bg-white bg-opacity-20 rounded-lg;
+}
+
+/* Animation for widget removal */
+@keyframes widget-fade-out {
+    to {
+        @apply opacity-0 scale-95;
+    }
+}
+
+.widget-removing {
+    animation: widget-fade-out 0.3s ease forwards;
+}
+
+/* Notification toast styles */
+.dashboard-notification {
+    @apply fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50;
+}
+
+.dashboard-notification.success {
+    @apply bg-green-500 text-white;
+}
+
+.dashboard-notification.error {
+    @apply bg-red-500 text-white;
+}
+
+.dashboard-notification.info {
+    @apply bg-blue-500 text-white;
+}
+
+@keyframes slide-in {
+    from {
+        @apply translate-x-full opacity-0;
+    }
+    to {
+        @apply translate-x-0 opacity-100;
+    }
+}
+
+.dashboard-notification {
+    animation: slide-in 0.3s ease-out;
+}

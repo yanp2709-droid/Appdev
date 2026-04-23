@@ -26,4 +26,15 @@ class EditQuestion extends EditRecord
     {
         return [];
     }
+
+    protected function getRedirectUrl(): string
+    {
+        $categoryId = $this->data['category_id'] ?? $this->record->category_id ?? null;
+        if ($categoryId) {
+            // Redirect to the category's question list
+            return \App\Filament\Resources\Categories\CategoryResource::getUrl('questions', ['record' => $categoryId]);
+        }
+        // Fallback to categories index if category_id is missing
+        return \App\Filament\Resources\Categories\CategoryResource::getUrl('index');
+    }
 }

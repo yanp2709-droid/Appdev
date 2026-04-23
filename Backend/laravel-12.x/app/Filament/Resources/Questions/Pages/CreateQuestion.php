@@ -76,7 +76,13 @@ class CreateQuestion extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('index');
+        $categoryId = $this->data['category_id'] ?? null;
+        if ($categoryId) {
+            // Redirect to the category's question list
+            return \App\Filament\Resources\Categories\CategoryResource::getUrl('questions', ['record' => $categoryId]);
+        }
+        // Fallback to categories index if category_id is missing
+        return \App\Filament\Resources\Categories\CategoryResource::getUrl('index');
     }
 
     protected function getCreatedNotification(): ?Notification
