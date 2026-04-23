@@ -7,6 +7,7 @@ use App\Models\Category;
 use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Support\Facades\DB;
 
 class ListCategories extends ListRecords
 {
@@ -24,7 +25,24 @@ class ListCategories extends ListRecords
     public function getCategories(): \Illuminate\Support\Collection
     {
         return Category::query()
+            ->select('categories.*')
             ->withCount('questions')
+            ->selectSub(
+                DB::table('quiz_attempts')
+                    ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
+                    ->whereColumn('quizzes.category_id', 'categories.id')
+                    ->where('quiz_attempts.status', 'submitted')
+                    ->selectRaw('MAX(quiz_attempts.score_percent)'),
+                'highest_score'
+            )
+            ->selectSub(
+                DB::table('quiz_attempts')
+                    ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
+                    ->whereColumn('quizzes.category_id', 'categories.id')
+                    ->where('quiz_attempts.status', 'submitted')
+                    ->selectRaw('MIN(quiz_attempts.score_percent)'),
+                'lowest_score'
+            )
             ->orderBy('name')
             ->get();
     }
@@ -44,7 +62,7 @@ class ListCategories extends ListRecords
         ]);
 
         Notification::make()
-            ->title('Category disabled')
+            ->title('Quiz disabled')
             ->body("{$categoryName} is now hidden from students taking quizzes.")
             ->success()
             ->send();
@@ -65,7 +83,7 @@ class ListCategories extends ListRecords
         ]);
 
         Notification::make()
-            ->title('Category enabled')
+            ->title('Quiz enabled')
             ->body("{$categoryName} is visible to students taking quizzes again.")
             ->success()
             ->send();

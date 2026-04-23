@@ -111,15 +111,19 @@
             color: #065f46;
         }
 
+        .category-header {
+            margin-top: 54px;
+            position: relative;
+            z-index: 2;
+        }
+
         .category-title {
-            margin: 56px 0 18px;
+            margin: 14px 0 8px;
             text-align: center;
             font-size: 22px;
             line-height: 1.2;
             font-weight: 800;
             color: #0f172a;
-            position: relative;
-            z-index: 2;
         }
 
         .category-description {
@@ -138,7 +142,7 @@
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 16px;
-            max-width: 240px;
+            max-width: 100%;
             margin: 0 auto;
             position: relative;
             z-index: 2;
@@ -149,20 +153,30 @@
             border: 1px solid #d9e2ec;
             border-radius: 18px;
             box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-            padding: 14px 14px;
+            padding: 14px;
             min-height: 108px;
+        }
+
+        .category-stat-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
         }
 
         .category-stat-label {
             display: block;
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
             color: #475569;
-            margin-bottom: 10px;
+            line-height: 1.1;
         }
 
         .category-stat-value {
             display: block;
-            font-size: 17px;
+            font-size: 18px;
             font-weight: 800;
             color: #0f172a;
             line-height: 1.2;
@@ -289,6 +303,14 @@
                     aria-label="Open {{ $category->name }}"
                 ></a>
 
+                <div class="category-header">
+                    <div class="category-title">{{ $category->name }}</div>
+
+                    <div class="category-description">
+                        {{ $category->description ?: 'Open this quiz to view its question list.' }}
+                    </div>
+                </div>
+
                 <div class="category-actions">
                     <button
                         type="button"
@@ -308,21 +330,49 @@
                     </a>
                 </div>
 
-                <div class="category-title">{{ $category->name }}</div>
-
-                <div class="category-description">
-                    {{ $category->description ?: 'Open this category to view its question list.' }}
-                </div>
-
                 <div class="category-stats">
                     <div class="category-stat">
-                        <span class="category-stat-label">Questions</span>
+                        <div class="category-stat-head">
+                            <span class="category-stat-label">Questions</span>
+                        </div>
                         <span class="category-stat-value">{{ $category->questions_count }}</span>
                     </div>
 
                     <div class="category-stat">
-                        <span class="category-stat-label">Time Limit</span>
+                        <div class="category-stat-head">
+                            <span class="category-stat-label">Time Limit</span>
+                        </div>
                         <span class="category-stat-value">{{ $category->time_limit_minutes }} min</span>
+                    </div>
+
+                    <div class="category-stat">
+                        <div class="category-stat-head">
+                            <span class="category-stat-icon" aria-hidden="true" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M6 15l4-4 3 3 5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M14 7h4v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                            <span class="category-stat-label">Highest Score</span>
+                        </div>
+                        <span class="category-stat-value">
+                            {{ is_null($category->highest_score) ? 'N/A' : number_format((float) $category->highest_score, 2) . '%' }}
+                        </span>
+                    </div>
+
+                    <div class="category-stat">
+                        <div class="category-stat-head">
+                            <span class="category-stat-icon" aria-hidden="true" style="background: linear-gradient(135deg, #fb7185 0%, #ef4444 100%);">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M6 9l4 4 3-3 5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M14 17h4v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                            <span class="category-stat-label">Lowest Score</span>
+                        </div>
+                        <span class="category-stat-value">
+                            {{ is_null($category->lowest_score) ? 'N/A' : number_format((float) $category->lowest_score, 2) . '%' }}
+                        </span>
                     </div>
                 </div>
 
@@ -332,7 +382,7 @@
             </div>
         @empty
             <div class="category-empty">
-                No categories available yet.
+                No quizzes available yet.
             </div>
         @endforelse
     </div>
@@ -348,7 +398,7 @@
                 type="button"
                 class="status-modal-close"
                 x-on:click="statusModalOpen = false"
-                aria-label="Close category status confirmation"
+                aria-label="Close quiz status confirmation"
             >
                 ×
             </button>
@@ -366,8 +416,8 @@
             </h3>
 
             <p class="status-modal-copy" x-text="categoryAction === 'disable'
-                ? 'This category will be hidden from students when taking quizzes, but existing history will stay available.'
-                : 'This category will be visible to students when taking quizzes again.'">
+                ? 'This quiz will be hidden from students when taking quizzes, but existing history will stay available.'
+                : 'This quiz will be visible to students when taking quizzes again.'">
             </p>
 
             <div class="status-modal-actions">

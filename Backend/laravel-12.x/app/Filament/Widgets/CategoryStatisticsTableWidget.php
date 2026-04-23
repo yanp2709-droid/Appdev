@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class CategoryStatisticsTableWidget extends BaseWidget
 {
-    protected static ?string $heading = 'Category Overall Analytics';
+    protected static ?string $heading = 'Quiz Overall Analytics';
 
     protected static bool $isLazy = false;
 
@@ -23,7 +23,7 @@ class CategoryStatisticsTableWidget extends BaseWidget
             ->query($this->getTableQuery())
             ->columns([
                 TextColumn::make('name')
-                    ->label('Quiz Category')
+                    ->label('Quiz')
                     ->searchable()
                     ->sortable(),
 

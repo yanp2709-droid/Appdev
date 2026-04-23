@@ -1,464 +1,381 @@
 <x-filament-panels::page>
     @php
-        $cards = $this->getCategoryCards();
-        $detail = $this->getSelectedCategoryDetail();
-        $summary = $detail['summary'] ?? null;
-        $users = collect($detail['users'] ?? []);
-        $highestScorer = $detail['highest_scorer'] ?? null;
-        $lowestScorer = $detail['lowest_scorer'] ?? null;
-        $maxScore = max(1, (float) $users->max('best_score'));
+        $quizCards = collect($this->getQuizCards());
+        $overall = $this->getOverallQuizSummary();
+        $maxAttempts = max(1, (int) $quizCards->max('total_attempts'));
+        $topQuiz = $quizCards->sortByDesc('total_attempts')->first();
+        $leastQuiz = $quizCards->sortBy('total_attempts')->first();
     @endphp
 
     <style>
-        .stats-shell {
+        .quiz-analytics-shell {
             display: flex;
             flex-direction: column;
             gap: 24px;
         }
 
-        .stats-card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 16px;
-        }
-
-        .stats-category-card {
+        .quiz-hero {
             border: 1px solid #d7dde5;
-            border-radius: 18px;
-            background: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
-            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
-            padding: 18px;
-            text-align: left;
-            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-            cursor: pointer;
+            border-radius: 24px;
+            padding: 28px;
+            background:
+                radial-gradient(circle at top right, rgba(245, 158, 11, 0.18), transparent 36%),
+                linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.06);
         }
 
-        .stats-category-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.10);
-            border-color: #f59e0b;
-        }
-
-        .stats-category-card.is-active {
-            border-color: #d97706;
-            background: linear-gradient(180deg, #fff8eb 0%, #fff2d6 100%);
-            box-shadow: 0 14px 32px rgba(217, 119, 6, 0.16);
-        }
-
-        .stats-card-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 14px;
-        }
-
-        .stats-chip {
-            background: #111827;
-            color: #fff;
-            font-size: 12px;
-            padding: 6px 10px;
-            border-radius: 999px;
-            white-space: nowrap;
-        }
-
-        .stats-category-title {
-            margin: 0;
-            font-size: 20px;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        .stats-category-subtitle {
-            margin: 6px 0 0;
-            color: #475569;
-            font-size: 14px;
-        }
-
-        .stats-metric-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-        }
-
-        .stats-mini-card {
-            border-radius: 14px;
-            padding: 12px;
-            background: #fff;
-            border: 1px solid #e5e7eb;
-        }
-
-        .stats-mini-label {
-            display: block;
-            color: #64748b;
-            font-size: 12px;
-            margin-bottom: 4px;
-        }
-
-        .stats-mini-value {
-            color: #0f172a;
-            font-size: 22px;
-            font-weight: 700;
-            line-height: 1.1;
-        }
-
-        .stats-detail-shell {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        .stats-summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 14px;
-        }
-
-        .stats-summary-card {
-            border-radius: 16px;
-            padding: 16px;
-            border: 1px solid transparent;
-        }
-
-        .stats-summary-card.high { background: #ecfdf5; border-color: #a7f3d0; }
-        .stats-summary-card.low { background: #fff1f2; border-color: #fecdd3; }
-        .stats-summary-card.complete { background: #eff6ff; border-color: #bfdbfe; }
-        .stats-summary-card.progress { background: #fffbeb; border-color: #fde68a; }
-        .stats-summary-card.expired { background: #f3f4f6; border-color: #d1d5db; }
-
-        .stats-layout {
-            display: grid;
-            grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
-            gap: 20px;
-        }
-
-        .stats-panel {
-            border: 1px solid #d7dde5;
-            border-radius: 20px;
-            background: #fff;
-            padding: 20px;
-            box-shadow: 0 12px 26px rgba(15, 23, 42, 0.06);
-        }
-
-        .stats-panel-title {
-            margin: 0 0 4px;
-            font-size: 18px;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        .stats-panel-subtitle {
-            margin: 0 0 18px;
-            color: #64748b;
-            font-size: 14px;
-        }
-
-        .stats-chart {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .stats-bar-row {
-            display: grid;
-            grid-template-columns: 150px minmax(0, 1fr) 72px;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .stats-bar-name {
-            font-size: 14px;
-            font-weight: 600;
-            color: #1e293b;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .stats-bar-track {
-            height: 18px;
-            border-radius: 999px;
-            background: #e5e7eb;
-            overflow: hidden;
-        }
-
-        .stats-bar-fill {
-            height: 100%;
-            border-radius: 999px;
-            background: linear-gradient(90deg, #f59e0b 0%, #ea580c 100%);
-        }
-
-        .stats-bar-score {
-            font-size: 13px;
-            font-weight: 700;
-            color: #334155;
-            text-align: right;
-        }
-
-        .stats-scorer-stack {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .stats-scorer-card {
-            border-radius: 18px;
-            padding: 18px;
-            border: 1px solid transparent;
-        }
-
-        .stats-scorer-card.high { background: #ecfdf5; border-color: #86efac; }
-        .stats-scorer-card.low { background: #fff1f2; border-color: #fda4af; }
-
-        .stats-scorer-label {
+        .quiz-hero-kicker {
             margin: 0 0 8px;
+            color: #b45309;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .quiz-hero-title {
+            margin: 0;
+            font-size: clamp(26px, 3vw, 38px);
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .quiz-hero-copy {
+            margin: 10px 0 0;
+            max-width: 850px;
+            color: #475569;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .quiz-metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 16px;
+        }
+
+        .quiz-metric {
+            border-radius: 20px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            padding: 18px;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.05);
+        }
+
+        .quiz-metric-label {
+            display: block;
+            margin-bottom: 10px;
+            color: #64748b;
             font-size: 13px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.04em;
         }
 
-        .stats-scorer-name {
-            margin: 0;
-            font-size: 22px;
-            font-weight: 700;
+        .quiz-metric-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.05;
         }
 
-        .stats-scorer-email {
-            margin: 6px 0 12px;
-            color: #475569;
+        .quiz-metric-note {
+            margin-top: 8px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .quiz-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.9fr);
+            gap: 20px;
+        }
+
+        .quiz-panel {
+            border: 1px solid #d7dde5;
+            border-radius: 22px;
+            background: #fff;
+            padding: 22px;
+            box-shadow: 0 12px 26px rgba(15, 23, 42, 0.06);
+        }
+
+        .quiz-panel-title {
+            margin: 0 0 4px;
+            font-size: 18px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .quiz-panel-subtitle {
+            margin: 0 0 18px;
+            color: #64748b;
             font-size: 14px;
         }
 
-        .stats-scorer-value {
-            font-size: 34px;
-            font-weight: 800;
-            line-height: 1;
+        .quiz-bar-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
         }
 
-        .stats-table-wrap {
+        .quiz-bar-row {
+            display: grid;
+            grid-template-columns: 170px minmax(0, 1fr) 78px;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .quiz-bar-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .quiz-bar-track {
+            height: 18px;
+            border-radius: 999px;
+            background: #e5e7eb;
+            overflow: hidden;
+        }
+
+        .quiz-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #f59e0b 0%, #ea580c 100%);
+        }
+
+        .quiz-bar-value {
+            font-size: 13px;
+            font-weight: 800;
+            color: #334155;
+            text-align: right;
+        }
+
+        .quiz-split {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .quiz-summary-card {
+            border-radius: 18px;
+            padding: 16px;
+            border: 1px solid transparent;
+        }
+
+        .quiz-summary-card.high {
+            background: #ecfdf5;
+            border-color: #bbf7d0;
+        }
+
+        .quiz-summary-card.low {
+            background: #fff1f2;
+            border-color: #fecdd3;
+        }
+
+        .quiz-summary-card.users {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+
+        .quiz-summary-card.attempts {
+            background: #fffbeb;
+            border-color: #fde68a;
+        }
+
+        .quiz-summary-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #475569;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .quiz-summary-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.05;
+        }
+
+        .quiz-table-wrap {
             overflow-x: auto;
         }
 
-        .stats-table {
+        .quiz-table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        .stats-table th,
-        .stats-table td {
+        .quiz-table th,
+        .quiz-table td {
             padding: 12px 14px;
             border-bottom: 1px solid #e5e7eb;
             text-align: left;
             font-size: 14px;
+            vertical-align: top;
         }
 
-        .stats-table th {
+        .quiz-table th {
             background: #f8fafc;
             color: #475569;
-            font-weight: 700;
+            font-weight: 800;
         }
 
-        .stats-table td {
+        .quiz-table td {
             color: #0f172a;
         }
 
+        .quiz-table-empty {
+            text-align: center;
+            color: #64748b;
+        }
+
         @media (max-width: 1024px) {
-            .stats-layout {
+            .quiz-layout {
                 grid-template-columns: 1fr;
             }
 
-            .stats-bar-row {
+            .quiz-bar-row {
                 grid-template-columns: 1fr;
             }
 
-            .stats-bar-score {
+            .quiz-bar-value {
                 text-align: left;
             }
         }
     </style>
 
-    <div class="stats-shell">
-        <div class="stats-card-grid">
-            @forelse ($cards as $card)
-                <button
-                    type="button"
-                    wire:click="selectCategory({{ $card['category_id'] }})"
-                    class="stats-category-card {{ $this->selectedCategoryId === $card['category_id'] ? 'is-active' : '' }}"
-                >
-                    <div class="stats-card-head">
-                        <div>
-                            <p class="stats-category-title">{{ $card['category_name'] }}</p>
-                            <p class="stats-category-subtitle">
-                                {{ $card['attempted_users'] }} users attempted this category
-                            </p>
-                        </div>
-
-                        <span class="stats-chip">
-                            {{ $card['total_attempts'] }} attempts
-                        </span>
-                    </div>
-
-                    <div class="stats-metric-grid">
-                        <div class="stats-mini-card">
-                            <span class="stats-mini-label">High Score</span>
-                            <span class="stats-mini-value">{{ number_format($card['highest_score'], 2) }}%</span>
-                        </div>
-                        <div class="stats-mini-card">
-                            <span class="stats-mini-label">Lowest Score</span>
-                            <span class="stats-mini-value">{{ number_format($card['lowest_score'], 2) }}%</span>
-                        </div>
-                        <div class="stats-mini-card">
-                            <span class="stats-mini-label">Completion</span>
-                            <span class="stats-mini-value">{{ number_format($card['completion_rate'], 2) }}%</span>
-                        </div>
-                        <div class="stats-mini-card">
-                            <span class="stats-mini-label">In Progress / Expired</span>
-                            <span class="stats-mini-value">{{ $card['in_progress_attempts'] }} / {{ $card['expired_attempts'] }}</span>
-                        </div>
-                    </div>
-                </button>
-            @empty
-                <div class="stats-panel">
-                    No category attempts found yet.
-                </div>
-            @endforelse
+    <div class="quiz-analytics-shell">
+        <div class="quiz-hero">
+            <p class="quiz-hero-kicker">Overall Analytics</p>
+            <h1 class="quiz-hero-title">Quiz Analytics Dashboard</h1>
+            <p class="quiz-hero-copy">
+                Track each quiz's attempts, unique students, highest score, and lowest score in one place.
+                This page gives you a quick summary across all quizzes.
+            </p>
         </div>
 
-        @if ($summary)
-            <x-filament::section>
-                <x-slot name="heading">
-                    {{ $summary['category_name'] }} Details
-                </x-slot>
+        <div class="quiz-metric-grid">
+            <div class="quiz-metric">
+                <span class="quiz-metric-label">Total Quizzes</span>
+                <div class="quiz-metric-value">{{ \App\Models\Category::count() }}</div>
+                <div class="quiz-metric-note">Quiz topics created in the system</div>
+            </div>
 
-                <x-slot name="description">
-                    Category performance chart, highest and lowest scorers, and the users who attempted this category.
-                </x-slot>
+            <div class="quiz-metric">
+                <span class="quiz-metric-label">Total Attempts</span>
+                <div class="quiz-metric-value">{{ number_format((int) ($overall['total_attempts'] ?? 0)) }}</div>
+                <div class="quiz-metric-note">Submitted, in progress, and expired attempts</div>
+            </div>
 
-                <div class="stats-detail-shell">
-                    <div class="stats-summary-grid">
-                        <div class="stats-summary-card high">
-                            <span class="stats-mini-label">High Score</span>
-                            <div class="stats-mini-value">{{ number_format($summary['highest_score'], 2) }}%</div>
+            <div class="quiz-metric">
+                <span class="quiz-metric-label">Unique Students</span>
+                <div class="quiz-metric-value">{{ number_format((int) ($overall['total_students'] ?? 0)) }}</div>
+                <div class="quiz-metric-note">Students registered in the platform</div>
+            </div>
+
+            <div class="quiz-metric">
+                <span class="quiz-metric-label">Completion Rate</span>
+                <div class="quiz-metric-value">{{ number_format((float) ($overall['completion_rate'] ?? 0), 2) }}%</div>
+                <div class="quiz-metric-note">Submitted attempts vs total attempts</div>
+            </div>
+        </div>
+
+        <div class="quiz-layout">
+            <div class="quiz-panel">
+                <h2 class="quiz-panel-title">Attempts by Quiz</h2>
+                <p class="quiz-panel-subtitle">The bars below show how many attempts each quiz received.</p>
+
+                <div class="quiz-bar-list">
+                    @forelse ($quizCards as $card)
+                        @php
+                            $barWidth = max(8, (($card['total_attempts'] ?? 0) / $maxAttempts) * 100);
+                        @endphp
+
+                        <div class="quiz-bar-row">
+                            <div class="quiz-bar-name">{{ $card['category_name'] }}</div>
+                            <div class="quiz-bar-track">
+                                <div class="quiz-bar-fill" style="width: {{ $barWidth }}%;"></div>
+                            </div>
+                            <div class="quiz-bar-value">{{ number_format((int) ($card['total_attempts'] ?? 0)) }}</div>
                         </div>
-                        <div class="stats-summary-card low">
-                            <span class="stats-mini-label">Lowest Score</span>
-                            <div class="stats-mini-value">{{ number_format($summary['lowest_score'], 2) }}%</div>
+                    @empty
+                        <p class="quiz-panel-subtitle">No quiz attempts found yet.</p>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="quiz-panel">
+                <h2 class="quiz-panel-title">Quick Highlights</h2>
+                <p class="quiz-panel-subtitle">A few at-a-glance widgets from the overall quiz data.</p>
+
+                <div class="quiz-split">
+                    <div class="quiz-summary-card users">
+                        <span class="quiz-summary-label">Most Attempted Quiz</span>
+                        <div class="quiz-summary-value">
+                            {{ $topQuiz['category_name'] ?? 'N/A' }}
                         </div>
-                        <div class="stats-summary-card complete">
-                            <span class="stats-mini-label">Completion Rate</span>
-                            <div class="stats-mini-value">{{ number_format($summary['completion_rate'], 2) }}%</div>
-                        </div>
-                        <div class="stats-summary-card progress">
-                            <span class="stats-mini-label">In Progress</span>
-                            <div class="stats-mini-value">{{ $summary['in_progress_attempts'] }}</div>
-                        </div>
-                        <div class="stats-summary-card expired">
-                            <span class="stats-mini-label">Expired Attempts</span>
-                            <div class="stats-mini-value">{{ $summary['expired_attempts'] }}</div>
+                        <div class="quiz-metric-note">
+                            {{ number_format((int) ($topQuiz['total_attempts'] ?? 0)) }} total attempts
                         </div>
                     </div>
 
-                    <div class="stats-layout">
-                        <div class="stats-panel">
-                            <div>
-                                <div>
-                                    <h3 class="stats-panel-title">User Score Chart</h3>
-                                    <p class="stats-panel-subtitle">Best submitted score for each user in this category.</p>
-                                </div>
-                            </div>
-
-                            <div class="stats-chart">
-                                @forelse ($users as $user)
-                                    @php
-                                        $width = $user['best_score'] > 0 ? max(8, ($user['best_score'] / $maxScore) * 100) : 8;
-                                    @endphp
-
-                                    <div class="stats-bar-row">
-                                        <div class="stats-bar-name">{{ $user['student_name'] }}</div>
-                                        <div class="stats-bar-track">
-                                            <div
-                                                class="stats-bar-fill"
-                                                style="width: {{ $width }}%;"
-                                            ></div>
-                                        </div>
-                                        <div class="stats-bar-score">{{ number_format($user['best_score'], 2) }}%</div>
-                                    </div>
-                                @empty
-                                    <p class="stats-panel-subtitle">No users attempted this category yet.</p>
-                                @endforelse
-                            </div>
+                    <div class="quiz-summary-card attempts">
+                        <span class="quiz-summary-label">Less Attempted Quiz</span>
+                        <div class="quiz-summary-value">
+                            {{ $leastQuiz['category_name'] ?? 'N/A' }}
                         </div>
-
-                        <div class="stats-scorer-stack">
-                            <div class="stats-scorer-card high">
-                                <p class="stats-scorer-label">Highest Scorer</p>
-                                @if ($highestScorer)
-                                    <p class="stats-scorer-name">{{ $highestScorer['student_name'] }}</p>
-                                    <p class="stats-scorer-email">{{ $highestScorer['student_email'] }}</p>
-                                    <div class="stats-scorer-value">{{ number_format($highestScorer['best_score'], 2) }}%</div>
-                                @else
-                                    <p class="stats-panel-subtitle">No submitted score yet.</p>
-                                @endif
-                            </div>
-
-                            <div class="stats-scorer-card low">
-                                <p class="stats-scorer-label">Lowest Scorer</p>
-                                @if ($lowestScorer)
-                                    <p class="stats-scorer-name">{{ $lowestScorer['student_name'] }}</p>
-                                    <p class="stats-scorer-email">{{ $lowestScorer['student_email'] }}</p>
-                                    <div class="stats-scorer-value">{{ number_format($lowestScorer['lowest_score'], 2) }}%</div>
-                                @else
-                                    <p class="stats-panel-subtitle">No submitted score yet.</p>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="stats-panel">
-                        <div style="margin-bottom: 16px;">
-                            <h3 class="stats-panel-title">Users Who Attempted This Category</h3>
-                        </div>
-
-                        <div class="stats-table-wrap">
-                            <table class="stats-table">
-                                <thead>
-                                    <tr>
-                                        <th>Student</th>
-                                        <th>Email</th>
-                                        <th>Attempts</th>
-                                        <th>Submitted</th>
-                                        <th>In Progress</th>
-                                        <th>Expired</th>
-                                        <th>Best Score</th>
-                                        <th>Lowest Score</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse ($users as $user)
-                                        <tr>
-                                            <td><strong>{{ $user['student_name'] }}</strong></td>
-                                            <td>{{ $user['student_email'] }}</td>
-                                            <td>{{ $user['total_attempts'] }}</td>
-                                            <td>{{ $user['submitted_attempts'] }}</td>
-                                            <td>{{ $user['in_progress_attempts'] }}</td>
-                                            <td>{{ $user['expired_attempts'] }}</td>
-                                            <td>{{ number_format($user['best_score'], 2) }}%</td>
-                                            <td>{{ number_format($user['lowest_score'], 2) }}%</td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="8" style="text-align: center; color: #64748b;">
-                                                No users attempted this category yet.
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
+                        <div class="quiz-metric-note">
+                            {{ number_format((int) ($leastQuiz['total_attempts'] ?? 0)) }} total attempts
                         </div>
                     </div>
                 </div>
-            </x-filament::section>
-        @endif
+            </div>
+        </div>
+
+        <div class="quiz-panel">
+            <h2 class="quiz-panel-title">Quiz Score Table</h2>
+            <p class="quiz-panel-subtitle">
+                This table groups the key analytics for each quiz: attempts, users who tried it, and the best and worst scores.
+            </p>
+
+            <div class="quiz-table-wrap">
+                <table class="quiz-table">
+                    <thead>
+                        <tr>
+                            <th>Quiz</th>
+                            <th>Attempts</th>
+                            <th>Users Attempted</th>
+                            <th>Highest Score</th>
+                            <th>Lowest Score</th>
+                            <th>Completion Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($quizCards as $card)
+                            <tr>
+                                <td><strong>{{ $card['category_name'] }}</strong></td>
+                                <td>{{ number_format((int) ($card['total_attempts'] ?? 0)) }}</td>
+                                <td>{{ number_format((int) ($card['attempted_users'] ?? 0)) }}</td>
+                                <td>{{ number_format((float) ($card['highest_score'] ?? 0), 2) }}%</td>
+                                <td>{{ number_format((float) ($card['lowest_score'] ?? 0), 2) }}%</td>
+                                <td>{{ number_format((float) ($card['completion_rate'] ?? 0), 2) }}%</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td class="quiz-table-empty" colspan="6">No quiz attempt data is available yet.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 </x-filament-panels::page>

@@ -12,7 +12,7 @@ class CategoryPerformanceWidget extends ChartWidget
 {
     use HasFiltersSchema;
 
-    protected ?string $heading = 'Category Performance';
+    protected ?string $heading = 'Quiz Performance';
 
     protected static ?int $sort = 4;
 

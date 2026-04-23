@@ -18,33 +18,13 @@ class Statistics extends Page
 
     protected string $view = 'filament.pages.statistics';
 
-    public ?int $selectedCategoryId = null;
-
-    public function mount(): void
-    {
-        $cards = $this->getCategoryCards();
-
-        if (($this->selectedCategoryId === null) && filled($cards)) {
-            $this->selectedCategoryId = $cards[0]['category_id'];
-        }
-    }
-
-    public function selectCategory(int $categoryId): void
-    {
-        $this->selectedCategoryId = $categoryId;
-    }
-
-    public function getCategoryCards(): array
+    public function getQuizCards(): array
     {
         return app(QuizStatisticsService::class)->getCategoryCardStatistics();
     }
 
-    public function getSelectedCategoryDetail(): array
+    public function getOverallQuizSummary(): array
     {
-        if (! $this->selectedCategoryId) {
-            return [];
-        }
-
-        return app(QuizStatisticsService::class)->getCategoryDetailStatistics($this->selectedCategoryId);
+        return app(QuizStatisticsService::class)->getOverallStatistics();
     }
 }

@@ -15,7 +15,7 @@ class CategoriesTable
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->label('Category Name')
+                    ->label('Quiz Name')
                     ->searchable()
                     ->sortable(),
 
@@ -40,7 +40,7 @@ class CategoriesTable
             ->filters([
                 TernaryFilter::make('is_published')
                     ->label('Published Status')
-                    ->placeholder('All categories')
+                    ->placeholder('All quizzes')
                     ->trueLabel('Published only')
                     ->falseLabel('Unpublished only'),
             ])

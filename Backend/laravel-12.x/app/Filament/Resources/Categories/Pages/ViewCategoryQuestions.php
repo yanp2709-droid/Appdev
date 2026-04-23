@@ -22,7 +22,7 @@ class ViewCategoryQuestions extends ViewRecord
 
     public function getTitle(): string
     {
-        return $this->getRecord()->name . ' Questions';
+        return $this->getRecord()->name . ' Quiz Questions';
     }
 
     protected function getHeaderActions(): array
