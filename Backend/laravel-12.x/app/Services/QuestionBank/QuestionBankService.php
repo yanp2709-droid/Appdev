@@ -24,7 +24,7 @@ class QuestionBankService
 
     private const QUESTION_TYPES = ['mcq', 'multiple_choice', 'tf', 'true_false', 'multi_select', 'short_answer'];
 
-    public function importCsv(UploadedFile|string $file): array
+    public function importCsv(UploadedFile|string $file, ?int $categoryId = null): array
     {
         $path = $this->resolveFilePath($file);
         if ($path === null) {
@@ -97,7 +97,7 @@ class QuestionBankService
             }
 
             $payload = $this->mapRowToPayload($row, $headerMap);
-            $result = $this->validateAndNormalizeRow($payload, $rowNumber);
+            $result = $this->validateAndNormalizeRow($payload, $rowNumber, $categoryId);
 
             if (!empty($result['errors'])) {
                 $errors = array_merge($errors, $result['errors']);
@@ -118,7 +118,7 @@ class QuestionBankService
         return $this->buildImportResponse($imported, $errors);
     }
 
-    public function importJsonFromFile(UploadedFile|string $file): array
+    public function importJsonFromFile(UploadedFile|string $file, ?int $categoryId = null): array
     {
         $path = $this->resolveFilePath($file);
         if ($path === null) {
@@ -138,10 +138,10 @@ class QuestionBankService
         $decoded = json_decode($raw, true);
         $questions = $decoded['questions'] ?? (is_array($decoded) ? $decoded : null);
 
-        return $this->importJsonPayload($questions);
+        return $this->importJsonPayload($questions, $categoryId);
     }
 
-    public function importJsonPayload($questions): array
+    public function importJsonPayload($questions, ?int $categoryId = null): array
     {
         if (!is_array($questions)) {
             return [
@@ -166,7 +166,7 @@ class QuestionBankService
                 continue;
             }
 
-            $result = $this->validateAndNormalizeRow($payload, $rowNumber);
+            $result = $this->validateAndNormalizeRow($payload, $rowNumber, $categoryId);
             if (!empty($result['errors'])) {
                 $errors = array_merge($errors, $result['errors']);
                 continue;
@@ -184,9 +184,11 @@ class QuestionBankService
         return $this->buildImportResponse($imported, $errors);
     }
 
-    public function exportJson(): array
+    public function exportJson(?int $categoryId = null): array
     {
-        $questions = Question::with('options', 'category')->get();
+        $questions = Question::with('options', 'category')
+            ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId))
+            ->get();
 
         return [
             'questions' => $questions->map(function (Question $question) {
@@ -195,9 +197,11 @@ class QuestionBankService
         ];
     }
 
-    public function exportCsv(): StreamedResponse
+    public function exportCsv(?int $categoryId = null): StreamedResponse
     {
-        $questions = Question::with('options', 'category')->get();
+        $questions = Question::with('options', 'category')
+            ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId))
+            ->get();
 
         $callback = function () use ($questions) {
             $handle = fopen('php://output', 'w');
@@ -267,7 +271,7 @@ class QuestionBankService
         return true;
     }
 
-    private function validateAndNormalizeRow(array $payload, int $rowNumber): array
+    private function validateAndNormalizeRow(array $payload, int $rowNumber, ?int $forcedCategoryId = null): array
     {
         $errors = [];
 
@@ -276,9 +280,14 @@ class QuestionBankService
             $errors[] = $this->rowError($rowNumber, 'question_text', 'Question text is required.');
         }
 
-        $categoryValue = $payload['category'] ?? null;
-        $categoryId = $this->resolveCategoryId($categoryValue);
+        $categoryId = $forcedCategoryId;
         if ($categoryId === null) {
+            $categoryValue = $payload['category'] ?? null;
+            $categoryId = $this->resolveCategoryId($categoryValue);
+            if ($categoryId === null) {
+                $errors[] = $this->rowError($rowNumber, 'category', 'Category does not exist.');
+            }
+        } elseif (! Category::whereKey($categoryId)->exists()) {
             $errors[] = $this->rowError($rowNumber, 'category', 'Category does not exist.');
         }
 

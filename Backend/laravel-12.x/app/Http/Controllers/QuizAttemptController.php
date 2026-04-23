@@ -104,15 +104,6 @@ class QuizAttemptController extends Controller
             );
         }
 
-        if ($attemptType === self::TYPE_GRADED && !$this->hasAvailableGradedAttempt($user->id, $quiz->id)) {
-            return $this->error(
-                'graded_attempt_already_used',
-                'You have already used your graded attempt for this quiz. You may still continue in practice mode.',
-                403,
-                $this->attemptAvailabilityPayload($user->id, $quiz->id)
-            );
-        }
-
         if ($attemptType === self::TYPE_GRADED && !empty($quiz->max_attempts)) {
             $attemptCount = Quiz_attempt::where('student_id', $user->id)
                 ->where('quiz_id', $quiz->id)
@@ -126,6 +117,15 @@ class QuizAttemptController extends Controller
                     403
                 );
             }
+        }
+
+        if ($attemptType === self::TYPE_GRADED && !$this->hasAvailableGradedAttempt($user->id, $quiz->id)) {
+            return $this->error(
+                'graded_attempt_already_used',
+                'You have already used your graded attempt for this quiz. You may still continue in practice mode.',
+                403,
+                $this->attemptAvailabilityPayload($user->id, $quiz->id)
+            );
         }
 
         $durationMinutes = (int) ($quiz->duration_minutes ?? self::DEFAULT_DURATION_MINUTES);

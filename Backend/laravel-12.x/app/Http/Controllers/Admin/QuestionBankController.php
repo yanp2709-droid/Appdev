@@ -18,7 +18,7 @@ class QuestionBankController extends Controller
             ],
         ]);
 
-        $result = $service->importCsv($request->file('file'));
+        $result = $service->importCsv($request->file('file'), $request->integer('category_id') ?: null);
 
         // If service detected that file is not a valid CSV, return 422
         if ($result['rejected'] && isset($result['errors'])) {
@@ -46,11 +46,11 @@ class QuestionBankController extends Controller
                 ],
             ]);
 
-            $result = $service->importJsonFromFile($request->file('file'));
+            $result = $service->importJsonFromFile($request->file('file'), $request->integer('category_id') ?: null);
         } else {
             $payload = $request->json()->all();
             $questions = $payload['questions'] ?? (is_array($payload) ? $payload : null);
-            $result = $service->importJsonPayload($questions);
+            $result = $service->importJsonPayload($questions, $request->integer('category_id') ?: null);
         }
 
         return response()->json($result);
@@ -58,11 +58,11 @@ class QuestionBankController extends Controller
 
     public function exportJson(QuestionBankService $service)
     {
-        return response()->json($service->exportJson());
+        return response()->json($service->exportJson(request()->integer('category_id') ?: null));
     }
 
     public function exportCsv(QuestionBankService $service)
     {
-        return $service->exportCsv();
+        return $service->exportCsv(request()->integer('category_id') ?: null);
     }
 }

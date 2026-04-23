@@ -18,6 +18,7 @@ class QuestionImportExportTest extends TestCase
     private User $teacher;
     private User $student;
     private Category $category;
+    private Category $otherCategory;
 
     protected function setUp(): void
     {
@@ -27,6 +28,7 @@ class QuestionImportExportTest extends TestCase
         $this->teacher = User::factory()->teacher()->create();
         $this->student = User::factory()->student()->create();
         $this->category = Category::factory()->create(['name' => 'Mathematics']);
+        $this->otherCategory = Category::factory()->create(['name' => 'Science']);
     }
 
     /**
@@ -67,6 +69,28 @@ class QuestionImportExportTest extends TestCase
         $this->assertNotEmpty($response->json('questions'));
     }
 
+    public function test_admin_can_export_json_for_one_category_only()
+    {
+        Question::factory()->create([
+            'category_id' => $this->category->id,
+            'question_text' => 'Math question',
+            'question_type' => 'mcq',
+        ]);
+
+        Question::factory()->create([
+            'category_id' => $this->otherCategory->id,
+            'question_text' => 'Science question',
+            'question_type' => 'mcq',
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->getJson('/api/admin/questions/export/json?category_id=' . $this->category->id);
+
+        $response->assertStatus(200);
+        $this->assertCount(1, $response->json('questions'));
+        $this->assertSame('Math question', $response->json('questions.0.question_text'));
+    }
+
     /**
      * Test admin can export questions as CSV
      */
@@ -82,6 +106,30 @@ class QuestionImportExportTest extends TestCase
 
         $response->assertStatus(200)
                  ->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+    }
+
+    public function test_admin_can_export_csv_for_one_category_only()
+    {
+        Question::factory()->create([
+            'category_id' => $this->category->id,
+            'question_text' => 'Math question',
+            'question_type' => 'mcq',
+        ]);
+
+        Question::factory()->create([
+            'category_id' => $this->otherCategory->id,
+            'question_text' => 'Science question',
+            'question_type' => 'mcq',
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->get('/api/admin/questions/export/csv?category_id=' . $this->category->id);
+
+        $response->assertOk();
+
+        $content = $response->streamedContent();
+        $this->assertStringContainsString('Math question', $content);
+        $this->assertStringNotContainsString('Science question', $content);
     }
 
     /**
@@ -144,6 +192,35 @@ class QuestionImportExportTest extends TestCase
 
         $this->assertDatabaseHas('questions', [
             'question_text' => 'What is 2+2?',
+        ]);
+    }
+
+    public function test_import_json_for_one_category_only()
+    {
+        $payload = [
+            'questions' => [
+                [
+                    'question_text' => 'What is 3+3?',
+                    'category' => 'Science',
+                    'question_type' => 'mcq',
+                    'options' => ['5', '6'],
+                    'correct_answer' => '6',
+                    'points' => 5,
+                    'answer_key' => null,
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($this->admin)
+            ->postJson('/api/admin/questions/import/json?category_id=' . $this->category->id, $payload);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('imported_count', 1);
+
+        $this->assertDatabaseHas('questions', [
+            'question_text' => 'What is 3+3?',
+            'category_id' => $this->category->id,
         ]);
     }
 
@@ -250,6 +327,36 @@ class QuestionImportExportTest extends TestCase
 
         $response->assertStatus(200)
                  ->assertJsonPath('status', 'success');
+    }
+
+    public function test_import_csv_for_one_category_only()
+    {
+        $csvContent = "question_text,category,question_type,options,correct_answer,points,answer_key\n";
+        $csvContent .= "\"What is 5+5?\",Science,mcq,\"[\"\"9\"\",\"\"10\"\"]\",10,5,\n";
+
+        $tempPath = self::createTempFile($csvContent);
+        $file = new UploadedFile(
+            $tempPath,
+            'questions.csv',
+            'text/csv',
+            null,
+            true
+        );
+
+        $response = $this->actingAs($this->admin)
+            ->postJson('/api/admin/questions/import/csv', [
+                'file' => $file,
+                'category_id' => $this->category->id,
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('imported_count', 1);
+
+        $this->assertDatabaseHas('questions', [
+            'question_text' => 'What is 5+5?',
+            'category_id' => $this->category->id,
+        ]);
     }
 
     /**

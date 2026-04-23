@@ -44,7 +44,7 @@ class ViewCategoryQuestions extends ViewRecord
                         ->required(),
                 ])
                 ->action(function (array $data, QuestionBankService $service): void {
-                    $result = $service->importCsv($data['file']);
+                    $result = $service->importCsv($data['file'], $this->getRecord()->id);
                     $this->notifyImportResult($result);
                 }),
             Action::make('importJson')
@@ -58,17 +58,17 @@ class ViewCategoryQuestions extends ViewRecord
                         ->required(),
                 ])
                 ->action(function (array $data, QuestionBankService $service): void {
-                    $result = $service->importJsonFromFile($data['file']);
+                    $result = $service->importJsonFromFile($data['file'], $this->getRecord()->id);
                     $this->notifyImportResult($result);
                 }),
             Action::make('exportCsv')
                 ->label('Export CSV')
-                ->action(fn (QuestionBankService $service) => $service->exportCsv()),
+                ->action(fn (QuestionBankService $service) => $service->exportCsv($this->getRecord()->id)),
             Action::make('exportJson')
                 ->label('Export JSON')
                 ->action(function (QuestionBankService $service) {
                     return response()->streamDownload(function () use ($service) {
-                        echo json_encode($service->exportJson(), JSON_PRETTY_PRINT);
+                        echo json_encode($service->exportJson($this->getRecord()->id), JSON_PRETTY_PRINT);
                     }, 'question_bank_export.json', [
                         'Content-Type' => 'application/json',
                     ]);
