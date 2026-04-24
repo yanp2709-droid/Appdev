@@ -63,17 +63,19 @@ class DashboardWidgetService
     public function resetWidgetCollection(User $user): void
     {
         foreach (array_keys(self::AVAILABLE_WIDGETS) as $order => $widgetName) {
-            DashboardWidget::updateOrCreate(
-                [
+            $existing = DashboardWidget::where('user_id', $user->id)
+                ->where('widget_class', self::AVAILABLE_WIDGETS[$widgetName])
+                ->first();
+
+            if (! $existing) {
+                DashboardWidget::create([
                     'user_id' => $user->id,
                     'widget_class' => self::AVAILABLE_WIDGETS[$widgetName],
-                ],
-                [
                     'widget_name' => $widgetName,
                     'order' => $order,
                     'is_visible' => false,
-                ],
-            );
+                ]);
+            }
         }
     }
 
