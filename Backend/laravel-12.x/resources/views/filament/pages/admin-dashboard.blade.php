@@ -225,6 +225,41 @@
             background: #fff;
             padding: 14px;
             box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+            cursor: grab;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+        }
+
+        .dashboard-widget-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+            border-color: #cbd5e1;
+        }
+
+        .dashboard-widget-option.is-dragging {
+            opacity: 0.45;
+            cursor: grabbing;
+            transform: scale(0.98);
+        }
+
+        .dashboard-drop-indicator {
+            grid-column: span 6;
+            min-height: 100px;
+            border: 2px dashed #f59e0b;
+            border-radius: 14px;
+            background: rgba(245, 158, 11, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f59e0b;
+            font-size: 14px;
+            font-weight: 700;
+            pointer-events: none;
+            transition: all 0.15s ease;
+        }
+
+        .dashboard-widget-shell.is-drop-target {
+            outline: 2px dashed #3b82f6;
+            outline-offset: 4px;
         }
 
         .dashboard-widget-option-title {
@@ -351,7 +386,7 @@
                 <div class="dashboard-drawer-header">
                     <div>
                         <h2 class="dashboard-drawer-title">Widget Collection</h2>
-                        <p class="dashboard-drawer-copy">Click Add Widget to place a widget on the dashboard.</p>
+                        <p class="dashboard-drawer-copy">Drag widgets to the dashboard to place them.</p>
                     </div>
 
                     <button type="button" class="dashboard-button" onclick="window.dashboardToggleDrawer()">
@@ -369,19 +404,13 @@
                         <div
                             class="dashboard-widget-option"
                             data-widget-name="{{ $widgetName }}"
+                            draggable="true"
+                            ondragstart="window.dashboardDrawerDragStart(event, this)"
+                            ondragend="window.dashboardDrawerDragEnd(event, this)"
+                            title="Drag to dashboard"
                         >
                             <h3 class="dashboard-widget-option-title">{{ $widget['label'] }}</h3>
                             <p class="dashboard-widget-option-copy">{{ $widget['description'] }}</p>
-
-                            <div class="dashboard-widget-option-footer">
-                                <button
-                                    type="button"
-                                    class="dashboard-button"
-                                    onclick="window.dashboardWidgetAdd('{{ $widgetName }}')"
-                                >
-                                    Add Widget
-                                </button>
-                            </div>
                         </div>
                     @empty
                         <div class="dashboard-drawer-empty">
@@ -400,10 +429,12 @@
             const canvas = document.querySelector('[data-dashboard-canvas]');
             const componentId = builder?.dataset.componentId || null;
             const dashboardWidgets = () => Array.from(document.querySelectorAll('[data-dashboard-widget]'));
+            const drawerOptions = () => Array.from(document.querySelectorAll('.dashboard-widget-option[data-widget-name]'));
 
             const state = window.dashboardWidgetDragState || {
                 draggedElement: null,
                 draggedWidget: null,
+                isDrawerDrag: false,
             };
 
             window.dashboardWidgetDragState = state;
@@ -457,6 +488,23 @@
                 return element?.closest?.('[data-dashboard-widget]') || null;
             }
 
+            function clearDropIndicators() {
+                document.querySelectorAll('.dashboard-drop-indicator').forEach((el) => el.remove());
+                document.querySelectorAll('.dashboard-widget-shell.is-drop-target').forEach((el) => el.classList.remove('is-drop-target'));
+            }
+
+            function showDropIndicator(grid, beforeElement) {
+                clearDropIndicators();
+                const indicator = document.createElement('div');
+                indicator.className = 'dashboard-drop-indicator';
+                indicator.textContent = 'Drop here';
+                if (beforeElement) {
+                    grid.insertBefore(indicator, beforeElement);
+                } else {
+                    grid.appendChild(indicator);
+                }
+            }
+
             window.dashboardToggleDrawer = function () {
                 if (!builder || !drawer) {
                     return;
@@ -484,7 +532,27 @@
                 reloadDashboard();
             };
 
+            /* Drawer drag: adding new widgets */
+            window.dashboardDrawerDragStart = function (event, element) {
+                state.isDrawerDrag = true;
+                state.draggedWidget = element.dataset.widgetName || null;
+                state.draggedElement = null;
+
+                element.classList.add('is-dragging');
+                event.dataTransfer.effectAllowed = 'copyMove';
+                event.dataTransfer.setData('text/plain', state.draggedWidget || '');
+            };
+
+            window.dashboardDrawerDragEnd = function (event, element) {
+                element.classList.remove('is-dragging');
+                state.isDrawerDrag = false;
+                state.draggedWidget = null;
+                clearDropIndicators();
+            };
+
+            /* Dashboard drag: reordering existing widgets */
             window.dashboardWidgetDragStart = function (event, element) {
+                state.isDrawerDrag = false;
                 state.draggedElement = element;
                 state.draggedWidget = element.dataset.widgetName || null;
 
@@ -495,16 +563,17 @@
 
             window.dashboardWidgetDragOver = function (event) {
                 event.preventDefault();
-                event.dataTransfer.dropEffect = 'move';
+                event.dataTransfer.dropEffect = state.isDrawerDrag ? 'copy' : 'move';
             };
 
             window.dashboardWidgetDrop = async function (event, target) {
                 event.preventDefault();
                 event.stopPropagation();
+                clearDropIndicators();
 
                 const widgetName = event.dataTransfer.getData('text/plain') || state.draggedWidget;
 
-                if (!widgetName || !target || target === state.draggedElement) {
+                if (!widgetName || !target) {
                     return;
                 }
 
@@ -512,27 +581,36 @@
                 const position = event.clientY < targetRect.top + targetRect.height / 2 ? 'before' : 'after';
                 const targetWidgetName = target.dataset.widgetName || null;
 
-                if (canvas) {
-                    const dragged = state.draggedElement;
-                    if (!dragged) {
-                        return;
-                    }
-
-                    if (position === 'before') {
-                        target.before(dragged);
-                    } else {
-                        target.after(dragged);
-                    }
-
-                    await callDashboard('reorderWidgets', getWidgetOrder());
-
-                    reloadDashboard();
+                if (state.isDrawerDrag) {
+                    /* Adding a new widget from drawer before/after an existing widget */
+                    await window.dashboardWidgetAdd(widgetName, targetWidgetName, position);
+                    return;
                 }
+
+                /* Reordering existing widgets */
+                if (target === state.draggedElement) {
+                    return;
+                }
+
+                const dragged = state.draggedElement;
+                if (!dragged || !canvas) {
+                    return;
+                }
+
+                if (position === 'before') {
+                    target.before(dragged);
+                } else {
+                    target.after(dragged);
+                }
+
+                await callDashboard('reorderWidgets', getWidgetOrder());
+                reloadDashboard();
             };
 
             window.dashboardWidgetCanvasDrop = async function (event) {
                 event.preventDefault();
                 event.stopPropagation();
+                clearDropIndicators();
 
                 const widgetName = event.dataTransfer.getData('text/plain') || state.draggedWidget;
                 const widgetTarget = getWidgetTargetFromPoint(event);
@@ -545,28 +623,33 @@
                     return;
                 }
 
-                if (canvas) {
-                    const dragged = state.draggedElement;
-                    const grid = canvas.querySelector('.dashboard-grid');
-
-                    if (!dragged || !grid) {
-                        return;
-                    }
-
-                    grid.appendChild(dragged);
-
-                    await callDashboard('reorderWidgets', getWidgetOrder());
-
-                    reloadDashboard();
+                if (state.isDrawerDrag) {
+                    /* Adding a new widget from drawer to the end of the grid */
+                    await window.dashboardWidgetAdd(widgetName);
+                    return;
                 }
+
+                /* Reordering existing widget to the end */
+                const dragged = state.draggedElement;
+                const grid = canvas?.querySelector('.dashboard-grid');
+
+                if (!dragged || !grid) {
+                    return;
+                }
+
+                grid.appendChild(dragged);
+                await callDashboard('reorderWidgets', getWidgetOrder());
+                reloadDashboard();
             };
 
             window.dashboardWidgetDragEnd = function (event, element) {
                 element.classList.remove('is-dragging');
                 state.draggedElement = null;
                 state.draggedWidget = null;
+                clearDropIndicators();
             };
 
+            /* Canvas-level dragover/drop for both drawer and dashboard drags */
             if (canvas) {
                 canvas.addEventListener('dragover', function (event) {
                     if (!isInsideCanvas(event)) {
@@ -574,12 +657,28 @@
                     }
 
                     event.preventDefault();
-                    event.dataTransfer.dropEffect = 'move';
+                    event.dataTransfer.dropEffect = state.isDrawerDrag ? 'copy' : 'move';
                 });
 
                 canvas.addEventListener('drop', function (event) {
                     if (isInsideCanvas(event)) {
                         window.dashboardWidgetCanvasDrop(event);
+                    }
+                });
+
+                /* Highlight drop targets when dragging from drawer */
+                canvas.addEventListener('dragenter', function (event) {
+                    if (!state.isDrawerDrag) return;
+                    const target = event.target?.closest?.('[data-dashboard-widget]');
+                    if (target) {
+                        target.classList.add('is-drop-target');
+                    }
+                });
+
+                canvas.addEventListener('dragleave', function (event) {
+                    const target = event.target?.closest?.('[data-dashboard-widget]');
+                    if (target) {
+                        target.classList.remove('is-drop-target');
                     }
                 });
             }
