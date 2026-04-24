@@ -7,7 +7,7 @@
                 <select
                     wire:model.live="selectedSchoolYear"
                     aria-label="Select academic year"
-                    style="width:2rem;height:2rem;border:1px solid #d1d5db;border-radius:0.5rem;background:#ffffff;padding:0.2rem 0.35rem;font-size:0.75rem;font-weight:600;color:#6b7280;box-shadow:0 1px 2px rgba(0,0,0,0.05);outline:none;margin-right:36px;"
+                    style="width:auto;min-width:6rem;height:2rem;border:1px solid #d1d5db;border-radius:0.5rem;background:#ffffff;padding:0.2rem 0.6rem;font-size:0.75rem;font-weight:600;color:#6b7280;box-shadow:0 1px 2px rgba(0,0,0,0.05);outline:none;margin-right:36px;"
                 >
                     @forelse ($schoolYearOptions as $value => $label)
                         <option value="{{ $value }}">{{ $label }}</option>

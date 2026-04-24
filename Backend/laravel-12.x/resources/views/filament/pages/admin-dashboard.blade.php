@@ -17,7 +17,7 @@
         .dashboard-toolbar {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-end;
             gap: 16px;
             margin-bottom: 18px;
         }
@@ -280,8 +280,6 @@
 
     <div class="dashboard-shell" data-dashboard-builder data-component-id="{{ $this->getId() }}">
         <div class="dashboard-toolbar">
-            <h1 class="dashboard-title">Dashboard</h1>
-
             <button
                 type="button"
                 class="dashboard-button"
@@ -475,10 +473,6 @@
             };
 
             window.dashboardWidgetRemove = async function (widgetName) {
-                if (!window.confirm('Remove this widget from the dashboard?')) {
-                    return;
-                }
-
                 await callDashboard('removeWidget', widgetName);
 
                 reloadDashboard();
