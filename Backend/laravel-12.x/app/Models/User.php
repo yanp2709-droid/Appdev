@@ -27,6 +27,7 @@ class User extends Authenticatable implements FilamentUser
         'course',
         'privacy_consent',
         'is_protected',
+        'is_active',
     ];
 
     protected $hidden = [
@@ -41,6 +42,7 @@ class User extends Authenticatable implements FilamentUser
             'password' => 'hashed',
             'privacy_consent' => 'boolean',
             'is_protected' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -66,7 +68,11 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->isAdmin() || $this->isTeacher();
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        return $this->isTeacher() && $this->is_active;
     }
 
     // Helper functions (optional but useful)

@@ -7,13 +7,14 @@ use App\Filament\Resources\Teachers\Pages\EditTeacher;
 use App\Filament\Resources\Teachers\Pages\ListTeachers;
 use App\Models\User;
 use BackedEnum;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -82,15 +83,63 @@ class TeacherResource extends Resource
                     ->label('Created')
                     ->dateTime()
                     ->sortable(),
+
+                IconColumn::make('is_active')
+                    ->label('Status')
+                    ->boolean()
+                    ->sortable(),
             ])
             ->actions([
                 EditAction::make(),
-                DeleteAction::make()
-                    ->hidden(fn (User $record): bool => $record->isProtected()),
+
+                Action::make('deactivate')
+                    ->label('Deactivate')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Deactivate Teacher')
+                    ->modalDescription('This will prevent the teacher from accessing the admin dashboard. Their quizzes will remain intact.')
+                    ->hidden(fn (User $record): bool => !$record->is_active || $record->isProtected())
+                    ->action(fn (User $record) => $record->update(['is_active' => false])),
+
+                Action::make('activate')
+                    ->label('Activate')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Activate Teacher')
+                    ->modalDescription('This will allow the teacher to access the admin dashboard again.')
+                    ->hidden(fn (User $record): bool => $record->is_active)
+                    ->action(fn (User $record) => $record->update(['is_active' => true])),
             ])
             ->bulkActions([
-                DeleteBulkAction::make()
-                    ->label('Delete Selected Teachers'),
+                BulkAction::make('deactivate')
+                    ->label('Deactivate Selected')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Deactivate Selected Teachers')
+                    ->modalDescription('This will prevent the selected teachers from accessing the admin dashboard. Their quizzes will remain intact.')
+                    ->action(function ($records) {
+                        foreach ($records as $record) {
+                            if (!$record->isProtected()) {
+                                $record->update(['is_active' => false]);
+                            }
+                        }
+                    }),
+
+                BulkAction::make('activate')
+                    ->label('Activate Selected')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Activate Selected Teachers')
+                    ->modalDescription('This will allow the selected teachers to access the admin dashboard again.')
+                    ->action(function ($records) {
+                        foreach ($records as $record) {
+                            $record->update(['is_active' => true]);
+                        }
+                    }),
             ]);
     }
 

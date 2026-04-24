@@ -29,12 +29,12 @@ class CategoryStatisticsTableWidget extends BaseWidget
 
                 TextColumn::make('highest_score')
                     ->label('High Score')
-                    ->formatStateUsing(fn ($state): string => number_format((float) ($state ?? 0), 2) . '%')
+                    ->formatStateUsing(fn ($state): string => round((float) ($state ?? 0)) . '%')
                     ->sortable(),
 
                 TextColumn::make('lowest_score')
                     ->label('Lowest Score')
-                    ->formatStateUsing(fn ($state): string => number_format((float) ($state ?? 0), 2) . '%')
+                    ->formatStateUsing(fn ($state): string => round((float) ($state ?? 0)) . '%')
                     ->sortable(),
 
                 TextColumn::make('completion_rate')

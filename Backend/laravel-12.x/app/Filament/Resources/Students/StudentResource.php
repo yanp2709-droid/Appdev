@@ -61,42 +61,7 @@ class StudentResource extends Resource
                     ->counts('quizAttempts')
                     ->sortable(),
 
-                TextColumn::make('avg_score')
-                    ->label('Avg. Score')
-                    ->formatStateUsing(function (User $record): string {
-                        $attempts = Quiz_attempt::where('student_id', $record->id)
-                            ->where('status', 'submitted');
-                        
-                        if ($attempts->count() === 0) {
-                            return 'N/A';
-                        }
 
-                        $avgScore = $attempts->avg('score_percent') ?? 0;
-                        return round($avgScore, 2) . '%';
-                    })
-                    ->color(function (User $record): string {
-                        $attempts = Quiz_attempt::where('student_id', $record->id)
-                            ->where('status', 'submitted');
-                        
-                        if ($attempts->count() === 0) {
-                            return 'gray';
-                        }
-
-                        $avgScore = $attempts->avg('score_percent') ?? 0;
-                        return $avgScore >= 80 ? 'success' : ($avgScore >= 60 ? 'warning' : 'danger');
-                    })
-                    ->sortable(),
-
-                TextColumn::make('highest_score')
-                    ->label('Highest')
-                    ->formatStateUsing(function (User $record): string {
-                        $highest = Quiz_attempt::where('student_id', $record->id)
-                            ->where('status', 'submitted')
-                            ->max('score_percent') ?? 0;
-                        
-                        return $highest > 0 ? round($highest, 2) . '%' : 'N/A';
-                    })
-                    ->color('success'),
             ])
             ->filters([
                 //

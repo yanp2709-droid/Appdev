@@ -356,8 +356,8 @@
                                 <td><strong>{{ $card['category_name'] }}</strong></td>
                                 <td>{{ number_format((int) ($card['total_attempts'] ?? 0)) }}</td>
                                 <td>{{ number_format((int) ($card['attempted_users'] ?? 0)) }}</td>
-                                <td>{{ is_null($card['highest_score'] ?? null) ? 'None' : number_format((float) $card['highest_score'], 2) }}</td>
-                                <td>{{ is_null($card['lowest_score'] ?? null) ? 'None' : number_format((float) $card['lowest_score'], 2) }}</td>
+                                <td>{{ is_null($card['highest_score'] ?? null) ? 'None' : round((float) $card['highest_score']) }}</td>
+                                <td>{{ is_null($card['lowest_score'] ?? null) ? 'None' : round((float) $card['lowest_score']) }}</td>
                             </tr>
                         @empty
                             <tr>
