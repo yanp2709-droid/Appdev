@@ -178,12 +178,12 @@ class AdminDashboard extends Dashboard
     public function getWidgetSpanClass(string $widgetName): string
     {
         return match ($widgetName) {
-            'TotalStudentsWidget' => 'xl:col-span-3',
-            'TotalAttemptsWidget' => 'xl:col-span-3',
-            'SubmittedAttemptsWidget' => 'xl:col-span-3',
-            'AverageScoreCardWidget' => 'xl:col-span-3',
-            'StudentInformationWidget' => 'xl:col-span-7',
-            'CategoryPerformanceWidget' => 'xl:col-span-5',
+            'TotalStudentsWidget' => 'xl:col-span-6',
+            'TotalAttemptsWidget' => 'xl:col-span-6',
+            'SubmittedAttemptsWidget' => 'xl:col-span-6',
+            'AverageScoreCardWidget' => 'xl:col-span-6',
+            'StudentInformationWidget' => 'xl:col-span-6',
+            'CategoryPerformanceWidget' => 'xl:col-span-6',
             default => 'xl:col-span-12',
         };
     }

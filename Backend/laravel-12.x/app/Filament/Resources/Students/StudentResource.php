@@ -52,7 +52,7 @@ class StudentResource extends Resource
                     ->sortable(),
 
                 TextColumn::make('created_at')
-                    ->label('Joined')
+                    ->label('Registered')
                     ->dateTime()
                     ->sortable(),
 

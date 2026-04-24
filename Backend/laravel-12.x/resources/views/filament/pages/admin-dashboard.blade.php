@@ -83,7 +83,7 @@
             background: #fff;
             box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
             border: 1px solid #e5e7eb;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .dashboard-widget-shell.is-dragging {
@@ -97,19 +97,30 @@
             z-index: 10;
             display: flex;
             gap: 8px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .dashboard-widget-shell:hover .dashboard-widget-actions {
+            opacity: 1;
         }
 
         .dashboard-widget-action {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 32px;
-            height: 32px;
+            width: 22px;
+            height: 22px;
             border: 0;
-            border-radius: 10px;
+            border-radius: 6px;
             color: #fff;
-            box-shadow: 0 10px 18px rgba(15, 23, 42, 0.12);
+            box-shadow: 0 6px 12px rgba(15, 23, 42, 0.12);
             transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+
+        .dashboard-widget-action svg {
+            width: 12px;
+            height: 12px;
         }
 
         .dashboard-widget-action:hover {
@@ -133,13 +144,19 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 10px;
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
             border: 1px solid #e5e7eb;
             background: rgba(255, 255, 255, 0.92);
             color: #64748b;
             cursor: grab;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .dashboard-widget-shell:hover .dashboard-widget-handle {
+            opacity: 1;
         }
 
         .dashboard-empty {
@@ -239,6 +256,10 @@
             font-size: 14px;
         }
 
+        .dashboard-widget-shell .fi-wi-chart-filter {
+            margin-right: 36px;
+        }
+
         @media (max-width: 1279px) {
             .dashboard-layout.is-open {
                 grid-template-columns: 1fr;
@@ -280,6 +301,7 @@
                         @foreach ($widgets as $widget)
                             <div
                                 class="dashboard-widget-shell {{ $this->getWidgetSpanClass($widget->widget_name) }}"
+                                style="grid-column: span {{ preg_replace('/[^0-9]/', '', $this->getWidgetSpanClass($widget->widget_name)) }}"
                                 data-dashboard-widget
                                 data-widget-name="{{ $widget->widget_name }}"
                                 draggable="true"
