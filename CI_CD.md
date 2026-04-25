@@ -43,6 +43,8 @@ Then it:
 - runs Laravel migrations
 - refreshes Laravel caches
 
+If the required deployment secrets are not configured yet, the deploy job now skips itself cleanly instead of failing the whole workflow.
+
 ## Required GitHub Secrets
 
 Add these in `Settings > Secrets and variables > Actions`:

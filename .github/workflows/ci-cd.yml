@@ -175,7 +175,8 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Validate deployment configuration
+      - name: Check deployment configuration
+        id: deploy-config
         shell: bash
         env:
           SSH_HOST: ${{ secrets.VPS_HOST }}
@@ -194,11 +195,22 @@ jobs:
           [[ -z "$LARAVEL_ENV_FILE" ]] && missing+=("LARAVEL_ENV_FILE")
 
           if (( ${#missing[@]} > 0 )); then
-            printf 'Missing GitHub Actions deployment settings: %s\n' "${missing[*]}"
-            exit 1
+            printf 'deploy_ready=false\n' >> "$GITHUB_OUTPUT"
+            printf 'missing_keys=%s\n' "$(IFS=,; echo "${missing[*]}")" >> "$GITHUB_OUTPUT"
+            printf 'Deployment skipped because these GitHub Actions secrets are missing: %s\n' "${missing[*]}"
+            exit 0
           fi
 
+          printf 'deploy_ready=true\n' >> "$GITHUB_OUTPUT"
+
+      - name: Note skipped deployment
+        if: steps.deploy-config.outputs.deploy_ready != 'true'
+        shell: bash
+        run: |
+          printf 'Backend deploy skipped. Add these GitHub environment secrets to enable it: %s\n' "${{ steps.deploy-config.outputs.missing_keys }}"
+
       - name: Configure SSH
+        if: steps.deploy-config.outputs.deploy_ready == 'true'
         shell: bash
         env:
           SSH_HOST: ${{ secrets.VPS_HOST }}
@@ -211,6 +223,7 @@ jobs:
           ssh-keyscan -p "${SSH_PORT:-22}" "$SSH_HOST" >> ~/.ssh/known_hosts
 
       - name: Upload deployment stack
+        if: steps.deploy-config.outputs.deploy_ready == 'true'
         shell: bash
         env:
           SSH_HOST: ${{ secrets.VPS_HOST }}
@@ -227,6 +240,7 @@ jobs:
           scp -P "${SSH_PORT:-22}" .deploy-tmp/.env "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/.env"
 
       - name: Deploy backend to VPS
+        if: steps.deploy-config.outputs.deploy_ready == 'true'
         shell: bash
         env:
           SSH_HOST: ${{ secrets.VPS_HOST }}
