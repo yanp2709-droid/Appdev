@@ -63,6 +63,12 @@ class User extends Authenticatable implements FilamentUser
                     'user' => 'The last admin account cannot be deleted.',
                 ]);
             }
+
+            if ($user->isStudent() && $user->quizAttempts()->exists()) {
+                throw ValidationException::withMessages([
+                    'user' => 'This student cannot be deleted because they already have quiz records.',
+                ]);
+            }
         });
     }
 

@@ -11,9 +11,12 @@ use App\Filament\Widgets\TotalStudentsWidget;
 use App\Models\DashboardWidget;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardWidgetService
 {
+    private const TABLE_NAME = 'dashboard_widgets';
+
     public const AVAILABLE_WIDGETS = [
         'TotalStudentsWidget' => TotalStudentsWidget::class,
         'TotalAttemptsWidget' => TotalAttemptsWidget::class,
@@ -32,8 +35,17 @@ class DashboardWidgetService
         return self::AVAILABLE_WIDGETS;
     }
 
+    public function isStorageReady(): bool
+    {
+        return Schema::hasTable(self::TABLE_NAME);
+    }
+
     public function getUserWidgets(User $user): Collection
     {
+        if (! $this->isStorageReady()) {
+            return new Collection();
+        }
+
         return DashboardWidget::where('user_id', $user->id)
             ->where('is_visible', true)
             ->orderBy('order')
@@ -42,6 +54,10 @@ class DashboardWidgetService
 
     public function initializeDefaultWidgets(User $user): void
     {
+        if (! $this->isStorageReady()) {
+            return;
+        }
+
         if (DashboardWidget::where('user_id', $user->id)->exists()) {
             return;
         }
@@ -62,6 +78,10 @@ class DashboardWidgetService
      */
     public function resetWidgetCollection(User $user): void
     {
+        if (! $this->isStorageReady()) {
+            return;
+        }
+
         foreach (array_keys(self::AVAILABLE_WIDGETS) as $order => $widgetName) {
             $existing = DashboardWidget::where('user_id', $user->id)
                 ->where('widget_class', self::AVAILABLE_WIDGETS[$widgetName])
@@ -81,6 +101,10 @@ class DashboardWidgetService
 
     public function addWidget(User $user, string $widgetName): DashboardWidget
     {
+        if (! $this->isStorageReady()) {
+            throw new \RuntimeException('Dashboard widget storage is not ready. Run the latest migrations.');
+        }
+
         if (! isset(self::AVAILABLE_WIDGETS[$widgetName])) {
             throw new \InvalidArgumentException("Widget {$widgetName} not found");
         }
@@ -108,6 +132,10 @@ class DashboardWidgetService
 
     public function removeWidget(User $user, string $widgetName): bool
     {
+        if (! $this->isStorageReady()) {
+            return false;
+        }
+
         return (bool) DashboardWidget::where('user_id', $user->id)
             ->where('widget_class', self::AVAILABLE_WIDGETS[$widgetName] ?? null)
             ->update(['is_visible' => false]);
@@ -115,6 +143,10 @@ class DashboardWidgetService
 
     public function updateWidgetOrder(User $user, array $widgetNames): void
     {
+        if (! $this->isStorageReady()) {
+            return;
+        }
+
         foreach ($widgetNames as $index => $widgetName) {
             if (! isset(self::AVAILABLE_WIDGETS[$widgetName])) {
                 continue;
@@ -128,6 +160,10 @@ class DashboardWidgetService
 
     public function getAvailableWidgetsForUser(User $user): array
     {
+        if (! $this->isStorageReady()) {
+            return self::AVAILABLE_WIDGETS;
+        }
+
         $visibleClasses = DashboardWidget::where('user_id', $user->id)
             ->where('is_visible', true)
             ->pluck('widget_class')

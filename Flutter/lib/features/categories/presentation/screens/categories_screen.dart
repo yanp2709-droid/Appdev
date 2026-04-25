@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/app_widgets.dart';
+import '../../../../core/widgets/dashboard_card.dart';
 import '../../../quiz/providers/quiz_provider.dart';
 import '../../data/categories_repository.dart';
 import '../../data/models/category.dart';
@@ -501,84 +502,119 @@ class _CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return DashboardCard(
+      topStripColor: category.color,
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected ? category.color : AppColors.gray200,
-            width: isSelected ? 2 : 1,
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      margin: const EdgeInsets.only(bottom: 12),
+      footer: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Tap to open category',
+              style: TextStyle(
+                color: AppColors.gray600,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2))
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: category.color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(category.emoji, style: const TextStyle(fontSize: 28)),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    category.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1F2937),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    category.description,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF6B7280),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
+          Icon(
+            isSelected ? Icons.check_circle_rounded : Icons.arrow_forward_rounded,
+            size: 18,
+            color: category.color,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Container(
-                width: 24,
-                height: 24,
+                width: 58,
+                height: 58,
                 decoration: BoxDecoration(
-                  color: category.color,
-                  borderRadius: BorderRadius.circular(6),
+                  color: category.color.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Center(
-                  child: Icon(Icons.check, size: 16, color: Colors.white),
+                child: Center(
+                  child: Text(category.emoji, style: const TextStyle(fontSize: 30)),
                 ),
-              )
-            else
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: AppColors.gray400,
               ),
-          ],
-        ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: category.color.withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'Quiz category',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: category.color,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      category.name,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            category.description,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF6B7280),
+              height: 1.45,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.gray200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.bookmarks_rounded, size: 16, color: category.color),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Ready for a focused quiz session',
+                    style: TextStyle(
+                      color: AppColors.gray600,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

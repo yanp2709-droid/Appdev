@@ -88,6 +88,17 @@ class Question extends Model
             return $errors;
         }
 
+        $points = $payload['points'] ?? null;
+        if ($points !== null && $points !== '') {
+            if (!is_numeric($points) || (int) $points != $points) {
+                $errors[] = 'Points must be a whole number.';
+            } elseif ((int) $points < 1) {
+                $errors[] = 'Points must be at least 1.';
+            } elseif ((int) $points > 1000) {
+                $errors[] = 'Points cannot exceed 1000.';
+            }
+        }
+
         $optionsPayload = $payload['options'] ?? [];
         $optionErrors = [];
         $correctCount = 0;

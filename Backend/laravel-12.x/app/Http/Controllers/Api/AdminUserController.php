@@ -53,5 +53,50 @@ $query->orderBy('role', 'desc');
             'user_id' => $user->id,
         ]);
     }
+
+    public function destroy(User $user)
+    {
+        try {
+            $user->delete();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'User deleted successfully',
+            'user_id' => $user->id,
+        ]);
+    }
+
+    public function deactivate(Request $request, User $user)
+    {
+        if (! $request->user()->isAdmin()) {
+            abort(403, 'Admin access required');
+        }
+
+        $user->update(['is_active' => false]);
+
+        return response()->json([
+            'message' => 'User deactivated successfully',
+            'user_id' => $user->id,
+        ]);
+    }
+
+    public function activate(Request $request, User $user)
+    {
+        if (! $request->user()->isAdmin()) {
+            abort(403, 'Admin access required');
+        }
+
+        $user->update(['is_active' => true]);
+
+        return response()->json([
+            'message' => 'User activated successfully',
+            'user_id' => $user->id,
+        ]);
+    }
 }
 

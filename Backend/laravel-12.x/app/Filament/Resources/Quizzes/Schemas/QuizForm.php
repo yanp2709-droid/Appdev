@@ -53,17 +53,29 @@ class QuizForm
                         Toggle::make('shuffle_options')
                             ->default(false),
                         TextInput::make('duration_minutes')
-                            ->numeric()
+                            ->integer()
                             ->minValue(1)
+                            ->maxValue(300)
                             ->default(Quiz::DEFAULT_DURATION_MINUTES)
                             ->required(fn (callable $get) => (bool) $get('timer_enabled'))
-                            ->visible(fn (callable $get) => (bool) $get('timer_enabled')),
+                            ->visible(fn (callable $get) => (bool) $get('timer_enabled'))
+                            ->validationMessages([
+                                'integer' => 'Duration must be a whole number in minutes.',
+                                'min' => 'Duration must be at least 1 minute.',
+                                'max' => 'Duration cannot exceed 300 minutes (5 hours).',
+                            ]),
                         TextInput::make('max_attempts')
                             ->label('Attempt Limit')
-                            ->numeric()
+                            ->integer()
                             ->minValue(1)
+                            ->maxValue(100)
                             ->nullable()
-                            ->helperText('Leave blank to allow unlimited attempts.'),
+                            ->helperText('Leave blank to allow unlimited attempts.')
+                            ->validationMessages([
+                                'integer' => 'Attempt limit must be a whole number.',
+                                'min' => 'Attempt limit must be at least 1.',
+                                'max' => 'Attempt limit cannot exceed 100.',
+                            ]),
                     ])
                     ->columns(1),
                 Section::make('Review Settings')

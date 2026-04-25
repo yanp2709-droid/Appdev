@@ -99,4 +99,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin/users')->group(function () {
     Route::get('/', [AdminUserController::class, 'index']);
     Route::patch('/{user}/password', [AdminUserController::class, 'updatePassword']);
+    Route::delete('/{user}', [AdminUserController::class, 'destroy']);
+    Route::patch('/{user}/deactivate', [AdminUserController::class, 'deactivate']);
+    Route::patch('/{user}/activate', [AdminUserController::class, 'activate']);
 });

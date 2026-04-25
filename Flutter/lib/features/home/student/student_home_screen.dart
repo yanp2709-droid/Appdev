@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/dashboard_card.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../quiz/providers/quiz_provider.dart';
 
@@ -251,35 +252,68 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         ],
                       ),
                       const SizedBox(height: 18),
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withOpacity(0.08),
-                              blurRadius: 24,
-                              offset: const Offset(0, 12),
+                      DashboardCard(
+                        topStripColor: AppColors.primary,
+                        padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        footer: Row(
+                          children: [
+                            Text(
+                              'Keep your momentum going',
+                              style: TextStyle(
+                                color: AppColors.gray600,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Spacer(),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: AppColors.primary,
+                              size: 18,
                             ),
                           ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Row(
+                            Row(
                               children: [
-                                Icon(
-                                  Icons.rocket_launch_rounded,
-                                  color: AppColors.primary,
+                                Container(
+                                  width: 46,
+                                  height: 46,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withOpacity(0.10),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: const Icon(
+                                    Icons.rocket_launch_rounded,
+                                    color: AppColors.primary,
+                                  ),
                                 ),
-                                SizedBox(width: 10),
-                                Text(
-                                  'Next Best Step',
-                                  style: TextStyle(
-                                    color: AppColors.textDark,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Next Best Step',
+                                        style: TextStyle(
+                                          color: AppColors.textDark,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'Suggested action for today',
+                                        style: TextStyle(
+                                          color: AppColors.gray600,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -606,57 +640,52 @@ class _QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Ink(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.12),
-                blurRadius: 24,
-                offset: const Offset(0, 12),
-              ),
-            ],
+    return DashboardCard(
+      topStripColor: color,
+      padding: const EdgeInsets.all(18),
+      margin: EdgeInsets.zero,
+      onTap: onTap,
+      footer: Row(
+        children: [
+          const Spacer(),
+          Icon(
+            Icons.arrow_forward_rounded,
+            color: color,
+            size: 18,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: color),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: AppColors.textDark,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  color: AppColors.gray600,
-                  fontSize: 13,
-                  height: 1.45,
-                ),
-              ),
-            ],
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: color),
           ),
-        ),
+          const SizedBox(height: 14),
+          Text(
+            title,
+            style: const TextStyle(
+              color: AppColors.textDark,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              color: AppColors.gray600,
+              fontSize: 13,
+              height: 1.45,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -667,16 +696,17 @@ class _WelcomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return DashboardCard(
+      topStripColor: AppColors.accent,
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+      margin: EdgeInsets.zero,
+      footer: Row(
+        children: const [
+          Spacer(),
+          Icon(
+            Icons.insights_rounded,
+            color: AppColors.primary,
+            size: 18,
           ),
         ],
       ),
@@ -741,22 +771,27 @@ class _ScoreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return DashboardCard(
+      topStripColor: color,
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color, color.withOpacity(0.86)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+      margin: EdgeInsets.zero,
+      footer: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.gray200),
         ),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.24),
-            blurRadius: 20,
-            offset: const Offset(0, 12),
+        child: Text(
+          subtitle,
+          style: const TextStyle(
+            color: AppColors.gray600,
+            fontSize: 12,
+            height: 1.35,
+            fontWeight: FontWeight.w600,
           ),
-        ],
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -766,36 +801,27 @@ class _ScoreCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  style: TextStyle(
+                    color: color,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-              Icon(icon, color: Colors.white70, size: 18),
+              Icon(icon, color: color, size: 18),
             ],
           ),
           const SizedBox(height: 10),
           Text(
             value,
             style: TextStyle(
-              color: Colors.white,
-              fontSize: smallText ? 18 : 30,
+              color: AppColors.textDark,
+              fontSize: smallText ? 18 : 28,
               fontWeight: FontWeight.w800,
               height: 1.05,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-              height: 1.4,
-            ),
           ),
         ],
       ),

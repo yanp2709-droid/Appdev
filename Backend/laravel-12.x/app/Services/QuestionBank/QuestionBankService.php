@@ -301,8 +301,10 @@ class QuestionBankService
         $pointsRaw = $payload['points'] ?? null;
         $points = 1;
         if ($pointsRaw !== null && trim((string) $pointsRaw) !== '') {
-            if (!is_numeric($pointsRaw) || (int) $pointsRaw < 1) {
+            if (!is_numeric($pointsRaw) || (float) $pointsRaw <= 0 || (float) $pointsRaw != floor((float) $pointsRaw)) {
                 $errors[] = $this->rowError($rowNumber, 'points', 'Points must be a positive integer.');
+            } elseif ((int) $pointsRaw > 1000) {
+                $errors[] = $this->rowError($rowNumber, 'points', 'Points cannot exceed 1000.');
             } else {
                 $points = (int) $pointsRaw;
             }

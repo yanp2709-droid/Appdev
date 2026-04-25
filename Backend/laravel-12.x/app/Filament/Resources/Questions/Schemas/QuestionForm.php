@@ -96,9 +96,15 @@ class QuestionForm
 
             TextInput::make('points')
                 ->label('Points')
-                ->numeric()
+                ->integer()
                 ->default(5)
-                ->minValue(1),
+                ->minValue(1)
+                ->maxValue(1000)
+                ->validationMessages([
+                    'integer' => 'Points must be a whole number.',
+                    'min' => 'Points must be at least 1.',
+                    'max' => 'Points cannot exceed 1000.',
+                ]),
 
             Textarea::make('question_text')
                 ->label('Question Prompt')

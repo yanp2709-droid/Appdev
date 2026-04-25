@@ -111,13 +111,17 @@ class Quiz extends Model
             $errors[] = 'Duration is required when the timer is enabled.';
         }
 
-        if ($durationMinutes !== null && $durationMinutes !== '' && (!is_numeric($durationMinutes) || (int) $durationMinutes <= 0)) {
-            $errors[] = 'Duration must be a positive integer.';
+        if ($durationMinutes !== null && $durationMinutes !== '') {
+            if (!is_numeric($durationMinutes) || (float) $durationMinutes <= 0 || (float) $durationMinutes != floor((float) $durationMinutes)) {
+                $errors[] = 'Duration must be a positive integer.';
+            }
         }
 
         $attemptLimit = $payload['max_attempts'] ?? $payload['attempt_limit'] ?? null;
-        if ($attemptLimit !== null && $attemptLimit !== '' && (!is_numeric($attemptLimit) || (int) $attemptLimit <= 0)) {
-            $errors[] = 'Attempt limit must be a positive integer when provided.';
+        if ($attemptLimit !== null && $attemptLimit !== '') {
+            if (!is_numeric($attemptLimit) || (float) $attemptLimit <= 0 || (float) $attemptLimit != floor((float) $attemptLimit)) {
+                $errors[] = 'Attempt limit must be a positive integer when provided.';
+            }
         }
 
         if (!empty($payload['show_correct_answers_after_submit']) && empty($payload['show_answers_after_submit'])) {

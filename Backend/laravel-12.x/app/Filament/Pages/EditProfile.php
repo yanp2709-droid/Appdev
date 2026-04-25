@@ -31,11 +31,13 @@ class EditProfile extends Page
     public ?User $selectedUser = null;
     public ?array $data = ['search' => ''];
     public string $search = '';
+    public string $activeTab = 'staff';
 
     public function mount(): void
     {
         if ($this->isAdmin()) {
-            $this->selectedUserId = User::orderByRaw("CASE WHEN role = 'admin' THEN 1 WHEN role = 'teacher' THEN 2 ELSE 3 END")
+            $this->selectedUserId = User::whereIn('role', ['admin', 'teacher'])
+                ->orderByRaw("CASE WHEN role = 'admin' THEN 1 WHEN role = 'teacher' THEN 2 ELSE 3 END")
                 ->orderBy('name')
                 ->value('id') ?? auth()->id();
             $this->fillSelectedUser();
@@ -48,30 +50,91 @@ class EditProfile extends Page
         }
     }
 
-    public function getUsers(): \Illuminate\Support\Collection
+    public function switchTab(string $tab): void
+    {
+        $this->activeTab = in_array($tab, ['staff', 'student']) ? $tab : 'staff';
+        $this->search = '';
+
+        $users = $this->activeTab === 'staff' ? $this->getStaffUsers() : $this->getStudentUsers();
+
+        if ($users->isNotEmpty()) {
+            $this->selectUser($users->first()->id);
+        } else {
+            $this->selectedUserId = null;
+            $this->selectedUser = null;
+        }
+    }
+
+    public function getStaffUsers(): \Illuminate\Support\Collection
     {
         $search = trim($this->search);
-        $query = User::query();
+        $query = User::query()->whereIn('role', ['admin', 'teacher']);
 
         if (! empty($search)) {
             $query->where(function ($q) use ($search) {
-$q->where('name', 'like', "%$search%")
-                  ->orWhere('email', 'like', "%$search%")
-                  ->orWhere('student_id', 'like', "%$search%");
+                $q->where('name', 'like', "%$search%")
+                  ->orWhere('email', 'like', "%$search%");
             });
         }
 
         return $query->orderByRaw("CASE WHEN role = 'admin' THEN 1 WHEN role = 'teacher' THEN 2 ELSE 3 END")
             ->orderBy('name')
-            ->limit(15) // Show fewer accounts initially // Show fewer accounts initially
+            ->limit(15)
             ->get();
-}
+    }
+
+    public function getStudentUsers(): \Illuminate\Support\Collection
+    {
+        $search = trim($this->search);
+        $query = User::query()->where('role', 'student');
+
+        if (! empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%$search%")
+                  ->orWhere('email', 'like', "%$search%")
+                  ->orWhere('student_id', 'like', "%$search%");
+            });
+        }
+
+        return $query->orderBy('name')
+            ->limit(15)
+            ->get();
+    }
+
+    public function getUsers(): \Illuminate\Support\Collection
+    {
+        return $this->activeTab === 'staff' ? $this->getStaffUsers() : $this->getStudentUsers();
+    }
 
     public function updatedSearch(): void
     {
-        $users = $this->getUsers();
-        if (!empty($this->search) && $users->isNotEmpty()) {
-            $this->selectUser($users->first()->id);
+        $search = trim($this->search);
+
+        if ($search === '') {
+            $users = $this->getUsers();
+
+            if ($users->isNotEmpty()) {
+                $this->selectUser($users->first()->id);
+            }
+
+            return;
+        }
+
+        $staffUsers = $this->getStaffUsers();
+        $studentUsers = $this->getStudentUsers();
+
+        if ($staffUsers->isNotEmpty()) {
+            $this->activeTab = 'staff';
+            $this->selectUser($staffUsers->first()->id);
+
+            return;
+        }
+
+        if ($studentUsers->isNotEmpty()) {
+            $this->activeTab = 'student';
+            $this->selectUser($studentUsers->first()->id);
+
+            return;
         }
     }
 
@@ -106,8 +169,13 @@ $q->where('name', 'like', "%$search%")
     public function form(Schema $schema): Schema
     {
         return $schema
+            ->columns([
+                'default' => 1,
+                'xl' => 2,
+            ])
             ->components([
                 Section::make('Profile Information')
+                    ->columnSpan(1)
                     ->schema([
                         TextInput::make('name')
                             ->required()
@@ -121,12 +189,15 @@ $q->where('name', 'like', "%$search%")
                             ->disabled(),
                     ]),
                 Section::make('Change Password')
+                    ->columnSpan(1)
                     ->schema([
                         TextInput::make('current_password')
                             ->password()
+                            ->revealable()
                             ->label('Current Password'),
                         TextInput::make('password')
                             ->password()
+                            ->revealable()
                             ->minLength(8)
                             ->label('New Password')
                             ->rules([
@@ -137,6 +208,7 @@ $q->where('name', 'like', "%$search%")
                             ]),
                         TextInput::make('password_confirmation')
                             ->password()
+                            ->revealable()
                             ->same('password')
                             ->label('Confirm New Password'),
                     ]),

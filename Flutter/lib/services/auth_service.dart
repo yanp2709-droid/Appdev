@@ -134,6 +134,44 @@ class AuthService {
     }
   }
 
+  /// Delete a user (admin only)
+  ///
+  /// Returns: {message: 'User deleted successfully'}
+  /// Throws: ApiException or ApiValidationException on failure
+  Future<Map<String, dynamic>> deleteUser(int userId) async {
+    try {
+      final response = await apiClient.dio.delete('/admin/users/$userId');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw apiClient.handleException(e);
+    }
   }
+
+  /// Deactivate a user (admin only)
+  ///
+  /// Returns: {message: 'User deactivated successfully'}
+  /// Throws: ApiException on failure
+  Future<Map<String, dynamic>> deactivateUser(int userId) async {
+    try {
+      final response = await apiClient.dio.patch('/admin/users/$userId/deactivate');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw apiClient.handleException(e);
+    }
+  }
+
+  /// Activate a user (admin only)
+  ///
+  /// Returns: {message: 'User activated successfully'}
+  /// Throws: ApiException on failure
+  Future<Map<String, dynamic>> activateUser(int userId) async {
+    try {
+      final response = await apiClient.dio.patch('/admin/users/$userId/activate');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw apiClient.handleException(e);
+    }
+  }
+}
 
 
