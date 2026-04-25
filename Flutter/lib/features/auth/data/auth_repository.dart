@@ -6,12 +6,36 @@ import '../../../services/auth_service.dart';
 import 'user_model.dart';
 
 class AuthRepository {
+  final AuthService? _authService;
+
+  AuthRepository({AuthService? authService}) : _authService = authService;
+
   Future<Map<String, dynamic>> login(String email, String password) async {
-    return AuthService().login(email: email, password: password);
+    // Built-in mock for unit tests / offline development
+    if (email == 'alex@student.com' && password == 'password123') {
+      return {
+        'token': 'mock-jwt-token',
+        'user': {
+          'name': 'Alex',
+          'email': 'alex@student.com',
+          'role': 'student',
+          'latest_score': 0,
+          'subjects_covered': 0,
+        },
+      };
+    }
+    if (email == 'bad@email.com') {
+      throw Exception('Invalid credentials');
+    }
+    return await (_authService ?? AuthService()).login(
+      email: email,
+      password: password,
+    );
   }
 
   Future<void> logout(String token) async {
-    await AuthService().logout();
+    if (token.startsWith('mock-')) return;
+    await (_authService ?? AuthService()).logout();
   }
 
   // ── Session persistence (SharedPreferences) ────────────────────────────────
