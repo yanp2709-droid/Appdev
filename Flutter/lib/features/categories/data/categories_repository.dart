@@ -32,9 +32,9 @@ class CategoriesRepository {
     }
     if (_useMockData) {
       return [
-        CategoryModel(id: 1, name: 'Mathematics', description: 'Math quizzes'),
-        CategoryModel(id: 2, name: 'Science', description: 'Science quizzes'),
-        CategoryModel(id: 3, name: 'History', description: 'History quizzes'),
+        const CategoryModel(id: 1, name: 'Mathematics', description: 'Math quizzes'),
+        const CategoryModel(id: 2, name: 'Science', description: 'Science quizzes'),
+        const CategoryModel(id: 3, name: 'History', description: 'History quizzes'),
       ];
     }
 

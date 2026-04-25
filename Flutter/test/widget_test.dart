@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:techquiz/features/auth/data/auth_repository.dart';
 import 'package:techquiz/features/auth/data/user_model.dart';
@@ -120,7 +119,7 @@ void main() {
       await cats.fetch();
       expect(
         () => (cats.categories as dynamic).add(
-          CategoryModel(id: 99, name: 'Test', description: 'Test'),
+          const CategoryModel(id: 99, name: 'Test', description: 'Test'),
         ),
         throwsUnsupportedError,
       );
