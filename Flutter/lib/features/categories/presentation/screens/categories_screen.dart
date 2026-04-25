@@ -33,16 +33,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     context.read<CategoriesProvider>().fetch();
   }
 
-  void _simulateError() {
-    CategoriesRepository.simulateState = SimulateState.error;
-    context.read<CategoriesProvider>().fetch();
-  }
-
-  void _simulateEmpty() {
-    CategoriesRepository.simulateState = SimulateState.empty;
-    context.read<CategoriesProvider>().fetch();
-  }
-
   Future<void> _selectCategory(CategoryModel category) async {
     setState(() {
       _selectedCategory = category;
@@ -68,10 +58,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     if (_selectedCategory == null) return;
 
     await context.read<QuizProvider>().startQuiz(
-      _selectedCategory!.id,
-      _selectedCategory!.name,
-      attemptType: attemptType,
-    );
+          _selectedCategory!.id,
+          _selectedCategory!.name,
+          attemptType: attemptType,
+        );
 
     if (mounted) {
       final quizProvider = context.read<QuizProvider>();
@@ -97,7 +87,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/student-home'),
         ),
-        actions: const [],
       ),
       body: Consumer<CategoriesProvider>(
         builder: (context, provider, _) {
@@ -135,7 +124,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Center(
@@ -181,7 +170,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.category_outlined, size: 24, color: Colors.white),
+                    Icon(Icons.category_outlined,
+                        size: 24, color: Colors.white),
                     SizedBox(width: 12),
                     Text(
                       'Select Category',
@@ -208,7 +198,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       case CategoriesStatus.loading:
         return Column(
           children: [
-            _ShimmerList(),
+            const _ShimmerList(),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ElevatedButton.icon(
@@ -230,7 +220,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               message: provider.errorMessage ?? 'Failed to load categories.',
               onRetry: _load,
             ),
-            _ShimmerList(),
+            const _ShimmerList(),
           ],
         );
 
@@ -313,7 +303,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: _selectedCategory!.color.withOpacity(0.1),
+                color: _selectedCategory!.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Center(
@@ -358,13 +348,13 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: gradedAvailable
-                            ? AppColors.primary.withOpacity(0.08)
-                            : Colors.orange.withOpacity(0.10),
+                            ? AppColors.primary.withValues(alpha: 0.08)
+                            : Colors.orange.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: gradedAvailable
-                              ? AppColors.primary.withOpacity(0.2)
-                              : Colors.orange.withOpacity(0.35),
+                              ? AppColors.primary.withValues(alpha: 0.2)
+                              : Colors.orange.withValues(alpha: 0.35),
                         ),
                       ),
                       child: isChecking
@@ -373,7 +363,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                 SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
                                 ),
                                 SizedBox(width: 12),
                                 Expanded(
@@ -417,14 +408,16 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                 height: 24,
                                 width: 24,
                                 child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
                                   strokeWidth: 2,
                                 ),
                               )
                             : const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.verified_rounded, size: 22, color: Colors.white),
+                                  Icon(Icons.verified_rounded,
+                                      size: 22, color: Colors.white),
                                   SizedBox(width: 12),
                                   Text(
                                     'Start Graded Quiz',
@@ -477,7 +470,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                 icon: const Icon(Icons.arrow_back),
                 label: const Text('Choose Different Category'),
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.primary),
+                  side: const BorderSide(color: AppColors.primary),
                 ),
               ),
             ),
@@ -509,7 +502,7 @@ class _CategoryCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       footer: Row(
         children: [
-          Expanded(
+          const Expanded(
             child: Text(
               'Tap to open category',
               style: TextStyle(
@@ -520,7 +513,9 @@ class _CategoryCard extends StatelessWidget {
             ),
           ),
           Icon(
-            isSelected ? Icons.check_circle_rounded : Icons.arrow_forward_rounded,
+            isSelected
+                ? Icons.check_circle_rounded
+                : Icons.arrow_forward_rounded,
             size: 18,
             color: category.color,
           ),
@@ -536,11 +531,12 @@ class _CategoryCard extends StatelessWidget {
                 width: 58,
                 height: 58,
                 decoration: BoxDecoration(
-                  color: category.color.withOpacity(0.10),
+                  color: category.color.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Center(
-                  child: Text(category.emoji, style: const TextStyle(fontSize: 30)),
+                  child: Text(category.emoji,
+                      style: const TextStyle(fontSize: 30)),
                 ),
               ),
               const SizedBox(width: 14),
@@ -549,9 +545,10 @@ class _CategoryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: category.color.withOpacity(0.10),
+                        color: category.color.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
@@ -601,7 +598,7 @@ class _CategoryCard extends StatelessWidget {
               children: [
                 Icon(Icons.bookmarks_rounded, size: 16, color: category.color),
                 const SizedBox(width: 8),
-                Expanded(
+                const Expanded(
                   child: Text(
                     'Ready for a focused quiz session',
                     style: TextStyle(
@@ -622,6 +619,8 @@ class _CategoryCard extends StatelessWidget {
 
 // ── Shimmer placeholder ───────────────────────────────────────────────────────
 class _ShimmerList extends StatelessWidget {
+  const _ShimmerList();
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -630,7 +629,8 @@ class _ShimmerList extends StatelessWidget {
         children: List.generate(
           3,
           (_) => Container(
-            height: 80, margin: const EdgeInsets.only(bottom: 12),
+            height: 80,
+            margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
               color: AppColors.gray200,
               borderRadius: BorderRadius.circular(14),

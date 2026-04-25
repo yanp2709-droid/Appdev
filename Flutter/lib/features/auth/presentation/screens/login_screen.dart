@@ -55,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: 72,
                   height: 72,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: const Center(
@@ -144,13 +144,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(color: AppColors.danger),
                               ),
-                              child: Row(
+                              child: const Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(Icons.warning_amber_rounded,
+                                  Icon(Icons.warning_amber_rounded,
                                       color: AppColors.danger, size: 20),
-                                  const SizedBox(width: 8),
-                                  const Expanded(
+                                  SizedBox(width: 8),
+                                  Expanded(
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,

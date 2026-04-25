@@ -39,9 +39,10 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 80, height: 80,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Center(
@@ -52,8 +53,10 @@ class _SplashScreenState extends State<SplashScreen> {
             const Text(
               'TechQuiz',
               style: TextStyle(
-                color: Colors.white, fontSize: 32,
-                fontWeight: FontWeight.w800, letterSpacing: -0.5,
+                color: Colors.white,
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
               ),
             ),
             const SizedBox(height: 6),
@@ -69,9 +72,11 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: 16),
             const SizedBox(
-              width: 36, height: 36,
+              width: 36,
+              height: 36,
               child: CircularProgressIndicator(
-                color: Colors.white, strokeWidth: 3,
+                color: Colors.white,
+                strokeWidth: 3,
               ),
             ),
           ],

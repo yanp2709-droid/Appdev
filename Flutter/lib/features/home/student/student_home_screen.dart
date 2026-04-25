@@ -44,7 +44,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               height: 260,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.08),
+                color: Colors.white.withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -56,7 +56,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.accent.withOpacity(0.08),
+                color: AppColors.accent.withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -84,7 +84,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                             Builder(
                               builder: (ctx) => Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.16),
+                                  color: Colors.white.withValues(alpha: 0.16),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: IconButton(
@@ -104,10 +104,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.14),
+                                color: Colors.white.withValues(alpha: 0.14),
                                 borderRadius: BorderRadius.circular(999),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                 ),
                               ),
                               child: const Row(
@@ -136,7 +136,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         Text(
                           'Welcome back,',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.78),
+                            color: Colors.white.withValues(alpha: 0.78),
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),
@@ -157,7 +157,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                               ? 'Pick up where you left off or review your latest performance.'
                               : 'Choose a category, start a quiz, and build momentum one session at a time.',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.85),
+                            color: Colors.white.withValues(alpha: 0.85),
                             fontSize: 14,
                             height: 1.45,
                           ),
@@ -256,7 +256,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         topStripColor: AppColors.primary,
                         padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
                         margin: const EdgeInsets.only(bottom: 12),
-                        footer: Row(
+                        footer: const Row(
                           children: [
                             Text(
                               'Keep your momentum going',
@@ -266,7 +266,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const Spacer(),
+                            Spacer(),
                             Icon(
                               Icons.arrow_forward_rounded,
                               color: AppColors.primary,
@@ -283,7 +283,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                                   width: 46,
                                   height: 46,
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.10),
+                                    color: AppColors.primary
+                                        .withValues(alpha: 0.10),
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                   child: const Icon(
@@ -294,7 +295,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                                 const SizedBox(width: 12),
                                 const Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Next Best Step',
@@ -394,7 +396,7 @@ class _StudentDrawer extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.white.withOpacity(0.08),
+                    Colors.white.withValues(alpha: 0.08),
                     Colors.transparent,
                   ],
                   begin: Alignment.topCenter,
@@ -408,9 +410,10 @@ class _StudentDrawer extends StatelessWidget {
                     width: 62,
                     height: 62,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.14),
+                      color: Colors.white.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: Colors.white.withOpacity(0.18)),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.18)),
                     ),
                     child: const Icon(
                       Icons.person_rounded,
@@ -458,7 +461,7 @@ class _StudentDrawer extends StatelessWidget {
                 context.go('/categories');
               },
             ),
-_DrawerTile(
+            _DrawerTile(
               icon: Icons.history_rounded,
               label: 'History',
               isActive: currentRoute == '/history',
@@ -467,7 +470,6 @@ _DrawerTile(
                 context.go('/history');
               },
             ),
-
             const Spacer(),
             const Divider(color: Colors.white24, height: 1),
             Consumer<AuthProvider>(
@@ -518,10 +520,13 @@ class _DrawerTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       decoration: BoxDecoration(
-        color: isActive ? Colors.white.withOpacity(0.12) : Colors.transparent,
+        color: isActive
+            ? Colors.white.withValues(alpha: 0.12)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(14),
-        border:
-            isActive ? Border.all(color: Colors.white.withOpacity(0.15)) : null,
+        border: isActive
+            ? Border.all(color: Colors.white.withValues(alpha: 0.15))
+            : null,
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
@@ -600,9 +605,9 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
+        color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.18)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -662,7 +667,7 @@ class _QuickActionCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: color),
@@ -696,12 +701,12 @@ class _WelcomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DashboardCard(
+    return const DashboardCard(
       topStripColor: AppColors.accent,
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(18),
       margin: EdgeInsets.zero,
       footer: Row(
-        children: const [
+        children: [
           Spacer(),
           Icon(
             Icons.insights_rounded,
@@ -710,7 +715,7 @@ class _WelcomeCard extends StatelessWidget {
           ),
         ],
       ),
-      child: const Row(
+      child: Row(
         children: [
           Expanded(
             child: Column(

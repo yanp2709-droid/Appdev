@@ -13,12 +13,12 @@ class QuizResultScreen extends StatelessWidget {
     final result = context.read<QuizProvider>().lastResult;
 
     if (result == null) {
-      WidgetsBinding.instance.addPostFrameCallback(
-          (_) => context.go('/student-home'));
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => context.go('/student-home'));
       return const Scaffold(body: SizedBox.shrink());
     }
 
-    final score     = result.scorePercent;
+    final score = result.scorePercent;
     final isPassing = score >= 50;
     final isPractice = result.isPracticeAttempt;
 
@@ -33,7 +33,11 @@ class QuizResultScreen extends StatelessWidget {
             children: [
               // Emoji result
               Text(
-                score >= 80 ? '🏆' : score >= 50 ? '👍' : '😔',
+                score >= 80
+                    ? '🏆'
+                    : score >= 50
+                        ? '👍'
+                        : '😔',
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 80),
               ),
@@ -42,14 +46,16 @@ class QuizResultScreen extends StatelessWidget {
               // Score circle
               Center(
                 child: Container(
-                  width: 140, height: 140,
+                  width: 140,
+                  height: 140,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: (isPassing ? AppColors.primary : AppColors.danger)
-                            .withOpacity(0.2),
+                        color:
+                            (isPassing ? AppColors.primary : AppColors.danger)
+                                .withValues(alpha: 0.2),
                         blurRadius: 24,
                         spreadRadius: 4,
                       ),
@@ -87,16 +93,17 @@ class QuizResultScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: isPractice
-                      ? Colors.orange.withOpacity(0.10)
-                      : AppColors.primary.withOpacity(0.08),
+                      ? Colors.orange.withValues(alpha: 0.10)
+                      : AppColors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isPractice
-                        ? Colors.orange.withOpacity(0.35)
-                        : AppColors.primary.withOpacity(0.2),
+                        ? Colors.orange.withValues(alpha: 0.35)
+                        : AppColors.primary.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Text(
@@ -107,7 +114,8 @@ class QuizResultScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: isPractice ? Colors.orange.shade900 : AppColors.primary,
+                    color:
+                        isPractice ? Colors.orange.shade900 : AppColors.primary,
                   ),
                 ),
               ),
@@ -199,7 +207,7 @@ class QuizResultScreen extends StatelessWidget {
 class _StatChip extends StatelessWidget {
   final String label;
   final String value;
-  final Color  color;
+  final Color color;
 
   const _StatChip({
     required this.label,
@@ -212,9 +220,9 @@ class _StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [

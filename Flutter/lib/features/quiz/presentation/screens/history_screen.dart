@@ -27,15 +27,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (context.canPop()) {
-          return true;
+    return PopScope(
+      canPop: context.canPop(),
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && mounted) {
+          context.go('/student-home');
         }
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) context.go('/student-home');
-        });
-        return false;
       },
       child: Scaffold(
         appBar: AppBar(
@@ -71,7 +68,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                    const Icon(Icons.error_outline,
+                        size: 64, color: Colors.red),
                     const SizedBox(height: 16),
                     Text(
                       'Failed to load history',
@@ -80,12 +78,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     const SizedBox(height: 8),
                     Text(
                       snapshot.error.toString(),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: Colors.grey),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(
-                      onPressed: () => setState(() => _historiesDataFuture = _historyService.getHistory()),
+                      onPressed: () => setState(() =>
+                          _historiesDataFuture = _historyService.getHistory()),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -99,18 +101,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.history, size: 64, color: AppColors.primary),
+                    const Icon(Icons.history,
+                        size: 64, color: AppColors.primary),
                     const SizedBox(height: 16),
                     Text(
                       'No attempts yet',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Start taking quizzes to see your history',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: Colors.grey),
                     ),
                   ],
                 ),
@@ -128,7 +134,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
               itemBuilder: (context, index) {
                 final categoryId = categoryIds[index];
                 final categoryAttempts = grouped[categoryId] ?? [];
-                final categoryName = categoryAttempts.isNotEmpty ? categoryAttempts.first.categoryName : 'Category';
+                final categoryName = categoryAttempts.isNotEmpty
+                    ? categoryAttempts.first.categoryName
+                    : 'Category';
                 return _CategorySection(
                   categoryName: categoryName,
                   attempts: categoryAttempts,
@@ -147,18 +155,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
     context.push('/history/$attemptId');
   }
 
-  void _ensureDetailFuture(int attemptId) {
-    _detailFutures.putIfAbsent(
-      attemptId,
-      () => _historyService.getAttemptDetail(attemptId: attemptId),
-    );
-  }
-
   void _primeDetailFutures(List<AttemptHistoryModel> attempts) {
     var added = false;
     for (final attempt in attempts) {
       if (!_detailFutures.containsKey(attempt.id)) {
-        _detailFutures[attempt.id] = _historyService.getAttemptDetail(attemptId: attempt.id);
+        _detailFutures[attempt.id] =
+            _historyService.getAttemptDetail(attemptId: attempt.id);
         added = true;
       }
     }
@@ -169,7 +171,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
-  Map<int, List<AttemptHistoryModel>> _groupByCategory(List<AttemptHistoryModel> attempts) {
+  Map<int, List<AttemptHistoryModel>> _groupByCategory(
+      List<AttemptHistoryModel> attempts) {
     final Map<int, List<AttemptHistoryModel>> grouped = {};
     for (final attempt in attempts) {
       grouped.putIfAbsent(attempt.categoryId, () => []).add(attempt);
@@ -291,9 +294,10 @@ class _AttemptDetailCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
                   decoration: BoxDecoration(
-                    color: scoreColor.withOpacity(0.15),
+                    color: scoreColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -313,7 +317,7 @@ class _AttemptDetailCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.12),
+                      color: Colors.orange.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -337,7 +341,8 @@ class _AttemptDetailCard extends StatelessWidget {
                   correctAnswers == null
                       ? '--/${attempt.totalItems}'
                       : '$correctAnswers/${attempt.totalItems}',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w700),
                 ),
               ],
             ),
@@ -416,8 +421,7 @@ class _QuestionHistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCorrect = question.isCorrect;
-    final statusColor =
-        isCorrect == true ? AppColors.accent : Colors.red;
+    final statusColor = isCorrect == true ? AppColors.accent : Colors.red;
     final userAnswer = _formatUserAnswer(question);
     final correctAnswer = _formatCorrectAnswer(question);
 
@@ -435,7 +439,8 @@ class _QuestionHistoryCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Q$questionNumber: ${question.questionText}',
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                 ),
                 if (isCorrect != null)
@@ -459,16 +464,17 @@ class _QuestionHistoryCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text('Your Answer:', style: Theme.of(context).textTheme.labelMedium),
+            Text('Your Answer:',
+                style: Theme.of(context).textTheme.labelMedium),
             const SizedBox(height: 4),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isCorrect == true
-                    ? AppColors.accent.withOpacity(0.1)
+                    ? AppColors.accent.withValues(alpha: 0.1)
                     : isCorrect == false
-                        ? Colors.red.withOpacity(0.1)
+                        ? Colors.red.withValues(alpha: 0.1)
                         : Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
@@ -494,11 +500,13 @@ class _QuestionHistoryCard extends StatelessWidget {
             ),
             if (correctAnswer != null) ...[
               const SizedBox(height: 8),
-              Text('Correct Answer:', style: Theme.of(context).textTheme.labelMedium),
+              Text('Correct Answer:',
+                  style: Theme.of(context).textTheme.labelMedium),
               const SizedBox(height: 4),
               Text(
                 correctAnswer,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                style:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
               ),
             ],
           ],
@@ -523,7 +531,8 @@ class _QuestionHistoryCard extends StatelessWidget {
 
   String? _formatCorrectAnswer(AttemptQuestionDetail question) {
     if (question.questionType == 'ordering') {
-      final ordered = question.options.where((o) => o.orderIndex != null).toList();
+      final ordered =
+          question.options.where((o) => o.orderIndex != null).toList();
       if (ordered.isEmpty) return null;
       ordered.sort((a, b) => a.orderIndex!.compareTo(b.orderIndex!));
       return ordered.map((o) => o.text).join(' > ');
