@@ -13,7 +13,7 @@
 /* Reduce spacing between Filament form sections */
 @layer components {
     .fi-section + .fi-section {
-        @apply mt-3 !important;
+        margin-top: 0.75rem !important;
     }
 
     .fi-sidebar-item.fi-sidebar-item-has-url > .fi-sidebar-item-btn:hover {
@@ -25,7 +25,11 @@
     }
 
     .fi-sidebar-item.fi-sidebar-item-has-url > .fi-sidebar-item-btn:hover > .fi-icon {
-        @apply text-primary-600 dark:text-primary-400;
+        color: #2563eb;
+    }
+
+    .dark .fi-sidebar-item.fi-sidebar-item-has-url > .fi-sidebar-item-btn:hover > .fi-icon {
+        color: #60a5fa;
     }
 }
 

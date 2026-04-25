@@ -1,0 +1,13 @@
+services:
+  app:
+    image: ${BACKEND_IMAGE:?Set BACKEND_IMAGE before running docker compose}
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${APP_PORT:-8001}:80"
+    volumes:
+      - laravel_storage:/var/www/storage
+
+volumes:
+  laravel_storage:
