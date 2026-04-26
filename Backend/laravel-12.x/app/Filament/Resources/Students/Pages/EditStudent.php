@@ -1,23 +1,27 @@
 <?php
 
-namespace App\Filament\Resources\Teachers\Pages;
+namespace App\Filament\Resources\Students\Pages;
 
-use App\Filament\Resources\Teachers\TeacherResource;
+use App\Filament\Resources\Students\StudentResource;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
-class EditTeacher extends EditRecord
+class EditStudent extends EditRecord
 {
-    protected static string $resource = TeacherResource::class;
+    protected static string $resource = StudentResource::class;
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        // Recompute name from first_name and last_name
+        $data['name'] = trim(($data['first_name'] ?? '') . ' ' . ($data['last_name'] ?? ''));
+
         // Handle password change with current password verification
         if (!empty($data['password'])) {
             // Verify current password
             if (empty($data['current_password']) || !Hash::check($data['current_password'], $this->record->password)) {
-                \Filament\Notifications\Notification::make()
+                Notification::make()
                     ->title('Incorrect Current Password')
                     ->body('The current password you entered is wrong. Please try again.')
                     ->danger()
@@ -39,3 +43,4 @@ class EditTeacher extends EditRecord
         return $data;
     }
 }
+

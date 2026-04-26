@@ -37,6 +37,7 @@ class DashboardStatsOverview extends BaseWidget
         if (Schema::hasColumn('quiz_attempts', 'school_year')) {
             $averageStats = Quiz_attempt::query()
                 ->where('status', 'submitted')
+                ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
                 ->where('school_year', $selectedSchoolYear)
                 ->select(DB::raw('AVG(score_percent) as average_score'), DB::raw('COUNT(*) as attempt_count'))
                 ->first();

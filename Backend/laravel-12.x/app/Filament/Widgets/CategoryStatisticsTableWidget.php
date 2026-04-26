@@ -64,8 +64,8 @@ class CategoryStatisticsTableWidget extends BaseWidget
             ->select([
                 'categories.id',
                 'categories.name',
-                DB::raw('MAX(CASE WHEN quiz_attempts.status = "submitted" THEN quiz_attempts.score_percent ELSE NULL END) as highest_score'),
-                DB::raw('MIN(CASE WHEN quiz_attempts.status = "submitted" THEN quiz_attempts.score_percent ELSE NULL END) as lowest_score'),
+                DB::raw('MAX(CASE WHEN quiz_attempts.status = "submitted" AND quiz_attempts.attempt_type = "graded" THEN quiz_attempts.score_percent ELSE NULL END) as highest_score'),
+                DB::raw('MIN(CASE WHEN quiz_attempts.status = "submitted" AND quiz_attempts.attempt_type = "graded" THEN quiz_attempts.score_percent ELSE NULL END) as lowest_score'),
                 DB::raw('ROUND((SUM(CASE WHEN quiz_attempts.status = "submitted" THEN 1 ELSE 0 END) / COUNT(quiz_attempts.id)) * 100, 2) as completion_rate'),
                 DB::raw('SUM(CASE WHEN quiz_attempts.status = "in_progress" THEN 1 ELSE 0 END) as in_progress_attempts'),
                 DB::raw('SUM(CASE WHEN quiz_attempts.status = "expired" THEN 1 ELSE 0 END) as expired_attempts'),

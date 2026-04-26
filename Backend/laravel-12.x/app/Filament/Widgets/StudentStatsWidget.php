@@ -47,12 +47,14 @@ class StudentStatsWidget extends BaseWidget
                     ->formatStateUsing(function ($record) {
                         $avg = Quiz_attempt::where('student_id', $record->id)
                             ->where('status', 'submitted')
+                            ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
                             ->avg('score_percent') ?? 0;
                         return round($avg, 2) . '%';
                     })
                     ->color(function ($record) {
                         $avg = Quiz_attempt::where('student_id', $record->id)
                             ->where('status', 'submitted')
+                            ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
                             ->avg('score_percent') ?? 0;
                         return $avg >= 70 ? 'success' : ($avg >= 50 ? 'warning' : 'danger');
                     }),

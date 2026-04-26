@@ -10,6 +10,7 @@ use App\Models\Quiz_attempt;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Filament\Actions\EditAction;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -69,6 +70,7 @@ class StudentResource extends Resource
             ])
             ->actions([
                 ViewAction::make(),
+                EditAction::make(),
                 Action::make('deactivate')
                     ->label('Deactivate')
                     ->icon('heroicon-m-lock-closed')
@@ -87,6 +89,25 @@ class StudentResource extends Resource
                     ->modalDescription('This will reactivate the student account.')
                     ->visible(fn (User $record): bool => ! $record->is_active)
                     ->action(fn (User $record) => $record->update(['is_active' => true])),
+                Action::make('resetPassword')
+                    ->label('Reset Password')
+                    ->icon('heroicon-m-key')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Reset Student Password')
+                    ->modalDescription('The admin cannot see the current password for security reasons. A new temporary password will be generated and shown after confirmation.')
+                    ->action(function (User $record) {
+                        $tempPassword = \Illuminate\Support\Str::random(10);
+                        $record->update([
+                            'password' => bcrypt($tempPassword),
+                        ]);
+                        \Filament\Notifications\Notification::make()
+                            ->title('Password Reset')
+                            ->body("{$record->name}'s temporary password is: {$tempPassword}. Please share this securely and ask them to change it immediately.")
+                            ->success()
+                            ->persistent()
+                            ->send();
+                    }),
                 DeleteAction::make()
                     ->label('Terminate')
                     ->modalHeading('Terminate Student Account')
@@ -124,6 +145,7 @@ class StudentResource extends Resource
             'index' => ListStudents::route('/'),
             'create' => CreateStudent::route('/create'),
             'view' => ViewStudent::route('/{record}'),
+            'edit' => \App\Filament\Resources\Students\Pages\EditStudent::route('/{record}/edit'),
         ];
     }
 
@@ -137,6 +159,28 @@ class StudentResource extends Resource
             TextInput::make('student_id')->label('Student ID')->required(),
             TextInput::make('year_level')->label('Year Level')->required(),
             TextInput::make('course')->label('Course')->required(),
+            TextInput::make('current_password')
+                ->password()
+                ->revealable()
+                ->label('Current Password')
+                ->helperText('Enter the current password before setting a new one.')
+                ->required(fn ($get) => filled($get('password')))
+                ->visible(fn (string $operation): bool => $operation === 'edit')
+                ->dehydrated(false),
+            TextInput::make('password')
+                ->password()
+                ->revealable()
+                ->label('New Password')
+                ->minLength(8)
+                ->dehydrated(fn (?string $state): bool => filled($state))
+                ->nullable(),
+            TextInput::make('passwordConfirmation')
+                ->label('Confirm Password')
+                ->password()
+                ->revealable()
+                ->same('password')
+                ->dehydrated(false)
+                ->visible(fn ($get) => filled($get('password'))),
         ]);
     }
 }

@@ -94,6 +94,7 @@ class AverageScoreCardWidget extends Widget
 
         $stats = Quiz_attempt::query()
             ->where('status', 'submitted')
+            ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
             ->where('school_year', $this->selectedSchoolYear)
             ->select(DB::raw('AVG(score_percent) as average_score'), DB::raw('COUNT(*) as attempt_count'))
             ->first();
