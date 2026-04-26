@@ -193,7 +193,7 @@ class CreateQuestion extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        $categoryId = $this->preparedQuestionData['category_id'] ?? $this->data['category_id'] ?? null;
+        $categoryId = $this->record?->category_id;
 
         if ($categoryId) {
             return CategoryResource::getUrl('questions', ['record' => $categoryId]);

@@ -27,7 +27,7 @@ class QuestionForm
                     description: 'Use this section when the answer should be exactly one of two choices.',
                     statePath: 'true_false',
                     optionsLabel: 'True/False Options',
-                    optionsHelperText: 'Add exactly two options and mark one as correct.',
+                    optionsHelperText: 'Mark one option as correct.',
                     defaultOptions: [
                         ['option_text' => 'True'],
                         ['option_text' => 'False'],
@@ -36,6 +36,8 @@ class QuestionForm
                     createAnotherMethod: 'createTrueFalseAnother',
                     cancelUrl: $cancelUrl,
                     withAnswerKey: false,
+                    disableItemCreation: true,
+                    visible: fn ($livewire): bool => ! $livewire instanceof \Filament\Resources\Pages\EditRecord || $livewire->record->question_type === Question::TYPE_TRUE_FALSE,
                 ),
 
                 self::questionSection(
@@ -49,6 +51,7 @@ class QuestionForm
                     createAnotherMethod: 'createMultipleChoiceAnother',
                     cancelUrl: $cancelUrl,
                     withAnswerKey: false,
+                    visible: fn ($livewire): bool => ! $livewire instanceof \Filament\Resources\Pages\EditRecord || $livewire->record->question_type === Question::TYPE_MCQ,
                 ),
 
                 self::questionSection(
@@ -62,6 +65,7 @@ class QuestionForm
                     createAnotherMethod: 'createMultiSelectAnother',
                     cancelUrl: $cancelUrl,
                     withAnswerKey: false,
+                    visible: fn ($livewire): bool => ! $livewire instanceof \Filament\Resources\Pages\EditRecord || $livewire->record->question_type === Question::TYPE_MULTI_SELECT,
                 ),
 
                 self::questionSection(
@@ -75,6 +79,7 @@ class QuestionForm
                     createAnotherMethod: 'createShortAnswerAnother',
                     cancelUrl: $cancelUrl,
                     withAnswerKey: true,
+                    visible: fn ($livewire): bool => ! $livewire instanceof \Filament\Resources\Pages\EditRecord || $livewire->record->question_type === Question::TYPE_SHORT_ANSWER,
                 ),
             ]);
     }
@@ -90,6 +95,8 @@ class QuestionForm
         string $createAnotherMethod,
         callable $cancelUrl,
         bool $withAnswerKey,
+        bool $disableItemCreation = false,
+        ?\Closure $visible = null,
     ): Section {
         $schema = [
             self::categoryField(),
@@ -120,13 +127,13 @@ class QuestionForm
                 ->columnSpanFull()
                 ->placeholder('Describe the expected answer, key points, or grading criteria...');
         } else {
-            $schema[] = self::optionsRepeater($optionsLabel ?? 'Options')
+            $schema[] = self::optionsRepeater($optionsLabel ?? 'Options', $disableItemCreation)
                 ->default($defaultOptions)
                 ->helperText($optionsHelperText)
                 ->columnSpanFull();
         }
 
-        return Section::make($title)
+        $section = Section::make($title)
             ->description($description)
             ->columnSpanFull()
             ->statePath($statePath)
@@ -139,6 +146,12 @@ class QuestionForm
                 $cancelUrl,
             ))
             ->footerActionsAlignment(Alignment::Start);
+
+        if ($visible !== null) {
+            $section->visible($visible);
+        }
+
+        return $section;
     }
 
     private static function categoryField(): Select
@@ -159,7 +172,7 @@ class QuestionForm
         return $field;
     }
 
-    private static function optionsRepeater(string $label): Repeater
+    private static function optionsRepeater(string $label, bool $disableItemCreation = false): Repeater
     {
         return Repeater::make('options')
             ->label($label)
@@ -177,8 +190,8 @@ class QuestionForm
             ->orderable()
             ->collapsible()
             ->addActionLabel('Add Option')
-            ->disableItemCreation(false)
-            ->disableItemDeletion(false);
+            ->disableItemCreation($disableItemCreation)
+            ->disableItemDeletion($disableItemCreation);
     }
 
     /**
@@ -189,13 +202,19 @@ class QuestionForm
         return [
             Action::make($prefix . '_create')
                 ->label('Create')
-                ->action($createMethod)
+                ->action(function ($livewire) use ($createMethod): void {
+                    $livewire->{$createMethod}();
+                })
+                ->visible(fn ($livewire): bool => ! $livewire instanceof \Filament\Resources\Pages\EditRecord)
                 ->color('warning'),
 
-            Action::make($prefix . '_createAnother')
-                ->label('Create & create another')
-                ->action($createAnotherMethod)
-                ->color('gray'),
+            Action::make($prefix . '_update')
+                ->label('Update')
+                ->action(function ($livewire): void {
+                    $livewire->save();
+                })
+                ->visible(fn ($livewire): bool => $livewire instanceof \Filament\Resources\Pages\EditRecord)
+                ->color('warning'),
 
             Action::make($prefix . '_cancel')
                 ->label('Cancel')
