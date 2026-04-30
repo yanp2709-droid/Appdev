@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Support\SchoolYears;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
@@ -32,6 +33,7 @@ class AuthController extends Controller
             'section' => $validated['section'],
             'year_level' => $validated['year_level'],
             'course' => $validated['course'],
+            'school_year' => SchoolYears::current(),
             'privacy_consent' => (bool) $validated['privacy_consent'],
             'password' => Hash::make($validated['password']),
             'role' => 'student',

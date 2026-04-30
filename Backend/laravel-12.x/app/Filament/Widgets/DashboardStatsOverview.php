@@ -2,8 +2,9 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\User;
 use App\Models\Quiz_attempt;
+use App\Models\User;
+use App\Support\SchoolYears;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,7 @@ class DashboardStatsOverview extends BaseWidget
 
     public function mount(): void
     {
-        $this->selectedSchoolYear = $this->getCurrentSchoolYear();
+        $this->selectedSchoolYear = SchoolYears::current();
     }
 
     protected function getStats(): array
@@ -28,8 +29,8 @@ class DashboardStatsOverview extends BaseWidget
         $totalStudents = User::where('role', 'student')->count();
         $totalAttempts = Quiz_attempt::count();
         $submittedAttempts = Quiz_attempt::where('status', 'submitted')->count();
-        $selectedSchoolYear = $this->selectedSchoolYear ?: $this->getCurrentSchoolYear();
-        $formattedSchoolYear = $this->formatSchoolYear($selectedSchoolYear);
+        $selectedSchoolYear = $this->selectedSchoolYear ?: SchoolYears::current();
+        $formattedSchoolYear = SchoolYears::format($selectedSchoolYear);
 
         $averageValue = 'No data available';
         $averageDescription = "No submitted records for A.Y. {$formattedSchoolYear}";
@@ -73,34 +74,13 @@ class DashboardStatsOverview extends BaseWidget
         ];
     }
 
-    private function getCurrentSchoolYear(): string
-    {
-        $referenceDate = now();
-        $startYear = $referenceDate->month >= 6
-            ? $referenceDate->year
-            : $referenceDate->year - 1;
-
-        return sprintf('%d-%d', $startYear, $startYear + 1);
-    }
-
-    private function formatSchoolYear(string $schoolYear): string
-    {
-        $normalizedSchoolYear = preg_replace('/\s+/', '', trim($schoolYear));
-
-        if (preg_match('/^(\d{4})[-–](\d{4})$/', $normalizedSchoolYear, $matches)) {
-            return "{$matches[1]}–{$matches[2]}";
-        }
-
-        return trim($schoolYear);
-    }
-
     /**
      * @return array<string, string>
      */
     private function getSchoolYearOptions(): array
     {
         if (! Schema::hasColumn('quiz_attempts', 'school_year')) {
-            return [];
+            return SchoolYears::options();
         }
 
         $schoolYears = Quiz_attempt::query()
@@ -114,20 +94,7 @@ class DashboardStatsOverview extends BaseWidget
             ->values()
             ->all();
 
-        $currentSchoolYear = $this->getCurrentSchoolYear();
-
-        if (! in_array($currentSchoolYear, $schoolYears, true)) {
-            $schoolYears[] = $currentSchoolYear;
-            rsort($schoolYears);
-        }
-
-        $options = [];
-
-        foreach ($schoolYears as $schoolYear) {
-            $options[$schoolYear] = $this->formatSchoolYear($schoolYear);
-        }
-
-        return $options;
+        return SchoolYears::options($schoolYears);
     }
 
     private function makeAverageScoreLabel(): HtmlString
@@ -151,7 +118,7 @@ class DashboardStatsOverview extends BaseWidget
             . 'style="min-width:7.5rem;height:2rem;border:1px solid #d1d5db;border-radius:0.5rem;background:#ffffff;padding:0.2rem 1.75rem 0.2rem 0.55rem;font-size:0.75rem;font-weight:600;color:#6b7280;box-shadow:0 1px 2px rgba(0,0,0,0.05);outline:none;appearance:none;-webkit-appearance:none;-moz-appearance:none;">'
             . $options
             . '</select>'
-            . '<span style="position:absolute;right:0.5rem;pointer-events:none;color:#6b7280;font-size:0.75rem;line-height:1;">▾</span>'
+            . '<span style="position:absolute;right:0.5rem;pointer-events:none;color:#6b7280;font-size:0.75rem;line-height:1;">&#9662;</span>'
             . '</span>'
             . '</span>'
         );

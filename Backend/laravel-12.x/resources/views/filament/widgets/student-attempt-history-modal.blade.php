@@ -4,6 +4,7 @@
         <div class="text-base font-semibold text-gray-900">{{ $student->name ?: trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? '')) }}</div>
         <div class="text-sm text-gray-600">{{ $student->email }}</div>
         <div class="text-xs text-gray-500">Student ID: {{ $student->student_id ?? 'N/A' }}</div>
+        <div class="text-xs text-gray-500">School Year: {{ $student->school_year ? \App\Support\SchoolYears::format($student->school_year) : 'N/A' }}</div>
     </div>
 
     <div class="overflow-hidden rounded-lg border border-gray-200">

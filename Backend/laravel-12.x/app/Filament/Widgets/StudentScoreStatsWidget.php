@@ -4,8 +4,10 @@ namespace App\Filament\Widgets;
 
 use App\Models\Quiz_attempt;
 use App\Models\User;
+use App\Support\SchoolYears;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Schema;
 
 class StudentScoreStatsWidget extends BaseWidget
 {
@@ -13,15 +15,26 @@ class StudentScoreStatsWidget extends BaseWidget
 
     protected static bool $isLazy = false;
 
+    public string $selectedSchoolYear = '';
+
+    public function mount(): void
+    {
+        $this->selectedSchoolYear = $this->record?->school_year ?: SchoolYears::current();
+    }
+
     protected function getStats(): array
     {
-        if (!$this->record || $this->record->role !== 'student') {
+        if (! $this->record || $this->record->role !== 'student') {
             return [];
         }
 
         $attempts = $this->record->quizAttempts()
             ->where('status', 'submitted')
             ->where('attempt_type', Quiz_attempt::TYPE_GRADED);
+
+        if (Schema::hasColumn('quiz_attempts', 'school_year') && ! blank($this->selectedSchoolYear)) {
+            $attempts = $attempts->where('school_year', $this->selectedSchoolYear);
+        }
 
         $attemptCount = $attempts->count();
         $averageScore = $attempts->avg('score_percent') ?? 0;
@@ -30,6 +43,10 @@ class StudentScoreStatsWidget extends BaseWidget
 
         $performanceColor = $averageScore >= 80 ? 'success' : ($averageScore >= 60 ? 'warning' : 'danger');
 
+        $schoolYearLabel = $this->selectedSchoolYear
+            ? 'A.Y. ' . SchoolYears::format($this->selectedSchoolYear)
+            : 'All Years';
+
         return [
             Stat::make('Total Submitted', $attemptCount)
                 ->description('Quiz attempts completed')
@@ -37,7 +54,7 @@ class StudentScoreStatsWidget extends BaseWidget
                 ->color('info'),
 
             Stat::make('Average Score', round($averageScore, 2) . '%')
-                ->description('Overall performance')
+                ->description($schoolYearLabel)
                 ->descriptionIcon('heroicon-m-chart-bar')
                 ->color($performanceColor),
 
@@ -51,5 +68,32 @@ class StudentScoreStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-arrow-trending-down')
                 ->color('warning'),
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function getSchoolYearOptions(): array
+    {
+        if (! Schema::hasColumn('quiz_attempts', 'school_year')) {
+            return SchoolYears::options($this->record?->school_year ? [$this->record->school_year] : []);
+        }
+
+        $schoolYears = $this->record->quizAttempts()
+            ->select('school_year')
+            ->whereNotNull('school_year')
+            ->where('school_year', '!=', '')
+            ->distinct()
+            ->orderBy('school_year', 'desc')
+            ->pluck('school_year')
+            ->filter()
+            ->values()
+            ->all();
+
+        if ($this->record?->school_year) {
+            $schoolYears[] = $this->record->school_year;
+        }
+
+        return SchoolYears::options($schoolYears);
     }
 }

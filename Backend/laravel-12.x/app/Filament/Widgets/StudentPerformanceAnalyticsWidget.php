@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Quiz_attempt;
 use App\Models\User;
+use App\Support\SchoolYears;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -44,6 +45,11 @@ class StudentPerformanceAnalyticsWidget extends BaseWidget
                 TextColumn::make('email')
                     ->label('Email')
                     ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('school_year')
+                    ->label('School Year')
+                    ->formatStateUsing(fn (?string $state): string => $state ? SchoolYears::format($state) : 'N/A')
                     ->sortable(),
 
                 TextColumn::make('quiz_attempts_count')

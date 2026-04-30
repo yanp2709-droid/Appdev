@@ -8,6 +8,7 @@ use App\Filament\Widgets\StudentScoreStatsWidget;
 use App\Models\Quiz;
 use App\Models\QuizRetakeAllowance;
 use App\Models\User;
+use App\Support\SchoolYears;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -116,6 +117,11 @@ class ViewStudent extends ViewRecord
                             ->label('Course')
                             ->icon('heroicon-m-book-open')
                             ->default('N/A'),
+
+                        TextEntry::make('school_year')
+                            ->label('School Year')
+                            ->icon('heroicon-m-calendar-days')
+                            ->formatStateUsing(fn (?string $state): string => $state ? 'A.Y. ' . SchoolYears::format($state) : 'N/A'),
 
                         TextEntry::make('email_verified_at')
                             ->label('Email Status')

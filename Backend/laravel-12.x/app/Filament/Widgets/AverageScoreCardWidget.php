@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Quiz_attempt;
+use App\Support\SchoolYears;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -21,14 +22,14 @@ class AverageScoreCardWidget extends Widget
 
     public function mount(): void
     {
-        $this->selectedSchoolYear = $this->getCurrentSchoolYear();
+        $this->selectedSchoolYear = SchoolYears::current();
     }
 
     protected function getViewData(): array
     {
         return [
             'schoolYearOptions' => $this->getSchoolYearOptions(),
-            'selectedSchoolYearLabel' => $this->formatSchoolYear($this->selectedSchoolYear),
+            'selectedSchoolYearLabel' => SchoolYears::format($this->selectedSchoolYear),
             'averageData' => $this->getAverageData(),
         ];
     }
@@ -39,7 +40,7 @@ class AverageScoreCardWidget extends Widget
     protected function getSchoolYearOptions(): array
     {
         if (! Schema::hasColumn('quiz_attempts', 'school_year')) {
-            return [];
+            return SchoolYears::options();
         }
 
         $schoolYears = Quiz_attempt::query()
@@ -53,20 +54,7 @@ class AverageScoreCardWidget extends Widget
             ->values()
             ->all();
 
-        $currentSchoolYear = $this->getCurrentSchoolYear();
-
-        if (! in_array($currentSchoolYear, $schoolYears, true)) {
-            $schoolYears[] = $currentSchoolYear;
-            rsort($schoolYears);
-        }
-
-        $options = [];
-
-        foreach ($schoolYears as $schoolYear) {
-            $options[$schoolYear] = $this->formatSchoolYear($schoolYear);
-        }
-
-        return $options;
+        return SchoolYears::options($schoolYears);
     }
 
     /**
@@ -107,26 +95,5 @@ class AverageScoreCardWidget extends Widget
             'average_score' => $attemptCount > 0 ? round((float) ($stats->average_score ?? 0), 2) : null,
             'attempt_count' => $attemptCount,
         ];
-    }
-
-    protected function formatSchoolYear(string $schoolYear): string
-    {
-        $normalizedSchoolYear = preg_replace('/\s+/', '', trim($schoolYear));
-
-        if (preg_match('/^(\d{4})[-–](\d{4})$/', $normalizedSchoolYear, $matches)) {
-            return "{$matches[1]}–{$matches[2]}";
-        }
-
-        return trim($schoolYear);
-    }
-
-    protected function getCurrentSchoolYear(): string
-    {
-        $referenceDate = now();
-        $startYear = $referenceDate->month >= 6
-            ? $referenceDate->year
-            : $referenceDate->year - 1;
-
-        return sprintf('%d-%d', $startYear, $startYear + 1);
     }
 }

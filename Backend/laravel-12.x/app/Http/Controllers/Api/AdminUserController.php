@@ -12,7 +12,7 @@ class AdminUserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::select('id', 'name', 'first_name', 'last_name', 'email', 'role', 'student_id', 'section', 'year_level', 'course', 'created_at');
+        $query = User::select('id', 'name', 'first_name', 'last_name', 'email', 'role', 'student_id', 'section', 'year_level', 'course', 'school_year', 'created_at');
         
 $query->orderBy('role', 'desc');
         $query->orderBy('name');

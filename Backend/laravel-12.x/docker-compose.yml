@@ -8,7 +8,11 @@ services:
     working_dir: /var/www
     volumes:
       - ./:/var/www:cached
-      - laravel_db:/var/www/storage/db
+      - laravel_framework_cache:/var/www/storage/framework/cache
+      - laravel_framework_sessions:/var/www/storage/framework/sessions
+      - laravel_framework_views:/var/www/storage/framework/views
+      - laravel_logs:/var/www/storage/logs
+      - laravel_bootstrap_cache:/var/www/bootstrap/cache
     networks:
       - laravel
 
@@ -29,4 +33,8 @@ networks:
   laravel:
 
 volumes:
-  laravel_db:
+  laravel_framework_cache:
+  laravel_framework_sessions:
+  laravel_framework_views:
+  laravel_logs:
+  laravel_bootstrap_cache:

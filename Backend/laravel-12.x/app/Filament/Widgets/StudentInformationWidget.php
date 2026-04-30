@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\User;
+use App\Support\SchoolYears;
 use Filament\Tables;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -47,6 +48,10 @@ class StudentInformationWidget extends BaseWidget
                     ->label('Email')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('school_year')
+                    ->label('School Year')
+                    ->formatStateUsing(fn (?string $state): string => $state ? SchoolYears::format($state) : 'N/A')
+                    ->sortable(),
                 BadgeColumn::make('status')
                     ->label('Status')
                     ->getStateUsing(fn (User $record): string => $record->email_verified_at ? 'Verified' : 'Unverified')
@@ -72,4 +77,3 @@ class StudentInformationWidget extends BaseWidget
             ]);
     }
 }
-

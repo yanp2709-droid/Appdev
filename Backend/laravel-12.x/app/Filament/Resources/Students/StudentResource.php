@@ -6,7 +6,7 @@ use App\Filament\Resources\Students\Pages\ListStudents;
 use App\Filament\Resources\Students\Pages\ViewStudent;
 use App\Filament\Resources\Students\Pages\CreateStudent;
 use App\Models\User;
-use App\Models\Quiz_attempt;
+use App\Support\SchoolYears;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -56,6 +56,11 @@ class StudentResource extends Resource
                 TextColumn::make('created_at')
                     ->label('Registered')
                     ->dateTime()
+                    ->sortable(),
+
+                TextColumn::make('school_year')
+                    ->label('School Year')
+                    ->getStateUsing(fn (User $record): string => $record->school_year ? SchoolYears::format($record->school_year) : 'N/A')
                     ->sortable(),
 
                 TextColumn::make('quiz_attempts_count')
@@ -159,6 +164,12 @@ class StudentResource extends Resource
             TextInput::make('student_id')->label('Student ID')->required(),
             TextInput::make('year_level')->label('Year Level')->required(),
             TextInput::make('course')->label('Course')->required(),
+            Select::make('school_year')
+                ->label('School Year')
+                ->options(SchoolYears::options())
+                ->searchable()
+                ->required()
+                ->default(SchoolYears::current()),
             TextInput::make('current_password')
                 ->password()
                 ->revealable()
