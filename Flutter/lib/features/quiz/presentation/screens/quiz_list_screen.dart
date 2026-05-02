@@ -65,14 +65,14 @@ class _QuizListScreenState extends State<QuizListScreen> {
 
   /// Loading view with shimmer effect
   Widget _buildLoadingView() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
+    return const Padding(
+      padding: EdgeInsets.all(16),
       child: Column(
         children: [
           _ShimmerCard(),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _ShimmerCard(),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _ShimmerCard(),
         ],
       ),
@@ -202,12 +202,12 @@ class _QuizListScreenState extends State<QuizListScreen> {
   /// Handle quiz tap - navigate to quiz screen
   Future<void> _handleQuizTap(QuizModel quiz) async {
     final quizListProvider = context.read<QuizListProvider>();
+    final quizProvider = context.read<QuizProvider>();
     // Select the quiz and start quiz attempt
     quizListProvider.selectQuiz(quiz);
     final attemptType = await _chooseAttemptType(quiz);
     if (attemptType == null) return;
 
-    final quizProvider = context.read<QuizProvider>();
     await quizProvider.startQuizWithQuiz(
       quizId: quiz.id,
       categoryId: widget.subjectId,
@@ -311,13 +311,15 @@ class _QuizCard extends StatelessWidget {
           color: isAvailable ? Colors.white : AppColors.gray100,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isAvailable ? AppColors.primary.withOpacity(0.3) : AppColors.gray200,
+            color: isAvailable
+                ? AppColors.primary.withValues(alpha: 0.3)
+                : AppColors.gray200,
             width: 1,
           ),
           boxShadow: isAvailable
               ? [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -332,7 +334,7 @@ class _QuizCard extends StatelessWidget {
               height: 56,
               decoration: BoxDecoration(
                 color: isAvailable
-                    ? AppColors.primary.withOpacity(0.1)
+                    ? AppColors.primary.withValues(alpha: 0.1)
                     : AppColors.gray200,
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -419,7 +421,7 @@ class _QuizCard extends StatelessWidget {
 
             // Arrow
             if (isAvailable)
-              Icon(
+              const Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
                 color: AppColors.gray400,
@@ -465,6 +467,8 @@ class _InfoChip extends StatelessWidget {
 
 /// Shimmer placeholder for loading state
 class _ShimmerCard extends StatelessWidget {
+  const _ShimmerCard();
+
   @override
   Widget build(BuildContext context) {
     return Container(

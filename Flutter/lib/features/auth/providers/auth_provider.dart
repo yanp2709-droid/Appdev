@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../data/auth_repository.dart';
 import '../data/user_model.dart';
+import '../../../core/network/token_storage.dart';
 
 enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 
@@ -29,6 +30,7 @@ class AuthProvider extends ChangeNotifier {
     if (session != null) {
       _token = session.token;
       _user = session.user;
+      await TokenStorage.saveToken(_token!);
       try {
         // Validate session with backend
         final me = await _repo.getMe();

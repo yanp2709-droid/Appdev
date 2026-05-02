@@ -52,7 +52,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     switch (provider.status) {
       case CategoriesStatus.initial:
       case CategoriesStatus.loading:
-        return _ShimmerList();
+        return const _ShimmerList();
 
       case CategoriesStatus.error:
         return ErrorBanner(
@@ -108,7 +108,7 @@ class _CategoryCard extends StatelessWidget {
           border: Border.all(color: AppColors.gray200, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -120,7 +120,7 @@ class _CategoryCard extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: category.color.withOpacity(0.1),
+                color: category.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
@@ -153,7 +153,7 @@ class _CategoryCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.gray400),
+            const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.gray400),
           ],
         ),
       ),
@@ -162,6 +162,8 @@ class _CategoryCard extends StatelessWidget {
 }
 
 class _ShimmerList extends StatelessWidget {
+  const _ShimmerList();
+
   @override
   Widget build(BuildContext context) {
     return Padding(
