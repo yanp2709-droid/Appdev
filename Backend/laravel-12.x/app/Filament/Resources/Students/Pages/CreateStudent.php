@@ -21,8 +21,8 @@ class CreateStudent extends CreateRecord
         $data['role'] = 'student';
         // Set the required 'name' field
         $data['name'] = trim(($data['first_name'] ?? '') . ' ' . ($data['last_name'] ?? ''));
-        // Set a default password (hashed)
-        $data['password'] = Hash::make('password');
+        // Use admin-provided password or default to 'password'
+        $data['password'] = Hash::make($data['password'] ?? 'password');
         return $data;
     }
 

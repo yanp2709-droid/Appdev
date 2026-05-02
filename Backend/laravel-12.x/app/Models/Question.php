@@ -33,6 +33,7 @@ class Question extends Model
 
     protected $fillable = [
         'category_id',
+        'quiz_id',
         'question_type',
         'question_text',
         'points',
@@ -47,6 +48,11 @@ class Question extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function quiz()
+    {
+        return $this->belongsTo(Quiz::class);
     }
 
     // Relation to options (for MCQ, TF, Ordering)
@@ -86,6 +92,17 @@ class Question extends Model
         if ($questionType === null) {
             $errors[] = 'Question type is invalid.';
             return $errors;
+        }
+
+        $points = $payload['points'] ?? null;
+        if ($points !== null && $points !== '') {
+            if (!is_numeric($points) || (int) $points != $points) {
+                $errors[] = 'Points must be a whole number.';
+            } elseif ((int) $points < 1) {
+                $errors[] = 'Points must be at least 1.';
+            } elseif ((int) $points > 1000) {
+                $errors[] = 'Points cannot exceed 1000.';
+            }
         }
 
         $optionsPayload = $payload['options'] ?? [];

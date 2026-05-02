@@ -18,7 +18,11 @@ class QuestionBankController extends Controller
             ],
         ]);
 
-        $result = $service->importCsv($request->file('file'), $request->integer('category_id') ?: null);
+        if ($request->filled('quiz_id')) {
+            $result = $service->importCsvForQuiz($request->file('file'), $request->integer('quiz_id'));
+        } else {
+            $result = $service->importCsv($request->file('file'), $request->integer('category_id') ?: null);
+        }
 
         // If service detected that file is not a valid CSV, return 422
         if ($result['rejected'] && isset($result['errors'])) {
@@ -46,11 +50,15 @@ class QuestionBankController extends Controller
                 ],
             ]);
 
-            $result = $service->importJsonFromFile($request->file('file'), $request->integer('category_id') ?: null);
+            $result = $request->filled('quiz_id')
+                ? $service->importJsonFromFileForQuiz($request->file('file'), $request->integer('quiz_id'))
+                : $service->importJsonFromFile($request->file('file'), $request->integer('category_id') ?: null);
         } else {
             $payload = $request->json()->all();
             $questions = $payload['questions'] ?? (is_array($payload) ? $payload : null);
-            $result = $service->importJsonPayload($questions, $request->integer('category_id') ?: null);
+            $result = $request->filled('quiz_id')
+                ? $service->importJsonPayloadForQuiz($questions, $request->integer('quiz_id'))
+                : $service->importJsonPayload($questions, $request->integer('category_id') ?: null);
         }
 
         return response()->json($result);
@@ -58,11 +66,19 @@ class QuestionBankController extends Controller
 
     public function exportJson(QuestionBankService $service)
     {
+        if (request()->filled('quiz_id')) {
+            return response()->json($service->exportJsonForQuiz(request()->integer('quiz_id')));
+        }
+
         return response()->json($service->exportJson(request()->integer('category_id') ?: null));
     }
 
     public function exportCsv(QuestionBankService $service)
     {
+        if (request()->filled('quiz_id')) {
+            return $service->exportCsvForQuiz(request()->integer('quiz_id'));
+        }
+
         return $service->exportCsv(request()->integer('category_id') ?: null);
     }
 }

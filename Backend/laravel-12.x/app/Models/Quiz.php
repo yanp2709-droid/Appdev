@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Schema;
 
 class Quiz extends Model
 {
@@ -25,6 +26,7 @@ class Quiz extends Model
         'show_score_immediately',
         'show_answers_after_submit',
         'show_correct_answers_after_submit',
+        'is_active',
     ];
 
     protected $casts = [
@@ -37,6 +39,7 @@ class Quiz extends Model
         'show_score_immediately' => 'boolean',
         'show_answers_after_submit' => 'boolean',
         'show_correct_answers_after_submit' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     public static function normalizePayload(array $payload): array
@@ -57,6 +60,7 @@ class Quiz extends Model
             'show_score_immediately',
             'show_answers_after_submit',
             'show_correct_answers_after_submit',
+            'is_active',
         ] as $booleanField) {
             if (array_key_exists($booleanField, $payload)) {
                 $payload[$booleanField] = (bool) $payload[$booleanField];
@@ -81,6 +85,10 @@ class Quiz extends Model
             } else {
                 $payload['duration_minutes'] = (int) $payload['duration_minutes'];
             }
+        }
+
+        if (!Schema::hasColumn('quizzes', 'is_active')) {
+            unset($payload['is_active']);
         }
 
         return $payload;
@@ -111,13 +119,17 @@ class Quiz extends Model
             $errors[] = 'Duration is required when the timer is enabled.';
         }
 
-        if ($durationMinutes !== null && $durationMinutes !== '' && (!is_numeric($durationMinutes) || (int) $durationMinutes <= 0)) {
-            $errors[] = 'Duration must be a positive integer.';
+        if ($durationMinutes !== null && $durationMinutes !== '') {
+            if (!is_numeric($durationMinutes) || (float) $durationMinutes <= 0 || (float) $durationMinutes != floor((float) $durationMinutes)) {
+                $errors[] = 'Duration must be a positive integer.';
+            }
         }
 
         $attemptLimit = $payload['max_attempts'] ?? $payload['attempt_limit'] ?? null;
-        if ($attemptLimit !== null && $attemptLimit !== '' && (!is_numeric($attemptLimit) || (int) $attemptLimit <= 0)) {
-            $errors[] = 'Attempt limit must be a positive integer when provided.';
+        if ($attemptLimit !== null && $attemptLimit !== '') {
+            if (!is_numeric($attemptLimit) || (float) $attemptLimit <= 0 || (float) $attemptLimit != floor((float) $attemptLimit)) {
+                $errors[] = 'Attempt limit must be a positive integer when provided.';
+            }
         }
 
         if (!empty($payload['show_correct_answers_after_submit']) && empty($payload['show_answers_after_submit'])) {
@@ -136,6 +148,11 @@ class Quiz extends Model
     public function questions()
     {
         return $this->hasMany(Question::class);
+    }
+
+    public function questionCount()
+    {
+        return $this->questions()->count();
     }
 
     public function attempts()

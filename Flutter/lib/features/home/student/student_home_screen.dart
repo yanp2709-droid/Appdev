@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/dashboard_card.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../quiz/providers/quiz_provider.dart';
 
@@ -43,7 +44,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               height: 260,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.08),
+                color: Colors.white.withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -55,7 +56,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.accent.withOpacity(0.08),
+                color: AppColors.accent.withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -83,7 +84,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                             Builder(
                               builder: (ctx) => Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.16),
+                                  color: Colors.white.withValues(alpha: 0.16),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: IconButton(
@@ -103,10 +104,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.14),
+                                color: Colors.white.withValues(alpha: 0.14),
                                 borderRadius: BorderRadius.circular(999),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                 ),
                               ),
                               child: const Row(
@@ -135,7 +136,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         Text(
                           'Welcome back,',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.78),
+                            color: Colors.white.withValues(alpha: 0.78),
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),
@@ -156,7 +157,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                               ? 'Pick up where you left off or review your latest performance.'
                               : 'Choose a category, start a quiz, and build momentum one session at a time.',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.85),
+                            color: Colors.white.withValues(alpha: 0.85),
                             fontSize: 14,
                             height: 1.45,
                           ),
@@ -251,35 +252,70 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         ],
                       ),
                       const SizedBox(height: 18),
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withOpacity(0.08),
-                              blurRadius: 24,
-                              offset: const Offset(0, 12),
+                      DashboardCard(
+                        topStripColor: AppColors.primary,
+                        padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        footer: const Row(
+                          children: [
+                            Text(
+                              'Keep your momentum going',
+                              style: TextStyle(
+                                color: AppColors.gray600,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Spacer(),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: AppColors.primary,
+                              size: 18,
                             ),
                           ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Row(
+                            Row(
                               children: [
-                                Icon(
-                                  Icons.rocket_launch_rounded,
-                                  color: AppColors.primary,
+                                Container(
+                                  width: 46,
+                                  height: 46,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary
+                                        .withValues(alpha: 0.10),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: const Icon(
+                                    Icons.rocket_launch_rounded,
+                                    color: AppColors.primary,
+                                  ),
                                 ),
-                                SizedBox(width: 10),
-                                Text(
-                                  'Next Best Step',
-                                  style: TextStyle(
-                                    color: AppColors.textDark,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Next Best Step',
+                                        style: TextStyle(
+                                          color: AppColors.textDark,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'Suggested action for today',
+                                        style: TextStyle(
+                                          color: AppColors.gray600,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -360,7 +396,7 @@ class _StudentDrawer extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.white.withOpacity(0.08),
+                    Colors.white.withValues(alpha: 0.08),
                     Colors.transparent,
                   ],
                   begin: Alignment.topCenter,
@@ -374,9 +410,10 @@ class _StudentDrawer extends StatelessWidget {
                     width: 62,
                     height: 62,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.14),
+                      color: Colors.white.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: Colors.white.withOpacity(0.18)),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.18)),
                     ),
                     child: const Icon(
                       Icons.person_rounded,
@@ -424,7 +461,7 @@ class _StudentDrawer extends StatelessWidget {
                 context.go('/categories');
               },
             ),
-_DrawerTile(
+            _DrawerTile(
               icon: Icons.history_rounded,
               label: 'History',
               isActive: currentRoute == '/history',
@@ -433,7 +470,6 @@ _DrawerTile(
                 context.go('/history');
               },
             ),
-
             const Spacer(),
             const Divider(color: Colors.white24, height: 1),
             Consumer<AuthProvider>(
@@ -484,10 +520,13 @@ class _DrawerTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       decoration: BoxDecoration(
-        color: isActive ? Colors.white.withOpacity(0.12) : Colors.transparent,
+        color: isActive
+            ? Colors.white.withValues(alpha: 0.12)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(14),
-        border:
-            isActive ? Border.all(color: Colors.white.withOpacity(0.15)) : null,
+        border: isActive
+            ? Border.all(color: Colors.white.withValues(alpha: 0.15))
+            : null,
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
@@ -566,9 +605,9 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
+        color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.18)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -606,57 +645,52 @@ class _QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Ink(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.12),
-                blurRadius: 24,
-                offset: const Offset(0, 12),
-              ),
-            ],
+    return DashboardCard(
+      topStripColor: color,
+      padding: const EdgeInsets.all(18),
+      margin: EdgeInsets.zero,
+      onTap: onTap,
+      footer: Row(
+        children: [
+          const Spacer(),
+          Icon(
+            Icons.arrow_forward_rounded,
+            color: color,
+            size: 18,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: color),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: AppColors.textDark,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  color: AppColors.gray600,
-                  fontSize: 13,
-                  height: 1.45,
-                ),
-              ),
-            ],
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: color),
           ),
-        ),
+          const SizedBox(height: 14),
+          Text(
+            title,
+            style: const TextStyle(
+              color: AppColors.textDark,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              color: AppColors.gray600,
+              fontSize: 13,
+              height: 1.45,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -667,20 +701,21 @@ class _WelcomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+    return const DashboardCard(
+      topStripColor: AppColors.accent,
+      padding: EdgeInsets.all(18),
+      margin: EdgeInsets.zero,
+      footer: Row(
+        children: [
+          Spacer(),
+          Icon(
+            Icons.insights_rounded,
+            color: AppColors.primary,
+            size: 18,
           ),
         ],
       ),
-      child: const Row(
+      child: Row(
         children: [
           Expanded(
             child: Column(
@@ -741,22 +776,27 @@ class _ScoreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return DashboardCard(
+      topStripColor: color,
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color, color.withOpacity(0.86)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+      margin: EdgeInsets.zero,
+      footer: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.gray200),
         ),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.24),
-            blurRadius: 20,
-            offset: const Offset(0, 12),
+        child: Text(
+          subtitle,
+          style: const TextStyle(
+            color: AppColors.gray600,
+            fontSize: 12,
+            height: 1.35,
+            fontWeight: FontWeight.w600,
           ),
-        ],
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -766,36 +806,27 @@ class _ScoreCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  style: TextStyle(
+                    color: color,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-              Icon(icon, color: Colors.white70, size: 18),
+              Icon(icon, color: color, size: 18),
             ],
           ),
           const SizedBox(height: 10),
           Text(
             value,
             style: TextStyle(
-              color: Colors.white,
-              fontSize: smallText ? 18 : 30,
+              color: AppColors.textDark,
+              fontSize: smallText ? 18 : 28,
               fontWeight: FontWeight.w800,
               height: 1.05,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-              height: 1.4,
-            ),
           ),
         ],
       ),

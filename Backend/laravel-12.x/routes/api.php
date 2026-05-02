@@ -45,7 +45,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Public read-only routes (use auth if you need to restrict later)
 Route::get('/categories', [CategoriesController::class, 'index']);
+Route::get('/categories/{category}/quizzes', [QuizzesController::class, 'byCategory'])->whereNumber('category');
+Route::get('/subjects/{subject}/quizzes', [QuizzesController::class, 'bySubject'])->whereNumber('subject');
 Route::get('/questions', [QuestionController::class, 'index']);
+Route::get('/quiz/{quiz}', [QuizzesController::class, 'show'])->whereNumber('quiz');
 
 // Quiz routes protected by role
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -53,7 +56,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
         Route::post('/quiz/create', [QuizzesController::class, 'store']);
         Route::put('/quiz/{quiz}', [QuizzesController::class, 'update'])->whereNumber('quiz');
-        Route::get('/quiz/{quiz}', [QuizzesController::class, 'show'])->whereNumber('quiz');
     });
 
     // Student-only routes
@@ -99,4 +101,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin/users')->group(function () {
     Route::get('/', [AdminUserController::class, 'index']);
     Route::patch('/{user}/password', [AdminUserController::class, 'updatePassword']);
+    Route::delete('/{user}', [AdminUserController::class, 'destroy']);
+    Route::patch('/{user}/deactivate', [AdminUserController::class, 'deactivate']);
+    Route::patch('/{user}/activate', [AdminUserController::class, 'activate']);
 });

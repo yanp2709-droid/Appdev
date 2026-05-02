@@ -17,19 +17,31 @@
 
         .category-card {
             position: relative;
-            background: #fff;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
             border: 1px solid #d9e2ec;
-            border-radius: 24px;
-            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
-            padding: 22px 20px 20px;
-            min-height: 400px;
+            border-radius: 26px;
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+            padding: 0 20px 20px;
+            min-height: 410px;
             transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+            overflow: hidden;
+        }
+
+        .category-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 88px;
+            background: linear-gradient(135deg, #1a5fd4 0%, #4f86f7 100%);
+            border-radius: 26px 26px 28px 28px;
         }
 
         .category-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-4px);
             border-color: #cfd8e3;
-            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+            box-shadow: 0 22px 40px rgba(15, 23, 42, 0.12);
         }
 
         .category-open-link {
@@ -112,14 +124,36 @@
         }
 
         .category-header {
-            margin-top: 54px;
+            margin-top: 24px;
             position: relative;
             z-index: 2;
+            padding: 52px 0 0;
+        }
+
+        .category-header::before {
+            content: attr(data-card-mark);
+            position: absolute;
+            top: 16px;
+            left: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 60px;
+            height: 60px;
+            padding: 0 18px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(8px);
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
         }
 
         .category-title {
-            margin: 14px 0 8px;
-            text-align: center;
+            margin: 16px 0 8px;
+            text-align: left;
             font-size: 22px;
             line-height: 1.2;
             font-weight: 800;
@@ -127,10 +161,10 @@
         }
 
         .category-description {
-            margin: 0 auto 24px;
-            max-width: 220px;
+            margin: 0 0 24px;
+            max-width: 100%;
             min-height: 60px;
-            text-align: center;
+            text-align: left;
             font-size: 14px;
             line-height: 1.45;
             color: #334155;
@@ -149,10 +183,10 @@
         }
 
         .category-stat {
-            background: #fff;
-            border: 1px solid #d9e2ec;
+            background: #ffffff;
+            border: 1px solid #dde7f2;
             border-radius: 18px;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
             padding: 14px;
             min-height: 108px;
         }
@@ -183,10 +217,12 @@
         }
 
         .category-created {
-            margin-top: 32px;
-            text-align: center;
-            font-size: 14px;
-            color: #334155;
+            margin-top: 26px;
+            padding-top: 16px;
+            border-top: 1px solid #e5edf5;
+            text-align: left;
+            font-size: 13px;
+            color: #64748b;
             position: relative;
             z-index: 2;
         }
@@ -298,12 +334,12 @@
         @forelse ($categories as $category)
             <div class="category-card">
                 <a
-                    href="{{ \App\Filament\Resources\Categories\CategoryResource::getUrl('questions', ['record' => $category]) }}"
+                    href="{{ \App\Filament\Resources\Categories\CategoryResource::getUrl('quizzes', ['record' => $category]) }}"
                     class="category-open-link"
                     aria-label="Open {{ $category->name }}"
                 ></a>
 
-                <div class="category-header">
+                <div class="category-header" data-card-mark="{{ strtoupper(\Illuminate\Support\Str::substr($category->name, 0, 2)) }}">
                     <div class="category-title">{{ $category->name }}</div>
 
                     <div class="category-description">

@@ -20,8 +20,9 @@ class StudentScoreStatsWidget extends BaseWidget
         }
 
         $attempts = $this->record->quizAttempts()
-            ->where('status', 'submitted');
-        
+            ->where('status', 'submitted')
+            ->where('attempt_type', Quiz_attempt::TYPE_GRADED);
+
         $attemptCount = $attempts->count();
         $averageScore = $attempts->avg('score_percent') ?? 0;
         $highestScore = $attempts->max('score_percent') ?? 0;

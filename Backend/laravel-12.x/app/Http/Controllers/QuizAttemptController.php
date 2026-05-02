@@ -74,6 +74,10 @@ class QuizAttemptController extends Controller
         if (!$quiz) {
             return $this->error('quiz_not_found', 'No quiz found for this category.', 404);
         }
+
+        if (! (bool) $quiz->is_active) {
+            return $this->error('quiz_inactive', 'This quiz is currently disabled.', 403);
+        }
         $now = now();
 
         Quiz_attempt::where('student_id', $user->id)
@@ -157,8 +161,7 @@ class QuizAttemptController extends Controller
             'expires_at' => $expiresAt,
         ]);
 
-        $query = Question::with('options')
-            ->where('category_id', $quiz->category_id);
+        $query = $this->quizQuestionsQuery($quiz);
 
         $shuffleQuestions = !empty($payload['random']) || $quiz->shuffle_questions;
         if ($shuffleQuestions) {
@@ -216,6 +219,10 @@ class QuizAttemptController extends Controller
             return $this->error('quiz_not_found', 'Quiz not found.', 404);
         }
 
+        if (! (bool) $quiz->is_active) {
+            return $this->error('quiz_inactive', 'This quiz is currently disabled.', 403);
+        }
+
         return $this->success([
             'quiz_id' => $quiz->id,
             'attempt_availability' => $this->attemptAvailabilityPayload($request->user()->id, $quiz->id),
@@ -224,6 +231,15 @@ class QuizAttemptController extends Controller
 
     private function resolveQuizForCategory(Category $category): ?Quiz
     {
+        $quiz = Quiz::where('category_id', $category->id)
+            ->where('is_active', true)
+            ->latest()
+            ->first();
+
+        if ($quiz) {
+            return $quiz;
+        }
+
         $hasQuestions = Question::where('category_id', $category->id)->exists();
         if (!$hasQuestions) {
             return null;
@@ -250,6 +266,7 @@ class QuizAttemptController extends Controller
                 'show_score_immediately' => true,
                 'show_answers_after_submit' => false,
                 'show_correct_answers_after_submit' => false,
+                'is_active' => true,
             ]
         );
     }
@@ -462,7 +479,13 @@ class QuizAttemptController extends Controller
 
             $question = Question::with('options')
                 ->where('id', $payload['question_id'])
-                ->where('category_id', $attempt->quiz->category_id)
+                ->where(function ($query) use ($attempt) {
+                    $query->where('quiz_id', $attempt->quiz->id)
+                        ->orWhere(function ($nested) use ($attempt) {
+                            $nested->whereNull('quiz_id')
+                                ->where('category_id', $attempt->quiz->category_id);
+                        });
+                })
                 ->first();
 
             if (!$question) {
@@ -472,7 +495,13 @@ class QuizAttemptController extends Controller
             if (!empty($payload['last_viewed_question_id'])) {
                 $lastViewedQuestionBelongsToQuiz = Question::query()
                     ->where('id', $payload['last_viewed_question_id'])
-                    ->where('category_id', $attempt->quiz->category_id)
+                    ->where(function ($query) use ($attempt) {
+                        $query->where('quiz_id', $attempt->quiz->id)
+                            ->orWhere(function ($nested) use ($attempt) {
+                                $nested->whereNull('quiz_id')
+                                    ->where('category_id', $attempt->quiz->category_id);
+                            });
+                    })
                     ->exists();
 
                 if (!$lastViewedQuestionBelongsToQuiz) {
@@ -640,7 +669,7 @@ class QuizAttemptController extends Controller
 
         $totalItems = $attempt->total_items ?? 0;
         if ($totalItems === 0) {
-            $totalItems = Question::where('category_id', $attempt->quiz->category_id)->count();
+            $totalItems = $this->quizQuestionsQuery($attempt->quiz)->count();
         }
         $answeredCount = $this->countAnsweredQuestions($attempt->id);
 
@@ -958,7 +987,7 @@ class QuizAttemptController extends Controller
             ->filter();
 
         if ($questionIds->isEmpty()) {
-            $questionIds = Question::where('category_id', $attempt->quiz->category_id)
+            $questionIds = $this->quizQuestionsQuery($attempt->quiz)
                 ->orderBy('id')
                 ->pluck('id')
                 ->map(fn ($id) => (int) $id);
@@ -973,6 +1002,19 @@ class QuizAttemptController extends Controller
             ->map(fn (int $id) => $questions->get($id))
             ->filter()
             ->values();
+    }
+
+    private function quizQuestionsQuery(Quiz $quiz)
+    {
+        return Question::query()
+            ->with('options')
+            ->where(function ($query) use ($quiz) {
+                $query->where('quiz_id', $quiz->id)
+                    ->orWhere(function ($nested) use ($quiz) {
+                        $nested->whereNull('quiz_id')
+                            ->where('category_id', $quiz->category_id);
+                    });
+            });
     }
 
     private function questionsPayload(Collection $questions, Quiz_attempt $attempt): Collection

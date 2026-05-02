@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Filament;
 
 use App\Http\Controllers\Controller;
-use App\Models\DashboardWidget;
 use App\Services\DashboardWidgetService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -81,6 +80,12 @@ class DashboardWidgetController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+        if (! $this->widgetService->isStorageReady()) {
+            return response()->json([
+                'error' => 'Dashboard widget storage is not ready. Run the latest migrations.',
+            ], 503);
+        }
+
         try {
             $widgetName = basename($validated['widget']);
             $targetWidgetName = isset($validated['target']) ? basename($validated['target']) : null;
@@ -88,10 +93,7 @@ class DashboardWidgetController extends Controller
 
             $this->widgetService->addWidget($user, $widgetName);
 
-            $widgetOrder = DashboardWidget::query()
-                ->where('user_id', $user->id)
-                ->where('is_visible', true)
-                ->orderBy('order')
+            $widgetOrder = $this->widgetService->getUserWidgets($user)
                 ->pluck('widget_name')
                 ->all();
 

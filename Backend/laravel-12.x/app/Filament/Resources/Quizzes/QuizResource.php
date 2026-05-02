@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Quizzes;
 use App\Filament\Resources\Quizzes\Pages\CreateQuiz;
 use App\Filament\Resources\Quizzes\Pages\EditQuiz;
 use App\Filament\Resources\Quizzes\Pages\ListQuizzes;
+use App\Filament\Resources\Quizzes\Pages\ViewQuizQuestions;
 use App\Filament\Resources\Quizzes\Schemas\QuizForm;
 use App\Filament\Resources\Quizzes\Tables\QuizzesTable;
 use App\Models\Quiz;
@@ -17,6 +18,8 @@ use Filament\Tables\Table;
 class QuizResource extends Resource
 {
     protected static ?string $model = Quiz::class;
+
+    protected static ?string $breadcrumb = 'Quiz';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
@@ -44,6 +47,7 @@ class QuizResource extends Resource
             'index' => ListQuizzes::route('/'),
             'create' => CreateQuiz::route('/create'),
             'edit' => EditQuiz::route('/{record}/edit'),
+            'questions' => ViewQuizQuestions::route('/{record}/questions'),
         ];
     }
 }

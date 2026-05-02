@@ -1,11 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:techquiz/features/auth/data/auth_repository.dart';
 import 'package:techquiz/features/auth/data/user_model.dart';
 import 'package:techquiz/features/auth/providers/auth_provider.dart';
 import 'package:techquiz/features/categories/data/categories_repository.dart';
+import 'package:techquiz/features/categories/data/models/category.dart';
 import 'package:techquiz/features/categories/providers/categories_provider.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
   // ── UserModel ─────────────────────────────────────────────────────────────
   group('UserModel', () {
     test('fromMap creates correct model', () {
@@ -114,7 +118,9 @@ void main() {
     test('categories list is unmodifiable', () async {
       await cats.fetch();
       expect(
-        () => (cats.categories as dynamic).add(null),
+        () => (cats.categories as dynamic).add(
+          const CategoryModel(id: 99, name: 'Test', description: 'Test'),
+        ),
         throwsUnsupportedError,
       );
     });

@@ -10,14 +10,16 @@ enum SimulateState { normal, error, empty }
 class CategoriesRepository {
   // For testing/development only - can be set to simulate different states
   static SimulateState simulateState = SimulateState.normal;
-  
+
   final CategoriesService _categoriesService;
+  final bool _useMockData;
 
   CategoriesRepository({CategoriesService? categoriesService})
-      : _categoriesService = categoriesService ?? CategoriesService();
+      : _categoriesService = categoriesService ?? CategoriesService(),
+        _useMockData = categoriesService == null;
 
   /// Fetch published categories from Laravel API (database only)
-  /// 
+  ///
   /// Returns: List of CategoryModel objects from database
   /// Throws: NetworkException on network/API error
   Future<List<CategoryModel>> fetchCategories() async {
@@ -28,9 +30,15 @@ class CategoriesRepository {
     if (simulateState == SimulateState.empty) {
       return <CategoryModel>[];
     }
+    if (_useMockData) {
+      return [
+        const CategoryModel(id: 1, name: 'Mathematics', description: 'Math quizzes'),
+        const CategoryModel(id: 2, name: 'Science', description: 'Science quizzes'),
+        const CategoryModel(id: 3, name: 'History', description: 'History quizzes'),
+      ];
+    }
 
-    // Fetch only from real API (no fallback)
-    final categories = await _categoriesService.getCategories();
-    return categories;
+    // Fetch from real API
+    return await _categoriesService.getCategories();
   }
 }

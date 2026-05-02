@@ -8,7 +8,6 @@ use App\Filament\Widgets\StudentInformationWidget;
 use App\Filament\Widgets\SubmittedAttemptsWidget;
 use App\Filament\Widgets\TotalAttemptsWidget;
 use App\Filament\Widgets\TotalStudentsWidget;
-use App\Models\DashboardWidget;
 use App\Models\User;
 use App\Services\DashboardWidgetService;
 use BackedEnum;
@@ -46,12 +45,10 @@ class AdminDashboard extends Dashboard
             return collect();
         }
 
-        return DashboardWidget::query()
-            ->where('user_id', $user->id)
-            ->where('is_visible', true)
+        return $this->widgetService()
+            ->getUserWidgets($user)
             ->whereIn('widget_class', array_values($this->getWidgetClasses()))
-            ->orderBy('order')
-            ->get();
+            ->values();
     }
 
     public function getActiveWidgetClasses(): array
@@ -116,7 +113,7 @@ class AdminDashboard extends Dashboard
         $service->addWidget($user, $widgetName);
 
         $widgetOrder = $this->getDashboardWidgets()
-            ->map(fn (DashboardWidget $widget) => $this->getWidgetNameForClass($widget->widget_class))
+            ->map(fn ($widget) => $this->getWidgetNameForClass($widget->widget_class))
             ->filter()
             ->values()
             ->all();

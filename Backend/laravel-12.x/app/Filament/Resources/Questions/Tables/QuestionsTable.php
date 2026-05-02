@@ -21,6 +21,12 @@ class QuestionsTable
                     ->searchable()
                     ->sortable(),
 
+                TextColumn::make('quiz.title')
+                    ->label('Quiz')
+                    ->placeholder('Legacy category question')
+                    ->searchable()
+                    ->sortable(),
+
                 TextColumn::make('question_text')
                     ->label('Question')
                     ->limit(50)
@@ -59,6 +65,10 @@ class QuestionsTable
                 SelectFilter::make('category_id')
                     ->label('Category')
                     ->relationship('category', 'name'),
+
+                SelectFilter::make('quiz_id')
+                    ->label('Quiz')
+                    ->relationship('quiz', 'title'),
 
                 SelectFilter::make('question_type')
                     ->label('Question Type')

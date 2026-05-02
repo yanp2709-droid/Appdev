@@ -63,7 +63,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.danger.withOpacity(0.1),
+                    color: AppColors.danger.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -128,22 +128,21 @@ class _QuizScreenState extends State<QuizScreen> {
         ? -1
         : question.options.indexWhere((o) => o.id == selectedOptionId);
     final progress = (quiz.currentIndex + 1) / quiz.totalQuestions;
-    final isFirst  = quiz.currentIndex == 0;
+    final isFirst = quiz.currentIndex == 0;
     final isBookmarked = quiz.isBookmarked(quiz.currentIndex);
 
     if (_lastQuestionId != question.id) {
       _lastQuestionId = question.id;
       if (question.questionType == 'short_answer') {
-        _textController.text =
-            quiz.textAnswers[quiz.currentIndex] ?? '';
+        _textController.text = quiz.textAnswers[quiz.currentIndex] ?? '';
       }
     }
 
     return Scaffold(
       backgroundColor: AppColors.gray100,
       appBar: AppBar(
-        title: Text(
-            'Question ${quiz.currentIndex + 1} of ${quiz.totalQuestions}'),
+        title:
+            Text('Question ${quiz.currentIndex + 1} of ${quiz.totalQuestions}'),
         actions: [
           IconButton(
             tooltip: isBookmarked ? 'Remove bookmark' : 'Bookmark question',
@@ -231,10 +230,10 @@ class _QuizScreenState extends State<QuizScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
-                        color: AppColors.danger.withOpacity(0.08),
+                        color: AppColors.danger.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                            color: AppColors.danger.withOpacity(0.3)),
+                            color: AppColors.danger.withValues(alpha: 0.3)),
                       ),
                       child: const Row(
                         children: [
@@ -260,10 +259,10 @@ class _QuizScreenState extends State<QuizScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
-                        color: AppColors.danger.withOpacity(0.08),
+                        color: AppColors.danger.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                            color: AppColors.danger.withOpacity(0.3)),
+                            color: AppColors.danger.withValues(alpha: 0.3)),
                       ),
                       child: const Row(
                         children: [
@@ -290,13 +289,13 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                     decoration: BoxDecoration(
                       color: quiz.isPracticeAttempt
-                          ? Colors.orange.withOpacity(0.10)
-                          : AppColors.primary.withOpacity(0.08),
+                          ? Colors.orange.withValues(alpha: 0.10)
+                          : AppColors.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: quiz.isPracticeAttempt
-                            ? Colors.orange.withOpacity(0.35)
-                            : AppColors.primary.withOpacity(0.22),
+                            ? Colors.orange.withValues(alpha: 0.35)
+                            : AppColors.primary.withValues(alpha: 0.22),
                       ),
                     ),
                     child: Row(
@@ -337,7 +336,7 @@ class _QuizScreenState extends State<QuizScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
+                          color: Colors.black.withValues(alpha: 0.06),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -364,7 +363,8 @@ class _QuizScreenState extends State<QuizScreen> {
                         border: OutlineInputBorder(),
                       ),
                       maxLines: 3,
-                      onChanged: (_) => setState(() => _showUnansweredWarning = false),
+                      onChanged: (_) =>
+                          setState(() => _showUnansweredWarning = false),
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -387,10 +387,10 @@ class _QuizScreenState extends State<QuizScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.08),
+                        color: AppColors.primary.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: AppColors.primary.withOpacity(0.2),
+                          color: AppColors.primary.withValues(alpha: 0.2),
                         ),
                       ),
                       child: const Row(
@@ -429,9 +429,8 @@ class _QuizScreenState extends State<QuizScreen> {
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primary
-                                : Colors.white,
+                            color:
+                                isSelected ? AppColors.primary : Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isSelected
@@ -441,7 +440,7 @@ class _QuizScreenState extends State<QuizScreen> {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
+                                color: Colors.black.withValues(alpha: 0.04),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
@@ -491,9 +490,8 @@ class _QuizScreenState extends State<QuizScreen> {
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primary
-                                : Colors.white,
+                            color:
+                                isSelected ? AppColors.primary : Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isSelected
@@ -503,7 +501,7 @@ class _QuizScreenState extends State<QuizScreen> {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
+                                color: Colors.black.withValues(alpha: 0.04),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
@@ -517,7 +515,7 @@ class _QuizScreenState extends State<QuizScreen> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: isSelected
-                                      ? Colors.white.withOpacity(0.2)
+                                      ? Colors.white.withValues(alpha: 0.2)
                                       : AppColors.gray100,
                                 ),
                                 child: Center(
@@ -617,8 +615,10 @@ class _QuizScreenState extends State<QuizScreen> {
                             ),
                           )
                         : Text(
-                            quiz.isLastQuestion ? 'Finish Quiz' : 'Next Question',
-                            style: TextStyle(
+                            quiz.isLastQuestion
+                                ? 'Finish Quiz'
+                                : 'Next Question',
+                            style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
@@ -634,31 +634,36 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Future<void> _handleFinishPressed(BuildContext context, QuizProvider quiz) async {
+  Future<void> _handleFinishPressed(
+      BuildContext context, QuizProvider quiz) async {
     if (_isReviewOpen) return;
     if (quiz.allowReviewBeforeSubmit) {
       _isReviewOpen = true;
       final shouldSubmit = await _showReviewSheet(context, quiz);
       _isReviewOpen = false;
+      if (!mounted) return;
       if (shouldSubmit == true) {
-        await _submitAttempt(context, quiz);
+        await _submitAttempt(quiz);
       }
       return;
     }
 
     if (quiz.unansweredCount > 0) {
-      final confirmed = await _confirmUnansweredSubmit(context, quiz.unansweredCount);
+      final confirmed =
+          await _confirmUnansweredSubmit(context, quiz.unansweredCount);
+      if (!mounted) return;
       if (!confirmed) return;
     }
 
-    await _submitAttempt(context, quiz);
+    await _submitAttempt(quiz);
   }
 
-  Future<void> _submitAttempt(BuildContext context, QuizProvider quiz) async {
+  Future<void> _submitAttempt(QuizProvider quiz) async {
     setState(() => _isSubmitting = true);
     try {
-      await context.read<QuizProvider>().submitAttempt();
-      if (context.read<QuizProvider>().status == QuizStatus.finished) {
+      await quiz.submitAttempt();
+      if (!mounted) return;
+      if (quiz.status == QuizStatus.finished) {
         context.go('/quiz-result');
       }
     } finally {
@@ -668,7 +673,8 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  Future<void> _showQuestionPalette(BuildContext context, QuizProvider quiz) async {
+  Future<void> _showQuestionPalette(
+      BuildContext context, QuizProvider quiz) async {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -705,7 +711,8 @@ class _QuizScreenState extends State<QuizScreen> {
                   child: GridView.builder(
                     shrinkWrap: true,
                     itemCount: quiz.totalQuestions,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 5,
                       mainAxisSpacing: 10,
                       crossAxisSpacing: 10,
@@ -746,14 +753,16 @@ class _QuizScreenState extends State<QuizScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Wrap(
+                const Wrap(
                   spacing: 12,
                   runSpacing: 6,
-                  children: const [
+                  children: [
                     _PaletteLegend(label: 'Current', color: AppColors.primary),
                     _PaletteLegend(label: 'Answered', color: Color(0xFF16A34A)),
-                    _PaletteLegend(label: 'Bookmarked', color: Color(0xFFF59E0B)),
-                    _PaletteLegend(label: 'Unanswered', color: AppColors.gray200),
+                    _PaletteLegend(
+                        label: 'Bookmarked', color: Color(0xFFF59E0B)),
+                    _PaletteLegend(
+                        label: 'Unanswered', color: AppColors.gray200),
                   ],
                 ),
               ],
@@ -764,7 +773,8 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Future<bool?> _showReviewSheet(BuildContext context, QuizProvider quiz) async {
+  Future<bool?> _showReviewSheet(
+      BuildContext context, QuizProvider quiz) async {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -809,7 +819,8 @@ class _QuizScreenState extends State<QuizScreen> {
                   child: GridView.builder(
                     shrinkWrap: true,
                     itemCount: quiz.totalQuestions,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 5,
                       mainAxisSpacing: 10,
                       crossAxisSpacing: 10,
@@ -899,12 +910,14 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Future<bool> _confirmUnansweredSubmit(BuildContext context, int unanswered) async {
+  Future<bool> _confirmUnansweredSubmit(
+      BuildContext context, int unanswered) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Submit With Unanswered?'),
-        content: Text('You have $unanswered unanswered question(s). Submit anyway?'),
+        content:
+            Text('You have $unanswered unanswered question(s). Submit anyway?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -1021,9 +1034,18 @@ class _SummaryRow extends StatelessWidget {
       runSpacing: 8,
       children: [
         _SummaryChip(label: 'Total', value: '$total', color: AppColors.gray200),
-        _SummaryChip(label: 'Answered', value: '$answered', color: const Color(0xFFDCFCE7)),
-        _SummaryChip(label: 'Unanswered', value: '$unanswered', color: AppColors.dangerBg),
-        _SummaryChip(label: 'Bookmarked', value: '$bookmarked', color: const Color(0xFFFFF7ED)),
+        _SummaryChip(
+            label: 'Answered',
+            value: '$answered',
+            color: const Color(0xFFDCFCE7)),
+        _SummaryChip(
+            label: 'Unanswered',
+            value: '$unanswered',
+            color: AppColors.dangerBg),
+        _SummaryChip(
+            label: 'Bookmarked',
+            value: '$bookmarked',
+            color: const Color(0xFFFFF7ED)),
       ],
     );
   }

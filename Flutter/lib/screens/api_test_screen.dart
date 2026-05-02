@@ -75,7 +75,9 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: _success ? Colors.green.shade50 : Colors.grey.shade100,
+                        color: _success
+                            ? Colors.green.shade50
+                            : Colors.grey.shade100,
                         border: Border.all(
                           color: _success ? Colors.green : Colors.grey,
                         ),
@@ -87,7 +89,9 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                           Text(
                             _success ? '✓ Connected' : '✗ Not tested',
                             style: TextStyle(
-                              color: _success ? Colors.green : Colors.grey.shade600,
+                              color: _success
+                                  ? Colors.green
+                                  : Colors.grey.shade600,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -137,16 +141,16 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                 border: Border.all(color: Colors.blue),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Column(
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Base URL: ${ApiConfig.baseUrl}'),
-                  const SizedBox(height: 8),
-                  const Text('Endpoint: /test'),
-                  const SizedBox(height: 8),
-                  const Text('Method: GET'),
-                  const SizedBox(height: 8),
-                  const Text('Expected: {message: "API route is working!"}'),
+                  SizedBox(height: 8),
+                  Text('Endpoint: /test'),
+                  SizedBox(height: 8),
+                  Text('Method: GET'),
+                  SizedBox(height: 8),
+                  Text('Expected: {message: "API route is working!"}'),
                 ],
               ),
             ),

@@ -59,8 +59,8 @@ class QuizAttemptService {
       }
       final progressJson = payload['progress'] as Map<String, dynamic>? ??
           (data['progress'] as Map<String, dynamic>?);
-      final availabilityJson =
-          payload['attempt_availability'] as Map<String, dynamic>? ??
+      final availabilityJson = payload['attempt_availability']
+              as Map<String, dynamic>? ??
           (data['attempt_availability'] as Map<String, dynamic>? ?? const {});
 
       final attempt = QuizAttempt.fromJson(attemptJson);
@@ -71,7 +71,8 @@ class QuizAttemptService {
           .whereType<Map<String, dynamic>>()
           .map(AttemptSavedAnswer.fromJson)
           .toList();
-      final progress = progressJson == null ? null : AttemptProgress.fromJson(progressJson);
+      final progress =
+          progressJson == null ? null : AttemptProgress.fromJson(progressJson);
       final availability = AttemptAvailability.fromJson(availabilityJson);
 
       return AttemptStartResponse(
@@ -86,8 +87,8 @@ class QuizAttemptService {
       if (status == 409) {
         final errorData = e.response?.data as Map<String, dynamic>?;
         if (errorData?['error']?['code'] == 'active_attempt_exists') {
-          final details = errorData?['error']?['details'] as Map<String, dynamic>? ?? {};
-          final msg = errorData?['error']?['message'] as String? ?? 'Active attempt already exists';
+          final msg = errorData?['error']?['message'] as String? ??
+              'Active attempt already exists';
           throw ApiException(
             message: msg,
             statusCode: 409,
@@ -170,7 +171,8 @@ class QuizAttemptService {
     }
   }
 
-  Future<Map<String, dynamic>> getAttemptStatus({required int attemptId}) async {
+  Future<Map<String, dynamic>> getAttemptStatus(
+      {required int attemptId}) async {
     try {
       final response = await apiClient.dio.get(
         '/quiz/attempts/$attemptId',

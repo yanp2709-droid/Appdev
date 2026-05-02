@@ -7,26 +7,45 @@
 
     <style>
         .dashboard-shell {
-            border: 1px solid #e5e7eb;
-            border-radius: 24px;
-            padding: 20px;
-            background: #fff;
-            box-shadow: 0 16px 30px rgba(15, 23, 42, 0.06);
+            border: 1px solid #dbe4f0;
+            border-radius: 30px;
+            padding: 24px;
+            background:
+                radial-gradient(circle at top right, rgba(26, 95, 212, 0.08), transparent 18rem),
+                linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 24px 50px rgba(15, 23, 42, 0.08);
         }
 
         .dashboard-toolbar {
             display: flex;
             align-items: center;
-            justify-content: flex-end;
+            justify-content: space-between;
             gap: 16px;
-            margin-bottom: 18px;
+            margin-bottom: 22px;
         }
 
         .dashboard-title {
             margin: 0;
-            font-size: clamp(24px, 3vw, 42px);
+            font-size: clamp(24px, 3vw, 38px);
             font-weight: 800;
             color: #111827;
+        }
+
+        .dashboard-kicker {
+            margin: 0 0 8px;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #1a5fd4;
+        }
+
+        .dashboard-copy {
+            margin: 10px 0 0;
+            max-width: 720px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #64748b;
         }
 
         .dashboard-button {
@@ -40,14 +59,14 @@
             font-size: 14px;
             font-weight: 700;
             color: #fff;
-            background: #f59e0b;
-            box-shadow: 0 10px 20px rgba(245, 158, 11, 0.2);
+            background: #1a5fd4;
+            box-shadow: 0 12px 24px rgba(26, 95, 212, 0.22);
             transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
         }
 
         .dashboard-button:hover {
             transform: translateY(-1px);
-            box-shadow: 0 14px 24px rgba(245, 158, 11, 0.25);
+            box-shadow: 0 16px 28px rgba(26, 95, 212, 0.28);
         }
 
         .dashboard-layout {
@@ -63,10 +82,11 @@
 
         .dashboard-canvas {
             min-height: 680px;
-            border-radius: 24px;
-            background: #fff;
-            padding: 4px 0 0;
+            border-radius: 26px;
+            background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+            padding: 12px;
             position: relative;
+            border: 1px solid #dbe4f0;
         }
 
         .dashboard-grid {
@@ -79,11 +99,12 @@
         .dashboard-widget-shell {
             position: relative;
             min-width: 0;
-            border-radius: 14px;
-            background: #fff;
-            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
-            border: 1px solid #e5e7eb;
+            border-radius: 22px;
+            background: linear-gradient(180deg, #ffffff 0%, #fdfefe 100%);
+            box-shadow: 0 18px 34px rgba(15, 23, 42, 0.08);
+            border: 1px solid #dbe4f0;
             overflow: visible;
+            padding-top: 16px;
         }
 
         .dashboard-widget-shell.is-dragging {
@@ -92,8 +113,8 @@
 
         .dashboard-widget-actions {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 14px;
+            right: 14px;
             z-index: 10;
             display: flex;
             gap: 8px;
@@ -109,18 +130,18 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 22px;
-            height: 22px;
+            width: 30px;
+            height: 30px;
             border: 0;
-            border-radius: 6px;
+            border-radius: 999px;
             color: #fff;
-            box-shadow: 0 6px 12px rgba(15, 23, 42, 0.12);
+            box-shadow: 0 8px 14px rgba(15, 23, 42, 0.12);
             transition: transform 0.15s ease, opacity 0.15s ease;
         }
 
         .dashboard-widget-action svg {
-            width: 12px;
-            height: 12px;
+            width: 14px;
+            height: 14px;
         }
 
         .dashboard-widget-action:hover {
@@ -129,7 +150,7 @@
         }
 
         .dashboard-widget-action.refresh {
-            background: #3b82f6;
+            background: #1a5fd4;
         }
 
         .dashboard-widget-action.remove {
@@ -138,17 +159,17 @@
 
         .dashboard-widget-handle {
             position: absolute;
-            top: 10px;
-            left: 10px;
+            top: 14px;
+            left: 14px;
             z-index: 10;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 24px;
-            height: 24px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-            background: rgba(255, 255, 255, 0.92);
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            border: 1px solid #dbe4f0;
+            background: rgba(255, 255, 255, 0.96);
             color: #64748b;
             cursor: grab;
             opacity: 0;
@@ -160,10 +181,10 @@
         }
 
         .dashboard-empty {
-            border: 1px dashed #cbd5e1;
-            border-radius: 18px;
-            background: #fff;
-            padding: 30px;
+            border: 1px dashed #bfd0e6;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 40px 30px;
             color: #64748b;
             text-align: center;
         }
@@ -173,10 +194,10 @@
             top: 18px;
             max-height: calc(100vh - 40px);
             overflow: auto;
-            border-radius: 18px;
-            border: 1px solid #e5e7eb;
-            background: #fff;
-            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.14);
+            border-radius: 24px;
+            border: 1px solid #dbe4f0;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 24px 48px rgba(15, 23, 42, 0.14);
             transform: translateX(10px);
             opacity: 0;
             pointer-events: none;
@@ -220,11 +241,11 @@
         }
 
         .dashboard-widget-option {
-            border-radius: 14px;
-            border: 1px solid #e5e7eb;
-            background: #fff;
-            padding: 14px;
-            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+            border-radius: 18px;
+            border: 1px solid #dbe4f0;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            padding: 16px;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
             cursor: grab;
             transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
         }
@@ -244,13 +265,13 @@
         .dashboard-drop-indicator {
             grid-column: span 6;
             min-height: 100px;
-            border: 2px dashed #f59e0b;
-            border-radius: 14px;
-            background: rgba(245, 158, 11, 0.06);
+            border: 2px dashed #1a5fd4;
+            border-radius: 20px;
+            background: rgba(26, 95, 212, 0.08);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #f59e0b;
+            color: #1a5fd4;
             font-size: 14px;
             font-weight: 700;
             pointer-events: none;
@@ -295,6 +316,13 @@
             margin-right: 36px;
         }
 
+        .dashboard-widget-shell .fi-section,
+        .dashboard-widget-shell .fi-wi-stats-overview-stat,
+        .dashboard-widget-shell .fi-ta,
+        .dashboard-widget-shell .fi-wi-chart {
+            border-radius: 18px !important;
+        }
+
         @media (max-width: 1279px) {
             .dashboard-layout.is-open {
                 grid-template-columns: 1fr;
@@ -315,6 +343,8 @@
 
     <div class="dashboard-shell" data-dashboard-builder data-component-id="{{ $this->getId() }}">
         <div class="dashboard-toolbar">
+            <div></div>
+
             <button
                 type="button"
                 class="dashboard-button"

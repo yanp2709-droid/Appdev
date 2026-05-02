@@ -25,9 +25,11 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
   }
 
   Future<_AttemptReviewData> _loadReviewData() async {
-    final detail = await _historyService.getAttemptDetail(attemptId: widget.attemptId);
+    final detail =
+        await _historyService.getAttemptDetail(attemptId: widget.attemptId);
     final attemptCount = await _getCategoryAttemptCount(detail.categoryId);
-    return _AttemptReviewData(detail: detail, categoryAttemptCount: attemptCount);
+    return _AttemptReviewData(
+        detail: detail, categoryAttemptCount: attemptCount);
   }
 
   Future<int?> _getCategoryAttemptCount(int categoryId) async {
@@ -38,7 +40,8 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
 
     try {
       while (page <= maxPages) {
-        final pageItems = await _historyService.getHistory(page: page, perPage: perPage);
+        final pageItems =
+            await _historyService.getHistory(page: page, perPage: perPage);
         if (pageItems.isEmpty) break;
         totalCount += pageItems.where((a) => a.categoryId == categoryId).length;
         if (pageItems.length < perPage) break;
@@ -52,15 +55,12 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (context.canPop()) {
-          return true;
+    return PopScope(
+      canPop: context.canPop(),
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && mounted) {
+          context.go('/student-home');
         }
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) context.go('/student-home');
-        });
-        return false;
       },
       child: Scaffold(
         appBar: AppBar(
@@ -96,7 +96,8 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                    const Icon(Icons.error_outline,
+                        size: 64, color: Colors.red),
                     const SizedBox(height: 16),
                     Text(
                       'Failed to load attempt details',
@@ -123,7 +124,7 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
                         question: question,
                         questionNumber: idx,
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
               );
@@ -135,7 +136,8 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
     );
   }
 
-  Widget _buildScoreSummary(AttemptDetailModel detail, int? categoryAttemptCount) {
+  Widget _buildScoreSummary(
+      AttemptDetailModel detail, int? categoryAttemptCount) {
     final scorePercent = detail.scorePercent;
     final scoreColor = (scorePercent ?? 0) >= 70
         ? AppColors.accent
@@ -162,8 +164,8 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: detail.isPracticeAttempt
-                  ? Colors.orange.withOpacity(0.14)
-                  : Colors.white.withOpacity(0.14),
+                  ? Colors.orange.withValues(alpha: 0.14)
+                  : Colors.white.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
@@ -265,8 +267,7 @@ class _QuestionReview extends StatelessWidget {
         question.isCorrect == true ? AppColors.accent : Colors.red;
     final statusIcon =
         question.isCorrect == true ? Icons.check_circle : Icons.cancel;
-    final statusText =
-        question.isCorrect == true ? 'Correct' : 'Incorrect';
+    final statusText = question.isCorrect == true ? 'Correct' : 'Incorrect';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -352,12 +353,13 @@ class _QuestionReview extends StatelessWidget {
     );
   }
 
-  Widget _buildShortAnswerReview(BuildContext context, AttemptQuestionDetail question) {
+  Widget _buildShortAnswerReview(
+      BuildContext context, AttemptQuestionDetail question) {
     final correctAnswer = _getCorrectAnswerText(question);
     final canShowCorrectness = question.isCorrect != null;
     final answerColor = question.isCorrect == true
-        ? AppColors.accent.withOpacity(0.1)
-        : Colors.red.withOpacity(0.1);
+        ? AppColors.accent.withValues(alpha: 0.1)
+        : Colors.red.withValues(alpha: 0.1);
     final answerBorderColor =
         question.isCorrect == true ? AppColors.accent : Colors.red;
     return Column(
@@ -382,7 +384,8 @@ class _QuestionReview extends StatelessWidget {
             question.textAnswer ?? '(No answer)',
             style: TextStyle(
               fontSize: 14,
-              fontWeight: canShowCorrectness ? FontWeight.w600 : FontWeight.w400,
+              fontWeight:
+                  canShowCorrectness ? FontWeight.w600 : FontWeight.w400,
               color: canShowCorrectness
                   ? (question.isCorrect == true ? AppColors.accent : Colors.red)
                   : null,
@@ -400,7 +403,7 @@ class _QuestionReview extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.accent.withOpacity(0.08),
+              color: AppColors.accent.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppColors.accent),
             ),
@@ -414,28 +417,33 @@ class _QuestionReview extends StatelessWidget {
     );
   }
 
-  Widget _buildMultipleChoiceReview(BuildContext context, AttemptQuestionDetail question) {
+  Widget _buildMultipleChoiceReview(
+      BuildContext context, AttemptQuestionDetail question) {
     var selectedOptions = question.options.where((o) => o.isSelected).toList();
     if (selectedOptions.isEmpty && question.selectedOptionId != null) {
-      selectedOptions = question.options.where((o) => o.id == question.selectedOptionId).toList();
+      selectedOptions = question.options
+          .where((o) => o.id == question.selectedOptionId)
+          .toList();
     }
     final correctAnswer = _getCorrectAnswerText(question);
-    final canShowCorrectness = question.isCorrect != null || correctAnswer != null;
+    final canShowCorrectness =
+        question.isCorrect != null || correctAnswer != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ...question.options.map((option) {
           final isSelected = option.isSelected;
           final isCorrect = option.isCorrect == true;
-          final isWrongSelection = canShowCorrectness && isSelected && !isCorrect;
+          final isWrongSelection =
+              canShowCorrectness && isSelected && !isCorrect;
 
           Color backgroundColor;
           Color borderColor;
           if (isCorrect) {
-            backgroundColor = AppColors.accent.withOpacity(0.1);
+            backgroundColor = AppColors.accent.withValues(alpha: 0.1);
             borderColor = AppColors.accent;
           } else if (isWrongSelection) {
-            backgroundColor = Colors.red.withOpacity(0.1);
+            backgroundColor = Colors.red.withValues(alpha: 0.1);
             borderColor = Colors.red;
           } else {
             backgroundColor = Colors.grey[100]!;
@@ -458,19 +466,22 @@ class _QuestionReview extends StatelessWidget {
                       option.text,
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: isSelected || isCorrect ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight: isSelected || isCorrect
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                       ),
                     ),
                   ),
                   if (isCorrect)
-                    Icon(Icons.check_circle, color: AppColors.accent, size: 20)
+                    const Icon(Icons.check_circle,
+                        color: AppColors.accent, size: 20)
                   else if (isWrongSelection)
-                    Icon(Icons.cancel, color: Colors.red, size: 20),
+                    const Icon(Icons.cancel, color: Colors.red, size: 20),
                 ],
               ),
             ),
           );
-        }).toList(),
+        }),
         const SizedBox(height: 8),
         Text('Your Answer:', style: Theme.of(context).textTheme.labelMedium),
         const SizedBox(height: 6),
@@ -479,9 +490,9 @@ class _QuestionReview extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: question.isCorrect == true
-                ? AppColors.accent.withOpacity(0.1)
+                ? AppColors.accent.withValues(alpha: 0.1)
                 : question.isCorrect == false
-                    ? Colors.red.withOpacity(0.1)
+                    ? Colors.red.withValues(alpha: 0.1)
                     : Colors.grey[100],
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
@@ -509,7 +520,8 @@ class _QuestionReview extends StatelessWidget {
         ),
         if (correctAnswer != null) ...[
           const SizedBox(height: 8),
-          Text('Correct Answer:', style: Theme.of(context).textTheme.labelMedium),
+          Text('Correct Answer:',
+              style: Theme.of(context).textTheme.labelMedium),
           const SizedBox(height: 6),
           Text(
             correctAnswer,
@@ -520,9 +532,11 @@ class _QuestionReview extends StatelessWidget {
     );
   }
 
-  Widget _buildOrderingReview(BuildContext context, AttemptQuestionDetail question) {
+  Widget _buildOrderingReview(
+      BuildContext context, AttemptQuestionDetail question) {
     // For ordering questions, show selected order
-    final selectedOptions = question.options.where((o) => o.isSelected).toList();
+    final selectedOptions =
+        question.options.where((o) => o.isSelected).toList();
     final correctOptions = _getCorrectOrderOptions(question);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -543,7 +557,7 @@ class _QuestionReview extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.blue),
                 ),
@@ -577,10 +591,11 @@ class _QuestionReview extends StatelessWidget {
                 ),
               ),
             );
-          }).toList(),
+          }),
         if (correctOptions != null && correctOptions.isNotEmpty) ...[
           const SizedBox(height: 12),
-          Text('Correct Order:', style: Theme.of(context).textTheme.labelMedium),
+          Text('Correct Order:',
+              style: Theme.of(context).textTheme.labelMedium),
           const SizedBox(height: 8),
           ...correctOptions.asMap().entries.map((entry) {
             final index = entry.key + 1;
@@ -590,7 +605,7 @@ class _QuestionReview extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.08),
+                  color: AppColors.accent.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: AppColors.accent),
                 ),
@@ -617,14 +632,15 @@ class _QuestionReview extends StatelessWidget {
                     Expanded(
                       child: Text(
                         option.text,
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ],
     );
@@ -647,7 +663,8 @@ class _QuestionReview extends StatelessWidget {
   }
 
   List<AttemptOption>? _getCorrectOrderOptions(AttemptQuestionDetail question) {
-    final ordered = question.options.where((o) => o.orderIndex != null).toList();
+    final ordered =
+        question.options.where((o) => o.orderIndex != null).toList();
     if (ordered.isEmpty) return null;
     ordered.sort((a, b) => a.orderIndex!.compareTo(b.orderIndex!));
     return ordered;

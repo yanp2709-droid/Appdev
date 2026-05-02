@@ -13,6 +13,8 @@ class ListCategories extends ListRecords
 {
     protected static string $resource = CategoryResource::class;
 
+    protected static ?string $breadcrumb = 'List';
+
     protected string $view = 'filament.resources.categories.pages.list-categories';
 
     protected function getHeaderActions(): array
@@ -32,6 +34,7 @@ class ListCategories extends ListRecords
                     ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
                     ->whereColumn('quizzes.category_id', 'categories.id')
                     ->where('quiz_attempts.status', 'submitted')
+                    ->where('quiz_attempts.attempt_type', 'graded')
                     ->selectRaw('MAX(quiz_attempts.score_percent)'),
                 'highest_score'
             )
@@ -40,6 +43,7 @@ class ListCategories extends ListRecords
                     ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
                     ->whereColumn('quizzes.category_id', 'categories.id')
                     ->where('quiz_attempts.status', 'submitted')
+                    ->where('quiz_attempts.attempt_type', 'graded')
                     ->selectRaw('MIN(quiz_attempts.score_percent)'),
                 'lowest_score'
             )

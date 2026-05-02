@@ -76,7 +76,9 @@ class _RegisterScreenState extends State<RegisterScreen>
   String? _validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) return 'Email is required';
     final emailRegex = RegExp(r'^[\w.-]+@[\w.-]+\.\w{2,}$');
-    if (!emailRegex.hasMatch(value.trim())) return 'Enter a valid email address';
+    if (!emailRegex.hasMatch(value.trim())) {
+      return 'Enter a valid email address';
+    }
     return null;
   }
 
@@ -135,7 +137,8 @@ class _RegisterScreenState extends State<RegisterScreen>
 
       // On success: show message then redirect to login
       setState(() {
-        _successMessage = 'Account created successfully! Redirecting to login...';
+        _successMessage =
+            'Account created successfully! Redirecting to login...';
       });
 
       await Future.delayed(const Duration(seconds: 2));
@@ -191,7 +194,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: const Center(
@@ -229,9 +232,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                         children: [
                           // Error / Success banners
                           if (_errorMessage != null)
-                            _StatusBanner(message: _errorMessage!, isError: true),
+                            _StatusBanner(
+                                message: _errorMessage!, isError: true),
                           if (_successMessage != null)
-                            _StatusBanner(message: _successMessage!, isError: false),
+                            _StatusBanner(
+                                message: _successMessage!, isError: false),
 
                           // First Name & Last Name
                           Row(
@@ -240,9 +245,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 child: _buildField(
                                   controller: _firstNameController,
                                   hint: 'First Name',
-                                  validator: (v) => _validateName(v, 'First name'),
+                                  validator: (v) =>
+                                      _validateName(v, 'First name'),
                                   errorText: _fieldErrors['first_name'],
-                                  onChanged: (_) => _clearFieldError('first_name'),
+                                  onChanged: (_) =>
+                                      _clearFieldError('first_name'),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -250,9 +257,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 child: _buildField(
                                   controller: _lastNameController,
                                   hint: 'Last Name',
-                                  validator: (v) => _validateName(v, 'Last name'),
+                                  validator: (v) =>
+                                      _validateName(v, 'Last name'),
                                   errorText: _fieldErrors['last_name'],
-                                  onChanged: (_) => _clearFieldError('last_name'),
+                                  onChanged: (_) =>
+                                      _clearFieldError('last_name'),
                                 ),
                               ),
                             ],
@@ -277,9 +286,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 child: _buildField(
                                   controller: _studentIdController,
                                   hint: 'Student ID',
-                                  validator: (v) => _validateRequired(v, 'Student ID'),
+                                  validator: (v) =>
+                                      _validateRequired(v, 'Student ID'),
                                   errorText: _fieldErrors['student_id'],
-                                  onChanged: (_) => _clearFieldError('student_id'),
+                                  onChanged: (_) =>
+                                      _clearFieldError('student_id'),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -287,7 +298,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 child: _buildField(
                                   controller: _sectionController,
                                   hint: 'Section',
-                                  validator: (v) => _validateRequired(v, 'Section'),
+                                  validator: (v) =>
+                                      _validateRequired(v, 'Section'),
                                   errorText: _fieldErrors['section'],
                                   onChanged: (_) => _clearFieldError('section'),
                                 ),
@@ -304,9 +316,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   controller: _yearLevelController,
                                   hint: 'Year Level',
                                   keyboardType: TextInputType.number,
-                                  validator: (v) => _validateRequired(v, 'Year level'),
+                                  validator: (v) =>
+                                      _validateRequired(v, 'Year level'),
                                   errorText: _fieldErrors['year_level'],
-                                  onChanged: (_) => _clearFieldError('year_level'),
+                                  onChanged: (_) =>
+                                      _clearFieldError('year_level'),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -314,7 +328,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 child: _buildField(
                                   controller: _courseController,
                                   hint: 'Course / Program',
-                                  validator: (v) => _validateRequired(v, 'Course'),
+                                  validator: (v) =>
+                                      _validateRequired(v, 'Course'),
                                   errorText: _fieldErrors['course'],
                                   onChanged: (_) => _clearFieldError('course'),
                                 ),
@@ -377,8 +392,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 height: 24,
                                 child: Checkbox(
                                   value: _privacyConsent,
-                                  onChanged: (v) =>
-                                      setState(() => _privacyConsent = v ?? false),
+                                  onChanged: (v) => setState(
+                                      () => _privacyConsent = v ?? false),
                                   activeColor: AppColors.danger,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(4),
@@ -490,9 +505,7 @@ class _StatusBanner extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: isError
-            ? AppColors.dangerBg
-            : Colors.green.shade50,
+        color: isError ? AppColors.dangerBg : Colors.green.shade50,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isError ? AppColors.danger : Colors.green,
@@ -521,4 +534,3 @@ class _StatusBanner extends StatelessWidget {
     );
   }
 }
-

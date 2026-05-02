@@ -1,28 +1,12 @@
-# Filament Section Class Resolution - TODO
+## DONE: Change Password + Reset Password + Realistic Names
 
-## Plan Breakdown (Approved ✅)
+### Files Edited
+- [x] `app/Filament/Resources/Students/StudentResource.php` — current_password field, helper text, Reset Password table action
+- [x] `app/Filament/Resources/Teachers/TeacherResource.php` — current_password field, helper text, Reset Password table action
+- [x] `app/Filament/Resources/Students/Pages/EditStudent.php` — validates current password + danger notification on wrong password
+- [x] `app/Filament/Resources/Teachers/Pages/EditTeacher.php` — validates current password + danger notification on wrong password
+- [x] `database/seeders/StudentId2302Seeder.php` — 200 first names, 250 last names with randomized pairing
+- [x] `rename_dummy_users.php` — same realistic name pools for updating existing dummy data
 
-**Status: [IN PROGRESS]**
-
-### Step 1: Create TODO.md [COMPLETED]
-- ✅ Create TODO.md tracking file
-
-### Step 2: Clear caches & regenerate autoloader **(DOCKER)**
-```
-docker-compose exec app php artisan optimize:clear
-docker-compose exec app composer dump-autoload  
-docker-compose exec app php artisan filament:upgrade
-```
-- [ ] Execute commands
-
-### Step 3: Verify resolution
-- [ ] Test CustomizableDashboard page loads without error
-- [ ] Confirm VSCode error disappears
-- [ ] Test AdminDashboard.php (identical code)
-
-### Step 4: Update TODO.md with completion status
-- [ ] Mark all steps complete
-- [ ] Run `attempt_completion`
-
-**Next Action:** Execute Step 2 commands in terminal.
+### Complete
 

@@ -7,6 +7,7 @@ import 'features/auth/data/auth_repository.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/categories/data/categories_repository.dart';
 import 'features/categories/providers/categories_provider.dart';
+import 'services/categories_service.dart';
 import 'services/quiz_attempt_service.dart';
 import 'features/quiz/providers/quiz_list_provider.dart';
 import 'features/quiz/providers/quiz_provider.dart';
@@ -19,7 +20,9 @@ void main() {
           create: (_) => AuthProvider(AuthRepository()),
         ),
         ChangeNotifierProvider(
-          create: (_) => CategoriesProvider(CategoriesRepository()),
+          create: (_) => CategoriesProvider(
+            CategoriesRepository(categoriesService: CategoriesService()),
+          ),
         ),
         // Singleton service for quiz attempts
         Provider<QuizAttemptService>(

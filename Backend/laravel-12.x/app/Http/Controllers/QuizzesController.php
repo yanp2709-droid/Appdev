@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Traits\ApiResponse;
+use App\Models\Category;
 use App\Models\Quiz;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -18,6 +19,19 @@ class QuizzesController extends Controller
     public function index()
     {
         //
+    }
+
+    public function byCategory(Category $category)
+    {
+        return $this->quizListResponse($category, request());
+    }
+
+    /**
+     * Compatibility alias for clients that use "subjects" instead of "categories".
+     */
+    public function bySubject(Category $subject)
+    {
+        return $this->quizListResponse($subject, request());
     }
 
     /**
@@ -109,6 +123,7 @@ class QuizzesController extends Controller
             'show_score_immediately' => ['sometimes', 'boolean'],
             'show_answers_after_submit' => ['sometimes', 'boolean'],
             'show_correct_answers_after_submit' => ['sometimes', 'boolean'],
+            'is_active' => ['sometimes', 'boolean'],
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -135,6 +150,7 @@ class QuizzesController extends Controller
                     'show_score_immediately',
                     'show_answers_after_submit',
                     'show_correct_answers_after_submit',
+                    'is_active',
                 ]),
                 $payload
             );
@@ -155,10 +171,15 @@ class QuizzesController extends Controller
     {
         return [
             'id' => $quiz->id,
+            'subject_id' => $quiz->category_id,
             'title' => $quiz->title,
+            'description' => $quiz->description ?? null,
             'category_id' => $quiz->category_id,
             'teacher_id' => $quiz->teacher_id,
             'difficulty' => $quiz->difficulty,
+            'question_count' => (int) ($quiz->questions_count ?? $quiz->questions()->count()),
+            'questions_count' => (int) ($quiz->questions_count ?? $quiz->questions()->count()),
+            'time_limit' => $quiz->duration_minutes,
             'duration_minutes' => $quiz->duration_minutes,
             'timer_enabled' => (bool) $quiz->timer_enabled,
             'shuffle_questions' => (bool) $quiz->shuffle_questions,
@@ -169,6 +190,35 @@ class QuizzesController extends Controller
             'show_score_immediately' => (bool) $quiz->show_score_immediately,
             'show_answers_after_submit' => (bool) $quiz->show_answers_after_submit,
             'show_correct_answers_after_submit' => (bool) $quiz->show_correct_answers_after_submit,
+            'is_active' => (bool) $quiz->is_active,
         ];
+    }
+
+    private function quizListResponse(Category $category, Request $request)
+    {
+        $isActive = $request->has('is_active')
+            ? $request->boolean('is_active')
+            : true;
+
+        $quizzes = $category->quizzes()
+            ->when($request->has('is_active'), fn ($query) => $query->where('is_active', $isActive), fn ($query) => $query->where('is_active', true))
+            ->with(['category'])
+            ->withCount('questions')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn (Quiz $quiz) => $this->quizPayload($quiz))
+            ->values()
+            ->all();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Quizzes retrieved.',
+            'category' => [
+                'id' => $category->id,
+                'name' => $category->name,
+                'description' => $category->description,
+            ],
+            'data' => $quizzes,
+        ]);
     }
 }

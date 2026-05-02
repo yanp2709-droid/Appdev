@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Questions\Schemas;
 use App\Models\Question;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -27,7 +28,7 @@ class QuestionForm
                     description: 'Use this section when the answer should be exactly one of two choices.',
                     statePath: 'true_false',
                     optionsLabel: 'True/False Options',
-                    optionsHelperText: 'Add exactly two options and mark one as correct.',
+                    optionsHelperText: 'Mark one option as correct.',
                     defaultOptions: [
                         ['option_text' => 'True'],
                         ['option_text' => 'False'],
@@ -36,6 +37,8 @@ class QuestionForm
                     createAnotherMethod: 'createTrueFalseAnother',
                     cancelUrl: $cancelUrl,
                     withAnswerKey: false,
+                    disableItemCreation: true,
+                    visible: fn ($livewire): bool => ! $livewire instanceof \Filament\Resources\Pages\EditRecord || $livewire->record->question_type === Question::TYPE_TRUE_FALSE,
                 ),
 
                 self::questionSection(
@@ -49,6 +52,7 @@ class QuestionForm
                     createAnotherMethod: 'createMultipleChoiceAnother',
                     cancelUrl: $cancelUrl,
                     withAnswerKey: false,
+                    visible: fn ($livewire): bool => ! $livewire instanceof \Filament\Resources\Pages\EditRecord || $livewire->record->question_type === Question::TYPE_MCQ,
                 ),
 
                 self::questionSection(
@@ -62,6 +66,7 @@ class QuestionForm
                     createAnotherMethod: 'createMultiSelectAnother',
                     cancelUrl: $cancelUrl,
                     withAnswerKey: false,
+                    visible: fn ($livewire): bool => ! $livewire instanceof \Filament\Resources\Pages\EditRecord || $livewire->record->question_type === Question::TYPE_MULTI_SELECT,
                 ),
 
                 self::questionSection(
@@ -75,6 +80,7 @@ class QuestionForm
                     createAnotherMethod: 'createShortAnswerAnother',
                     cancelUrl: $cancelUrl,
                     withAnswerKey: true,
+                    visible: fn ($livewire): bool => ! $livewire instanceof \Filament\Resources\Pages\EditRecord || $livewire->record->question_type === Question::TYPE_SHORT_ANSWER,
                 ),
             ]);
     }
@@ -90,15 +96,23 @@ class QuestionForm
         string $createAnotherMethod,
         callable $cancelUrl,
         bool $withAnswerKey,
+        bool $disableItemCreation = false,
+        ?\Closure $visible = null,
     ): Section {
         $schema = [
-            self::categoryField(),
+            ...self::scopeFields(),
 
             TextInput::make('points')
                 ->label('Points')
-                ->numeric()
+                ->integer()
                 ->default(5)
-                ->minValue(1),
+                ->minValue(1)
+                ->maxValue(1000)
+                ->validationMessages([
+                    'integer' => 'Points must be a whole number.',
+                    'min' => 'Points must be at least 1.',
+                    'max' => 'Points cannot exceed 1000.',
+                ]),
 
             Textarea::make('question_text')
                 ->label('Question Prompt')
@@ -114,13 +128,13 @@ class QuestionForm
                 ->columnSpanFull()
                 ->placeholder('Describe the expected answer, key points, or grading criteria...');
         } else {
-            $schema[] = self::optionsRepeater($optionsLabel ?? 'Options')
+            $schema[] = self::optionsRepeater($optionsLabel ?? 'Options', $disableItemCreation)
                 ->default($defaultOptions)
                 ->helperText($optionsHelperText)
                 ->columnSpanFull();
         }
 
-        return Section::make($title)
+        $section = Section::make($title)
             ->description($description)
             ->columnSpanFull()
             ->statePath($statePath)
@@ -133,27 +147,41 @@ class QuestionForm
                 $cancelUrl,
             ))
             ->footerActionsAlignment(Alignment::Start);
-    }
 
-    private static function categoryField(): Select
-    {
-        $field = Select::make('category_id')
-            ->label('Category')
-            ->relationship('category', 'name')
-            ->searchable()
-            ->createOptionAction(null);
-
-        if (request()->filled('category_id')) {
-            return $field
-                ->default(fn (): ?int => request()->integer('category_id'))
-                ->disabled()
-                ->dehydrated();
+        if ($visible !== null) {
+            $section->visible($visible);
         }
 
-        return $field;
+        return $section;
     }
 
-    private static function optionsRepeater(string $label): Repeater
+    /**
+     * @return array<int, \Filament\Schemas\Components\Component>
+     */
+    private static function scopeFields(): array
+    {
+        return [
+            Hidden::make('quiz_id')
+                ->default(fn ($livewire): ?int => property_exists($livewire, 'quizId') && filled($livewire->quizId) ? (int) $livewire->quizId : null)
+                ->dehydrated(fn ($livewire): bool => property_exists($livewire, 'quizId') && filled($livewire->quizId))
+                ->visible(fn ($livewire): bool => property_exists($livewire, 'quizId') && filled($livewire->quizId)),
+
+            Hidden::make('category_id')
+                ->default(fn ($livewire): ?int => property_exists($livewire, 'categoryId') && filled($livewire->categoryId) ? (int) $livewire->categoryId : null)
+                ->dehydrated(fn ($livewire): bool => property_exists($livewire, 'categoryId') && filled($livewire->categoryId))
+                ->visible(fn ($livewire): bool => property_exists($livewire, 'categoryId') && filled($livewire->categoryId)),
+
+            Select::make('category_id')
+                ->label('Subject')
+                ->relationship('category', 'name')
+                ->searchable()
+                ->createOptionAction(null)
+                ->visible(fn ($livewire): bool => ! (property_exists($livewire, 'quizId') && filled($livewire->quizId)) && ! (property_exists($livewire, 'categoryId') && filled($livewire->categoryId)))
+                ->dehydrated(fn ($livewire): bool => ! (property_exists($livewire, 'quizId') && filled($livewire->quizId)) && ! (property_exists($livewire, 'categoryId') && filled($livewire->categoryId))),
+        ];
+    }
+
+    private static function optionsRepeater(string $label, bool $disableItemCreation = false): Repeater
     {
         return Repeater::make('options')
             ->label($label)
@@ -171,8 +199,8 @@ class QuestionForm
             ->orderable()
             ->collapsible()
             ->addActionLabel('Add Option')
-            ->disableItemCreation(false)
-            ->disableItemDeletion(false);
+            ->disableItemCreation($disableItemCreation)
+            ->disableItemDeletion($disableItemCreation);
     }
 
     /**
@@ -183,13 +211,19 @@ class QuestionForm
         return [
             Action::make($prefix . '_create')
                 ->label('Create')
-                ->action($createMethod)
+                ->action(function ($livewire) use ($createMethod): void {
+                    $livewire->{$createMethod}();
+                })
+                ->visible(fn ($livewire): bool => ! $livewire instanceof \Filament\Resources\Pages\EditRecord)
                 ->color('warning'),
 
-            Action::make($prefix . '_createAnother')
-                ->label('Create & create another')
-                ->action($createAnotherMethod)
-                ->color('gray'),
+            Action::make($prefix . '_update')
+                ->label('Update')
+                ->action(function ($livewire): void {
+                    $livewire->save();
+                })
+                ->visible(fn ($livewire): bool => $livewire instanceof \Filament\Resources\Pages\EditRecord)
+                ->color('warning'),
 
             Action::make($prefix . '_cancel')
                 ->label('Cancel')

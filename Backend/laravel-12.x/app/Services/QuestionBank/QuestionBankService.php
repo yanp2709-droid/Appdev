@@ -5,6 +5,7 @@ namespace App\Services\QuestionBank;
 use App\Models\Category;
 use App\Models\Question;
 use App\Models\QuestionOption;
+use App\Models\Quiz;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -184,6 +185,165 @@ class QuestionBankService
         return $this->buildImportResponse($imported, $errors);
     }
 
+    public function importCsvForQuiz(UploadedFile|string $file, int $quizId): array
+    {
+        $path = $this->resolveFilePath($file);
+        if ($path === null) {
+            return [
+                'status' => 'failed',
+                'imported_count' => 0,
+                'failed_count' => 1,
+                'partial' => false,
+                'rejected' => true,
+                'errors' => [
+                    $this->rowError(1, 'file', 'Uploaded file could not be resolved.'),
+                ],
+            ];
+        }
+
+        $handle = fopen($path, 'r');
+        if ($handle === false) {
+            return [
+                'status' => 'failed',
+                'imported_count' => 0,
+                'failed_count' => 1,
+                'partial' => false,
+                'rejected' => true,
+                'errors' => [
+                    $this->rowError(1, 'file', 'Unable to read uploaded file.'),
+                ],
+            ];
+        }
+
+        $header = fgetcsv($handle);
+        if (!$header) {
+            fclose($handle);
+            return [
+                'status' => 'failed',
+                'imported_count' => 0,
+                'failed_count' => 1,
+                'partial' => false,
+                'rejected' => true,
+                'errors' => [
+                    $this->rowError(1, 'header', 'CSV header row is missing.'),
+                ],
+            ];
+        }
+
+        $headerMap = $this->buildHeaderMap($header);
+        $missing = array_values(array_diff(self::REQUIRED_COLUMNS, array_keys($headerMap)));
+        if (!empty($missing)) {
+            fclose($handle);
+            return [
+                'status' => 'failed',
+                'imported_count' => 0,
+                'failed_count' => count($missing),
+                'partial' => false,
+                'rejected' => true,
+                'errors' => array_map(function ($column) {
+                    return $this->rowError(1, $column, 'Missing required column.');
+                }, $missing),
+            ];
+        }
+
+        $imported = 0;
+        $errors = [];
+        $rowNumber = 1;
+
+        while (($row = fgetcsv($handle)) !== false) {
+            $rowNumber++;
+            if ($this->isRowEmpty($row)) {
+                continue;
+            }
+
+            $payload = $this->mapRowToPayload($row, $headerMap);
+            $result = $this->validateAndNormalizeRow($payload, $rowNumber, null, $quizId);
+
+            if (!empty($result['errors'])) {
+                $errors = array_merge($errors, $result['errors']);
+                continue;
+            }
+
+            $createResult = $this->createQuestionFromNormalized($result['data'], $rowNumber);
+            if (!empty($createResult['errors'])) {
+                $errors = array_merge($errors, $createResult['errors']);
+                continue;
+            }
+
+            $imported++;
+        }
+
+        fclose($handle);
+
+        return $this->buildImportResponse($imported, $errors);
+    }
+
+    public function importJsonFromFileForQuiz(UploadedFile|string $file, int $quizId): array
+    {
+        $path = $this->resolveFilePath($file);
+        if ($path === null) {
+            return [
+                'status' => 'failed',
+                'imported_count' => 0,
+                'failed_count' => 1,
+                'partial' => false,
+                'rejected' => true,
+                'errors' => [
+                    $this->rowError(1, 'file', 'Uploaded file could not be resolved.'),
+                ],
+            ];
+        }
+
+        $raw = file_get_contents($path);
+        $decoded = json_decode($raw, true);
+        $questions = $decoded['questions'] ?? (is_array($decoded) ? $decoded : null);
+
+        return $this->importJsonPayloadForQuiz($questions, $quizId);
+    }
+
+    public function importJsonPayloadForQuiz($questions, int $quizId): array
+    {
+        if (!is_array($questions)) {
+            return [
+                'status' => 'failed',
+                'imported_count' => 0,
+                'failed_count' => 1,
+                'partial' => false,
+                'rejected' => true,
+                'errors' => [
+                    $this->rowError(1, 'payload', 'Invalid JSON payload. Expected a "questions" array.'),
+                ],
+            ];
+        }
+
+        $imported = 0;
+        $errors = [];
+
+        foreach (array_values($questions) as $index => $payload) {
+            $rowNumber = $index + 1;
+            if (!is_array($payload)) {
+                $errors[] = $this->rowError($rowNumber, 'row', 'Each question must be an object.');
+                continue;
+            }
+
+            $result = $this->validateAndNormalizeRow($payload, $rowNumber, null, $quizId);
+            if (!empty($result['errors'])) {
+                $errors = array_merge($errors, $result['errors']);
+                continue;
+            }
+
+            $createResult = $this->createQuestionFromNormalized($result['data'], $rowNumber);
+            if (!empty($createResult['errors'])) {
+                $errors = array_merge($errors, $createResult['errors']);
+                continue;
+            }
+
+            $imported++;
+        }
+
+        return $this->buildImportResponse($imported, $errors);
+    }
+
     public function exportJson(?int $categoryId = null): array
     {
         $questions = Question::with('options', 'category')
@@ -203,15 +363,27 @@ class QuestionBankService
             ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId))
             ->get();
 
+        $category = $categoryId ? Category::find($categoryId) : null;
+        $filename = $category ? "{$category->name}_questions.csv" : 'question_bank_export.csv';
+
         $callback = function () use ($questions) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, self::REQUIRED_COLUMNS);
+            $headers = [
+                'question_text',
+                'subject',
+                'question_type',
+                'options',
+                'correct_answer',
+                'points',
+                'answer_key',
+            ];
+            fputcsv($handle, $headers);
 
             foreach ($questions as $question) {
                 $payload = $this->exportQuestionPayload($question);
                 $row = [
                     $payload['question_text'],
-                    $payload['category'],
+                    $payload['subject'],
                     $payload['question_type'],
                     json_encode($payload['options']),
                     is_array($payload['correct_answer']) ? json_encode($payload['correct_answer']) : $payload['correct_answer'],
@@ -224,7 +396,66 @@ class QuestionBankService
             fclose($handle);
         };
 
-        return response()->streamDownload($callback, 'question_bank_export.csv', [
+        return response()->streamDownload($callback, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
+    public function exportJsonForQuiz(int $quizId): array
+    {
+        $questions = Question::with('options', 'category', 'quiz.category')
+            ->where('quiz_id', $quizId)
+            ->get();
+
+        return [
+            'questions' => $questions->map(function (Question $question) {
+                return $this->exportQuestionPayload($question);
+            })->values(),
+        ];
+    }
+
+    public function exportCsvForQuiz(int $quizId): StreamedResponse
+    {
+        $questions = Question::with('options', 'category', 'quiz.category')
+            ->where('quiz_id', $quizId)
+            ->get();
+
+        $quiz = $questions->first()->quiz ?? null;
+        $quizName = $quiz ? $quiz->title : 'quiz';
+        $subject = $quiz ? ($quiz->category->name ?? 'subject') : 'subject';
+        $filename = "{$quizName}_{$subject}_questions.csv";
+
+        $callback = function () use ($questions) {
+            $handle = fopen('php://output', 'w');
+            $headers = [
+                'question_text',
+                'subject',
+                'question_type',
+                'options',
+                'correct_answer',
+                'points',
+                'answer_key',
+            ];
+            fputcsv($handle, $headers);
+
+            foreach ($questions as $question) {
+                $payload = $this->exportQuestionPayload($question);
+                $row = [
+                    $payload['question_text'],
+                    $payload['subject'],
+                    $payload['question_type'],
+                    json_encode($payload['options']),
+                    is_array($payload['correct_answer']) ? json_encode($payload['correct_answer']) : $payload['correct_answer'],
+                    $payload['points'],
+                    $payload['answer_key'],
+                ];
+                fputcsv($handle, $row);
+            }
+
+            fclose($handle);
+        };
+
+        return response()->streamDownload($callback, $filename, [
             'Content-Type' => 'text/csv',
         ]);
     }
@@ -271,7 +502,7 @@ class QuestionBankService
         return true;
     }
 
-    private function validateAndNormalizeRow(array $payload, int $rowNumber, ?int $forcedCategoryId = null): array
+    private function validateAndNormalizeRow(array $payload, int $rowNumber, ?int $forcedCategoryId = null, ?int $forcedQuizId = null): array
     {
         $errors = [];
 
@@ -281,6 +512,17 @@ class QuestionBankService
         }
 
         $categoryId = $forcedCategoryId;
+        $quizId = $forcedQuizId;
+
+        if ($quizId !== null) {
+            $quiz = Quiz::find($quizId);
+            if ($quiz === null) {
+                $errors[] = $this->rowError($rowNumber, 'quiz', 'Quiz does not exist.');
+            } else {
+                $categoryId = $quiz->category_id;
+            }
+        }
+
         if ($categoryId === null) {
             $categoryValue = $payload['category'] ?? null;
             $categoryId = $this->resolveCategoryId($categoryValue);
@@ -301,8 +543,10 @@ class QuestionBankService
         $pointsRaw = $payload['points'] ?? null;
         $points = 1;
         if ($pointsRaw !== null && trim((string) $pointsRaw) !== '') {
-            if (!is_numeric($pointsRaw) || (int) $pointsRaw < 1) {
+            if (!is_numeric($pointsRaw) || (float) $pointsRaw <= 0 || (float) $pointsRaw != floor((float) $pointsRaw)) {
                 $errors[] = $this->rowError($rowNumber, 'points', 'Points must be a positive integer.');
+            } elseif ((int) $pointsRaw > 1000) {
+                $errors[] = $this->rowError($rowNumber, 'points', 'Points cannot exceed 1000.');
             } else {
                 $points = (int) $pointsRaw;
             }
@@ -346,12 +590,13 @@ class QuestionBankService
         }
 
         if ($categoryId !== null && $questionText !== '' && !empty($questionType)) {
-            $duplicateExists = Question::where('category_id', $categoryId)
+            $duplicateExists = Question::where('quiz_id', $quizId)
+                ->when($quizId === null, fn ($query) => $query->where('category_id', $categoryId))
                 ->where('question_text', $questionText)
                 ->where('question_type', $questionType)
                 ->exists();
             if ($duplicateExists) {
-                $errors[] = $this->rowError($rowNumber, 'question_text', 'Duplicate question for this category and type.');
+                $errors[] = $this->rowError($rowNumber, 'question_text', $quizId !== null ? 'Duplicate question for this quiz and type.' : 'Duplicate question for this category and type.');
             }
         }
 
@@ -365,6 +610,7 @@ class QuestionBankService
             'data' => [
                 'question_text' => $questionText,
                 'category_id' => $categoryId,
+                'quiz_id' => $quizId,
                 'question_type' => $questionType,
                 'points' => $points,
                 'answer_key' => $questionType === Question::TYPE_SHORT_ANSWER ? $answerKey : null,
@@ -499,6 +745,7 @@ class QuestionBankService
             return DB::transaction(function () use ($data) {
                 $question = Question::create([
                     'category_id' => $data['category_id'],
+                    'quiz_id' => $data['quiz_id'] ?? null,
                     'question_type' => $data['question_type'],
                     'question_text' => $data['question_text'],
                     'points' => $data['points'],
@@ -563,15 +810,27 @@ class QuestionBankService
                 ->values()
                 ->all();
 
-            $correctAnswer = $question->question_type === Question::TYPE_MULTI_SELECT
-                ? $correctIndexes
-                : ($correctIndexes[0] ?? null);
+            if ($question->question_type === Question::TYPE_TRUE_FALSE) {
+                // For True/False, output "true" or "false" if we have a correct option
+                $correctAnswer = isset($correctIndexes[0])
+                    ? ($correctIndexes[0] === 1 ? 'true' : 'false')
+                    : null;
+            } elseif ($question->question_type === Question::TYPE_MCQ) {
+                // For MCQ, output letter A, B, C, etc. if we have a correct option
+                $correctAnswer = isset($correctIndexes[0])
+                    ? chr(64 + $correctIndexes[0])
+                    : null;
+            } else {
+                // For multi-select, output array of letters
+                $correctAnswer = array_map(fn ($index) => chr(64 + $index), $correctIndexes);
+            }
         }
 
         return [
             'id' => $question->id,
             'question_text' => $question->question_text,
-            'category' => $question->category?->name ?? '',
+            'subject' => $question->category?->name ?? $question->quiz?->category?->name ?? '',
+            'quiz' => $question->quiz?->title ?? '',
             'question_type' => $question->question_type,
             'options' => $options,
             'correct_answer' => $correctAnswer,

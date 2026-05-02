@@ -9,6 +9,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema as SchemaFacade;
 
 class QuizForm
 {
@@ -22,10 +23,13 @@ class QuizForm
                             ->required()
                             ->maxLength(255),
                         Select::make('category_id')
-                            ->label('Category')
+                            ->label('Subject')
                             ->relationship('category', 'name')
                             ->required()
-                            ->searchable(),
+                            ->searchable()
+                            ->default(fn (): ?int => request()->filled('category_id') ? request()->integer('category_id') : null)
+                            ->disabled(fn (): bool => request()->filled('category_id'))
+                            ->dehydrated(),
                         Select::make('teacher_id')
                             ->label('Teacher')
                             ->relationship('teacher', 'name')
@@ -53,17 +57,29 @@ class QuizForm
                         Toggle::make('shuffle_options')
                             ->default(false),
                         TextInput::make('duration_minutes')
-                            ->numeric()
+                            ->integer()
                             ->minValue(1)
+                            ->maxValue(300)
                             ->default(Quiz::DEFAULT_DURATION_MINUTES)
                             ->required(fn (callable $get) => (bool) $get('timer_enabled'))
-                            ->visible(fn (callable $get) => (bool) $get('timer_enabled')),
+                            ->visible(fn (callable $get) => (bool) $get('timer_enabled'))
+                            ->validationMessages([
+                                'integer' => 'Duration must be a whole number in minutes.',
+                                'min' => 'Duration must be at least 1 minute.',
+                                'max' => 'Duration cannot exceed 300 minutes (5 hours).',
+                            ]),
                         TextInput::make('max_attempts')
                             ->label('Attempt Limit')
-                            ->numeric()
+                            ->integer()
                             ->minValue(1)
+                            ->maxValue(100)
                             ->nullable()
-                            ->helperText('Leave blank to allow unlimited attempts.'),
+                            ->helperText('Leave blank to allow unlimited attempts.')
+                            ->validationMessages([
+                                'integer' => 'Attempt limit must be a whole number.',
+                                'min' => 'Attempt limit must be at least 1.',
+                                'max' => 'Attempt limit cannot exceed 100.',
+                            ]),
                     ])
                     ->columns(1),
                 Section::make('Review Settings')
@@ -75,6 +91,11 @@ class QuizForm
                             ->default(false)
                             ->visible(fn (callable $get) => (bool) $get('show_answers_after_submit'))
                             ->helperText('Shows correct answers after quiz submission'),
+                        Toggle::make('is_active')
+                            ->label('Active')
+                            ->default(true)
+                            ->visible(fn (): bool => SchemaFacade::hasColumn('quizzes', 'is_active'))
+                            ->helperText('Inactive quizzes are hidden from student attempts.'),
                     ])
                     ->columns(2),
             ]);

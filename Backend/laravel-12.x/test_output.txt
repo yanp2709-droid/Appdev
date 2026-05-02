@@ -1,0 +1,52 @@
+﻿
+   WARN  Metadata found in doc-comment for method Tests\Feature\AdminStatisticsApiTest::admin_can_access_dashboard_statistics(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\AdminStatisticsApiTest::non_admin_cannot_access_statistics_endpoints(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\AdminStatisticsApiTest::admin_can_get_all_students_with_statistics(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\AdminStatisticsApiTest::admin_can_get_specific_student_statistics(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\AdminStatisticsApiTest::admin_can_filter_attempts_by_status(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\AdminStatisticsApiTest::admin_can_get_category_statistics(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\AdminStatisticsApiTest::statistics_returns_numeric_values(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\AdminStatisticsApiTest::empty_statistics_do_not_cause_errors(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\QuizStatisticsServiceTest::it_returns_zero_statistics_for_empty_database(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\QuizStatisticsServiceTest::it_calculates_overall_statistics_correctly(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\QuizStatisticsServiceTest::it_calculates_student_statistics_correctly(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\QuizStatisticsServiceTest::it_returns_empty_array_for_invalid_student(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\QuizStatisticsServiceTest::it_returns_empty_array_for_non_student_user(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\QuizStatisticsServiceTest::it_calculates_category_statistics_correctly(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\QuizStatisticsServiceTest::it_calculates_performance_distribution_correctly(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\QuizStatisticsServiceTest::it_calculates_difficulty_analysis_correctly(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\QuizStatisticsServiceTest::it_handles_empty_categories_gracefully(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\QuizStatisticsServiceTest::it_handles_students_with_no_attempts(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\QuizStatisticsServiceTest::it_filters_category_card_statistics_by_date_range(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   WARN  Metadata found in doc-comment for method Tests\Feature\QuizStatisticsServiceTest::it_filters_category_detail_statistics_by_date_range(). Metadata in doc-comments is deprecated and will no longer be supported in PHPUnit 12. Update your test code to use attributes instead.
+
+   PASS  Tests\Feature\StudentQuizHistoryDeletionTest
+  Γ£ô student with quiz attempts cannot be deleted                                      1.34s  
+  Γ£ô student without quiz attempts can be deleted                                      0.36s  
+  Γ£ô admin api blocks deletion of student with quiz attempts                           0.33s  
+  Γ£ô admin api allows deletion of student without quiz attempts                        0.27s  
+  Γ£ô admin can deactivate student via api                                              0.32s  
+  Γ£ô admin can activate student via api                                                0.31s  
+
+  Tests:    6 passed (15 assertions)
+  Duration: 3.28s
+

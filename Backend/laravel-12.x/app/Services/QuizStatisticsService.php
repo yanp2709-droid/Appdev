@@ -19,7 +19,8 @@ class QuizStatisticsService
         $totalAttempts = Quiz_attempt::count();
         $submittedAttempts = Quiz_attempt::where('status', 'submitted')->count();
         
-        $submittedQuery = Quiz_attempt::where('status', 'submitted');
+        $submittedQuery = Quiz_attempt::where('status', 'submitted')
+            ->where('attempt_type', Quiz_attempt::TYPE_GRADED);
         $averageScore = $submittedQuery->avg('score_percent') ?? 0;
         $highestScore = $submittedQuery->max('score_percent') ?? 0;
         $lowestScore = $submittedQuery->min('score_percent') ?? 0;
@@ -51,7 +52,9 @@ class QuizStatisticsService
         }
 
         $attempts = $student->quizAttempts();
-        $submittedAttempts = (clone $attempts)->where('status', 'submitted');
+        $submittedAttempts = (clone $attempts)
+            ->where('status', 'submitted')
+            ->where('attempt_type', Quiz_attempt::TYPE_GRADED);
         $submittedCount = $submittedAttempts->count();
 
         return [
@@ -79,6 +82,7 @@ class QuizStatisticsService
         $stats = DB::table('quiz_attempts')
             ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
             ->where('quiz_attempts.status', 'submitted')
+            ->where('quiz_attempts.attempt_type', Quiz_attempt::TYPE_GRADED)
             ->groupBy('quizzes.id', 'quizzes.title')
             ->select(
                 'quizzes.id',
@@ -114,6 +118,7 @@ class QuizStatisticsService
             ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
             ->join('categories', 'quizzes.category_id', '=', 'categories.id')
             ->where('quiz_attempts.status', 'submitted')
+            ->where('quiz_attempts.attempt_type', Quiz_attempt::TYPE_GRADED)
             ->groupBy('categories.id', 'categories.name')
             ->select(
                 'categories.id',
@@ -157,9 +162,9 @@ class QuizStatisticsService
                 'categories.name',
                 DB::raw('COUNT(quiz_attempts.id) as total_attempts'),
                 DB::raw('COUNT(DISTINCT quiz_attempts.student_id) as attempted_users'),
-                DB::raw('MAX(CASE WHEN quiz_attempts.status = "submitted" THEN quiz_attempts.score_percent ELSE NULL END) as highest_score'),
-                DB::raw('MIN(CASE WHEN quiz_attempts.status = "submitted" THEN quiz_attempts.score_percent ELSE NULL END) as lowest_score'),
-                DB::raw('SUM(CASE WHEN quiz_attempts.status = "submitted" THEN 1 ELSE 0 END) as submitted_attempts'),
+                DB::raw('MAX(CASE WHEN quiz_attempts.status = "submitted" AND quiz_attempts.attempt_type = "graded" THEN quiz_attempts.score_percent ELSE NULL END) as highest_score'),
+                DB::raw('MIN(CASE WHEN quiz_attempts.status = "submitted" AND quiz_attempts.attempt_type = "graded" THEN quiz_attempts.score_percent ELSE NULL END) as lowest_score'),
+                DB::raw('SUM(CASE WHEN quiz_attempts.status = "submitted" AND quiz_attempts.attempt_type = "graded" THEN 1 ELSE 0 END) as submitted_attempts'),
                 DB::raw('SUM(CASE WHEN quiz_attempts.status = "in_progress" THEN 1 ELSE 0 END) as in_progress_attempts'),
                 DB::raw('SUM(CASE WHEN quiz_attempts.status = "expired" THEN 1 ELSE 0 END) as expired_attempts')
             )
@@ -224,8 +229,8 @@ class QuizStatisticsService
                 DB::raw('SUM(CASE WHEN quiz_attempts.status = "submitted" THEN 1 ELSE 0 END) as submitted_attempts'),
                 DB::raw('SUM(CASE WHEN quiz_attempts.status = "in_progress" THEN 1 ELSE 0 END) as in_progress_attempts'),
                 DB::raw('SUM(CASE WHEN quiz_attempts.status = "expired" THEN 1 ELSE 0 END) as expired_attempts'),
-                DB::raw('MAX(CASE WHEN quiz_attempts.status = "submitted" THEN quiz_attempts.score_percent ELSE NULL END) as best_score'),
-                DB::raw('MIN(CASE WHEN quiz_attempts.status = "submitted" THEN quiz_attempts.score_percent ELSE NULL END) as lowest_score')
+                DB::raw('MAX(CASE WHEN quiz_attempts.status = "submitted" AND quiz_attempts.attempt_type = "graded" THEN quiz_attempts.score_percent ELSE NULL END) as best_score'),
+                DB::raw('MIN(CASE WHEN quiz_attempts.status = "submitted" AND quiz_attempts.attempt_type = "graded" THEN quiz_attempts.score_percent ELSE NULL END) as lowest_score')
             )
             ->orderByDesc('best_score')
             ->orderBy('users.name')
@@ -269,6 +274,7 @@ class QuizStatisticsService
     public function getStatisticsByDateRange(\DateTime $startDate, \DateTime $endDate): array
     {
         $submittedQuery = Quiz_attempt::where('status', 'submitted')
+            ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
             ->whereBetween('submitted_at', [$startDate, $endDate]);
 
         $totalAttempts = $submittedQuery->count();
@@ -297,7 +303,9 @@ class QuizStatisticsService
             'F' => ['min' => 0, 'max' => 59, 'count' => 0],
         ];
 
-        $attempts = Quiz_attempt::where('status', 'submitted')->get();
+        $attempts = Quiz_attempt::where('status', 'submitted')
+            ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
+            ->get();
 
         foreach ($attempts as $attempt) {
             $score = $attempt->score_percent ?? 0;
@@ -325,6 +333,7 @@ class QuizStatisticsService
         foreach ($students as $student) {
             $avgScore = $student->quizAttempts()
                 ->where('status', 'submitted')
+                ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
                 ->avg('score_percent') ?? 0;
 
             if ($student->quizAttempts()->count() > 0) {
@@ -358,6 +367,7 @@ class QuizStatisticsService
             $stats = DB::table('quiz_attempts')
                 ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
                 ->where('quiz_attempts.status', 'submitted')
+                ->where('quiz_attempts.attempt_type', Quiz_attempt::TYPE_GRADED)
                 ->where('quizzes.difficulty', $difficulty)
                 ->select(
                     DB::raw('COUNT(*) as attempt_count'),

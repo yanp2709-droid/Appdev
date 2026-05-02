@@ -22,19 +22,20 @@ class SessionExpiredScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          Expanded(
+          const Expanded(
             child: Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
+                padding: EdgeInsets.symmetric(horizontal: 32),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
+                  children: [
                     Text('⏳', style: TextStyle(fontSize: 80)),
                     SizedBox(height: 24),
                     Text(
                       'Session Expired',
                       style: TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.w800,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textDark,
                       ),
                     ),
@@ -43,7 +44,8 @@ class SessionExpiredScreen extends StatelessWidget {
                       'Your session has expired.\nPlease log in again.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: AppColors.gray600, fontSize: 14,
+                        color: AppColors.gray600,
+                        fontSize: 14,
                       ),
                     ),
                   ],

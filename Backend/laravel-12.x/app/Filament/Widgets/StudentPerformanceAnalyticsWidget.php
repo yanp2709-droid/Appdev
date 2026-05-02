@@ -54,7 +54,10 @@ class StudentPerformanceAnalyticsWidget extends BaseWidget
                 TextColumn::make('avg_score')
                     ->label('Average Score')
                     ->formatStateUsing(function (User $record): string {
-                        $attempts = $record->quizAttempts()->get();
+                        $attempts = $record->quizAttempts()
+                            ->where('status', 'submitted')
+                            ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
+                            ->get();
 
                         if ($attempts->isEmpty()) {
                             return 'No Data';
@@ -68,7 +71,10 @@ class StudentPerformanceAnalyticsWidget extends BaseWidget
                 TextColumn::make('highest_score')
                     ->label('Highest Score')
                     ->formatStateUsing(function (User $record): string {
-                        $attempts = $record->quizAttempts()->get();
+                        $attempts = $record->quizAttempts()
+                            ->where('status', 'submitted')
+                            ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
+                            ->get();
 
                         if ($attempts->isEmpty()) {
                             return 'N/A';
