@@ -45,6 +45,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Public read-only routes (use auth if you need to restrict later)
 Route::get('/categories', [CategoriesController::class, 'index']);
+Route::get('/categories/{category}/quizzes', [QuizzesController::class, 'byCategory'])->whereNumber('category');
+Route::get('/subjects/{subject}/quizzes', [QuizzesController::class, 'bySubject'])->whereNumber('subject');
 Route::get('/questions', [QuestionController::class, 'index']);
 
 // Quiz routes protected by role

@@ -231,6 +231,15 @@ class QuizAttemptController extends Controller
 
     private function resolveQuizForCategory(Category $category): ?Quiz
     {
+        $quiz = Quiz::where('category_id', $category->id)
+            ->where('is_active', true)
+            ->latest()
+            ->first();
+
+        if ($quiz) {
+            return $quiz;
+        }
+
         $hasQuestions = Question::where('category_id', $category->id)->exists();
         if (!$hasQuestions) {
             return null;

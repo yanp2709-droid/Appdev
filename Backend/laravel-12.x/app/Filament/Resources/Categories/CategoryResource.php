@@ -29,7 +29,7 @@ class CategoryResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Subjects';
 
-    protected static ?string $navigationLabel = 'Subjects';
+    protected static ?string $navigationLabel = 'Quiz';
 
     protected static ?int $navigationSort = 1;
 
