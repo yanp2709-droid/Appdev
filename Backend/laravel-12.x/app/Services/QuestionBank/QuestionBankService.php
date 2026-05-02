@@ -363,15 +363,27 @@ class QuestionBankService
             ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId))
             ->get();
 
+        $category = $categoryId ? Category::find($categoryId) : null;
+        $filename = $category ? "{$category->name}_questions.csv" : 'question_bank_export.csv';
+
         $callback = function () use ($questions) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, self::REQUIRED_COLUMNS);
+            $headers = [
+                'question_text',
+                'subject',
+                'question_type',
+                'options',
+                'correct_answer',
+                'points',
+                'answer_key',
+            ];
+            fputcsv($handle, $headers);
 
             foreach ($questions as $question) {
                 $payload = $this->exportQuestionPayload($question);
                 $row = [
                     $payload['question_text'],
-                    $payload['category'],
+                    $payload['subject'],
                     $payload['question_type'],
                     json_encode($payload['options']),
                     is_array($payload['correct_answer']) ? json_encode($payload['correct_answer']) : $payload['correct_answer'],
@@ -384,7 +396,7 @@ class QuestionBankService
             fclose($handle);
         };
 
-        return response()->streamDownload($callback, 'question_bank_export.csv', [
+        return response()->streamDownload($callback, $filename, [
             'Content-Type' => 'text/csv',
         ]);
     }
@@ -408,15 +420,29 @@ class QuestionBankService
             ->where('quiz_id', $quizId)
             ->get();
 
+        $quiz = $questions->first()->quiz ?? null;
+        $quizName = $quiz ? $quiz->title : 'quiz';
+        $subject = $quiz ? ($quiz->category->name ?? 'subject') : 'subject';
+        $filename = "{$quizName}_{$subject}_questions.csv";
+
         $callback = function () use ($questions) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, self::REQUIRED_COLUMNS);
+            $headers = [
+                'question_text',
+                'subject',
+                'question_type',
+                'options',
+                'correct_answer',
+                'points',
+                'answer_key',
+            ];
+            fputcsv($handle, $headers);
 
             foreach ($questions as $question) {
                 $payload = $this->exportQuestionPayload($question);
                 $row = [
                     $payload['question_text'],
-                    $payload['category'],
+                    $payload['subject'],
                     $payload['question_type'],
                     json_encode($payload['options']),
                     is_array($payload['correct_answer']) ? json_encode($payload['correct_answer']) : $payload['correct_answer'],
@@ -429,7 +455,7 @@ class QuestionBankService
             fclose($handle);
         };
 
-        return response()->streamDownload($callback, 'question_bank_export.csv', [
+        return response()->streamDownload($callback, $filename, [
             'Content-Type' => 'text/csv',
         ]);
     }
@@ -784,15 +810,26 @@ class QuestionBankService
                 ->values()
                 ->all();
 
-            $correctAnswer = $question->question_type === Question::TYPE_MULTI_SELECT
-                ? $correctIndexes
-                : ($correctIndexes[0] ?? null);
+            if ($question->question_type === Question::TYPE_TRUE_FALSE) {
+                // For True/False, output "true" or "false" if we have a correct option
+                $correctAnswer = isset($correctIndexes[0])
+                    ? ($correctIndexes[0] === 1 ? 'true' : 'false')
+                    : null;
+            } elseif ($question->question_type === Question::TYPE_MCQ) {
+                // For MCQ, output letter A, B, C, etc. if we have a correct option
+                $correctAnswer = isset($correctIndexes[0])
+                    ? chr(64 + $correctIndexes[0])
+                    : null;
+            } else {
+                // For multi-select, output array of letters
+                $correctAnswer = array_map(fn ($index) => chr(64 + $index), $correctIndexes);
+            }
         }
 
         return [
             'id' => $question->id,
             'question_text' => $question->question_text,
-            'category' => $question->category?->name ?? $question->quiz?->category?->name ?? '',
+            'subject' => $question->category?->name ?? $question->quiz?->category?->name ?? '',
             'quiz' => $question->quiz?->title ?? '',
             'question_type' => $question->question_type,
             'options' => $options,

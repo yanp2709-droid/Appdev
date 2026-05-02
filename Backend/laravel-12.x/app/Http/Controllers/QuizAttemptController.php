@@ -266,6 +266,7 @@ class QuizAttemptController extends Controller
                 'show_score_immediately' => true,
                 'show_answers_after_submit' => false,
                 'show_correct_answers_after_submit' => false,
+                'is_active' => true,
             ]
         );
     }

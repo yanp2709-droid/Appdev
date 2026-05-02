@@ -198,7 +198,6 @@ class TeacherResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->isAdmin()
-            && $user->isProtected();
+            && $user->isAdmin();
     }
 }

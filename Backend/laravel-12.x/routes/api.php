@@ -48,6 +48,7 @@ Route::get('/categories', [CategoriesController::class, 'index']);
 Route::get('/categories/{category}/quizzes', [QuizzesController::class, 'byCategory'])->whereNumber('category');
 Route::get('/subjects/{subject}/quizzes', [QuizzesController::class, 'bySubject'])->whereNumber('subject');
 Route::get('/questions', [QuestionController::class, 'index']);
+Route::get('/quiz/{quiz}', [QuizzesController::class, 'show'])->whereNumber('quiz');
 
 // Quiz routes protected by role
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -55,7 +56,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
         Route::post('/quiz/create', [QuizzesController::class, 'store']);
         Route::put('/quiz/{quiz}', [QuizzesController::class, 'update'])->whereNumber('quiz');
-        Route::get('/quiz/{quiz}', [QuizzesController::class, 'show'])->whereNumber('quiz');
     });
 
     // Student-only routes

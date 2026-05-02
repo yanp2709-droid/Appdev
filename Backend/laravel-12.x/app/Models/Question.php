@@ -94,10 +94,6 @@ class Question extends Model
             return $errors;
         }
 
-        if (empty($payload['category_id']) && empty($payload['quiz_id'])) {
-            $errors[] = 'Question category or quiz is required.';
-        }
-
         $points = $payload['points'] ?? null;
         if ($points !== null && $points !== '') {
             if (!is_numeric($points) || (int) $points != $points) {
