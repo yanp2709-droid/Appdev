@@ -103,16 +103,6 @@ class TeacherResource extends Resource
             ->actions([
                 EditAction::make(),
 
-                Action::make('deactivate')
-                    ->label('Deactivate')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading('Deactivate Teacher')
-                    ->modalDescription('This will prevent the teacher from accessing the admin dashboard. Their quizzes will remain intact.')
-                    ->hidden(fn (User $record): bool => !$record->is_active || $record->isProtected())
-                    ->action(fn (User $record) => $record->update(['is_active' => false])),
-
                 Action::make('activate')
                     ->label('Activate')
                     ->icon('heroicon-o-check-circle')
@@ -144,21 +134,6 @@ class TeacherResource extends Resource
                     }),
             ])
             ->bulkActions([
-                BulkAction::make('deactivate')
-                    ->label('Deactivate Selected')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading('Deactivate Selected Teachers')
-                    ->modalDescription('This will prevent the selected teachers from accessing the admin dashboard. Their quizzes will remain intact.')
-                    ->action(function ($records) {
-                        foreach ($records as $record) {
-                            if (!$record->isProtected()) {
-                                $record->update(['is_active' => false]);
-                            }
-                        }
-                    }),
-
                 BulkAction::make('activate')
                     ->label('Activate Selected')
                     ->icon('heroicon-o-check-circle')

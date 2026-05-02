@@ -343,11 +343,7 @@
 
     <div class="dashboard-shell" data-dashboard-builder data-component-id="{{ $this->getId() }}">
         <div class="dashboard-toolbar">
-            <div>
-                <p class="dashboard-kicker">Dashboard Builder</p>
-                <h1 class="dashboard-title">Arrange Your Classroom Insights</h1>
-                <p class="dashboard-copy">Keep the most important widgets at the top, group related analytics together, and give the dashboard a cleaner Google Classroom-inspired rhythm.</p>
-            </div>
+            <div></div>
 
             <button
                 type="button"

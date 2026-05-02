@@ -71,15 +71,6 @@ class StudentResource extends Resource
             ->actions([
                 ViewAction::make(),
                 EditAction::make(),
-                Action::make('deactivate')
-                    ->label('Deactivate')
-                    ->icon('heroicon-m-lock-closed')
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->modalHeading('Deactivate Student Account')
-                    ->modalDescription('This will deactivate the student account. They will no longer be able to log in, but all quiz records will be preserved.')
-                    ->visible(fn (User $record): bool => $record->is_active)
-                    ->action(fn (User $record) => $record->update(['is_active' => false])),
                 Action::make('activate')
                     ->label('Activate')
                     ->icon('heroicon-m-lock-open')

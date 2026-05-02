@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Questions\Schemas;
 use App\Models\Question;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -99,7 +100,7 @@ class QuestionForm
         ?\Closure $visible = null,
     ): Section {
         $schema = [
-            self::categoryField(),
+            ...self::scopeFields(),
 
             TextInput::make('points')
                 ->label('Points')
@@ -154,22 +155,30 @@ class QuestionForm
         return $section;
     }
 
-    private static function categoryField(): Select
+    /**
+     * @return array<int, \Filament\Schemas\Components\Component>
+     */
+    private static function scopeFields(): array
     {
-        $field = Select::make('category_id')
-            ->label('Category')
-            ->relationship('category', 'name')
-            ->searchable()
-            ->createOptionAction(null);
+        return [
+            Hidden::make('quiz_id')
+                ->default(fn ($livewire): ?int => property_exists($livewire, 'quizId') && filled($livewire->quizId) ? (int) $livewire->quizId : null)
+                ->dehydrated(fn ($livewire): bool => property_exists($livewire, 'quizId') && filled($livewire->quizId))
+                ->visible(fn ($livewire): bool => property_exists($livewire, 'quizId') && filled($livewire->quizId)),
 
-        if (request()->filled('category_id')) {
-            return $field
-                ->default(fn (): ?int => request()->integer('category_id'))
-                ->disabled()
-                ->dehydrated();
-        }
+            Hidden::make('category_id')
+                ->default(fn ($livewire): ?int => property_exists($livewire, 'categoryId') && filled($livewire->categoryId) ? (int) $livewire->categoryId : null)
+                ->dehydrated(fn ($livewire): bool => property_exists($livewire, 'categoryId') && filled($livewire->categoryId))
+                ->visible(fn ($livewire): bool => property_exists($livewire, 'categoryId') && filled($livewire->categoryId)),
 
-        return $field;
+            Select::make('category_id')
+                ->label('Subject')
+                ->relationship('category', 'name')
+                ->searchable()
+                ->createOptionAction(null)
+                ->visible(fn ($livewire): bool => ! (property_exists($livewire, 'quizId') && filled($livewire->quizId)) && ! (property_exists($livewire, 'categoryId') && filled($livewire->categoryId)))
+                ->dehydrated(fn ($livewire): bool => ! (property_exists($livewire, 'quizId') && filled($livewire->quizId)) && ! (property_exists($livewire, 'categoryId') && filled($livewire->categoryId))),
+        ];
     }
 
     private static function optionsRepeater(string $label, bool $disableItemCreation = false): Repeater

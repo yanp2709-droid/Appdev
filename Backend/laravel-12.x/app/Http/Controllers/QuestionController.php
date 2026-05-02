@@ -24,14 +24,20 @@ class QuestionController extends Controller
             $limit = $request->limit ?? 10;
             $random = (bool) $request->random;
 
-            $cacheKey = "questions:cat:{$request->category_id}:limit:{$limit}:rand:" . ($random ? '1' : '0');
+            $scopeKey = $request->quiz_id ? 'quiz:' . $request->quiz_id : 'cat:' . $request->category_id;
+            $cacheKey = "questions:{$scopeKey}:limit:{$limit}:rand:" . ($random ? '1' : '0');
 
             $questions = Cache::remember($cacheKey, 300, function () use ($request, $limit, $random) {
                 $query = Question::with(['options' => function ($q) {
                     $q->select('id', 'question_id', 'option_text', 'order_index');
                 }])
-                    ->select('id', 'category_id', 'question_type', 'question_text', 'points')
-                    ->where('category_id', $request->category_id);
+                    ->select('id', 'category_id', 'quiz_id', 'question_type', 'question_text', 'points');
+
+                if ($request->filled('quiz_id')) {
+                    $query->where('quiz_id', $request->quiz_id);
+                } else {
+                    $query->where('category_id', $request->category_id);
+                }
 
                 if ($random) {
                     $query->inRandomOrder();

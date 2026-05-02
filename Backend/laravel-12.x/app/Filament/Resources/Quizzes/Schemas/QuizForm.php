@@ -9,6 +9,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema as SchemaFacade;
 
 class QuizForm
 {
@@ -22,10 +23,13 @@ class QuizForm
                             ->required()
                             ->maxLength(255),
                         Select::make('category_id')
-                            ->label('Category')
+                            ->label('Subject')
                             ->relationship('category', 'name')
                             ->required()
-                            ->searchable(),
+                            ->searchable()
+                            ->default(fn (): ?int => request()->filled('category_id') ? request()->integer('category_id') : null)
+                            ->disabled(fn (): bool => request()->filled('category_id'))
+                            ->dehydrated(),
                         Select::make('teacher_id')
                             ->label('Teacher')
                             ->relationship('teacher', 'name')
@@ -87,6 +91,11 @@ class QuizForm
                             ->default(false)
                             ->visible(fn (callable $get) => (bool) $get('show_answers_after_submit'))
                             ->helperText('Shows correct answers after quiz submission'),
+                        Toggle::make('is_active')
+                            ->label('Active')
+                            ->default(true)
+                            ->visible(fn (): bool => SchemaFacade::hasColumn('quizzes', 'is_active'))
+                            ->helperText('Inactive quizzes are hidden from student attempts.'),
                     ])
                     ->columns(2),
             ]);

@@ -334,7 +334,7 @@
         @forelse ($categories as $category)
             <div class="category-card">
                 <a
-                    href="{{ \App\Filament\Resources\Categories\CategoryResource::getUrl('questions', ['record' => $category]) }}"
+                    href="{{ \App\Filament\Resources\Categories\CategoryResource::getUrl('quizzes', ['record' => $category]) }}"
                     class="category-open-link"
                     aria-label="Open {{ $category->name }}"
                 ></a>

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Questions\Pages;
 
 use App\Filament\Resources\Categories\CategoryResource;
+use App\Filament\Resources\Quizzes\QuizResource;
 use App\Filament\Resources\Questions\QuestionResource;
 use App\Models\Question;
 use Exception;
@@ -21,6 +22,28 @@ class EditQuestion extends EditRecord
         return false;
     }
 
+    public function getBreadcrumbs(): array
+    {
+        $breadcrumbs = [
+            CategoryResource::getUrl('index') => 'Subject',
+        ];
+
+        $quiz = $this->record->quiz ?? null;
+        $category = $quiz?->category ?? $this->record->category;
+
+        if ($category) {
+            $breadcrumbs[CategoryResource::getUrl('quizzes', ['record' => $category])] = $category->name;
+        }
+
+        if ($quiz) {
+            $breadcrumbs[QuizResource::getUrl('questions', ['record' => $quiz])] = $quiz->title;
+        }
+
+        $breadcrumbs[] = 'Edit';
+
+        return $breadcrumbs;
+    }
+
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $sectionKey = match ($this->record->question_type) {
@@ -33,6 +56,7 @@ class EditQuestion extends EditRecord
 
         $sectionData = [
             'category_id' => $data['category_id'] ?? null,
+            'quiz_id' => $data['quiz_id'] ?? null,
             'points' => $data['points'] ?? 5,
             'question_text' => $data['question_text'] ?? '',
         ];
@@ -74,6 +98,13 @@ class EditQuestion extends EditRecord
             $flattened['multi_select'],
             $flattened['short_answer'],
         );
+
+        if (empty($flattened['category_id']) && !empty($flattened['quiz_id'])) {
+            $quiz = \App\Models\Quiz::find($flattened['quiz_id']);
+            if ($quiz) {
+                $flattened['category_id'] = $quiz->category_id;
+            }
+        }
 
         $errors = Question::validatePayload($flattened, $this->record);
 
@@ -148,10 +179,15 @@ class EditQuestion extends EditRecord
 
     protected function getRedirectUrl(): string
     {
-        $categoryId = $this->record->category_id ?? null;
+        $quizId = $this->record->quiz_id ?? null;
 
+        if ($quizId) {
+            return QuizResource::getUrl('questions', ['record' => $quizId]);
+        }
+
+        $categoryId = $this->record->category_id ?? null;
         if ($categoryId) {
-            return CategoryResource::getUrl('questions', ['record' => $categoryId]);
+            return CategoryResource::getUrl('quizzes', ['record' => $categoryId]);
         }
 
         return CategoryResource::getUrl('index');

@@ -109,6 +109,7 @@ class QuizzesController extends Controller
             'show_score_immediately' => ['sometimes', 'boolean'],
             'show_answers_after_submit' => ['sometimes', 'boolean'],
             'show_correct_answers_after_submit' => ['sometimes', 'boolean'],
+            'is_active' => ['sometimes', 'boolean'],
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -135,6 +136,7 @@ class QuizzesController extends Controller
                     'show_score_immediately',
                     'show_answers_after_submit',
                     'show_correct_answers_after_submit',
+                    'is_active',
                 ]),
                 $payload
             );
@@ -169,6 +171,7 @@ class QuizzesController extends Controller
             'show_score_immediately' => (bool) $quiz->show_score_immediately,
             'show_answers_after_submit' => (bool) $quiz->show_answers_after_submit,
             'show_correct_answers_after_submit' => (bool) $quiz->show_correct_answers_after_submit,
+            'is_active' => (bool) $quiz->is_active,
         ];
     }
 }

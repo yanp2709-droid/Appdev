@@ -13,6 +13,8 @@ class ListCategories extends ListRecords
 {
     protected static string $resource = CategoryResource::class;
 
+    protected static ?string $breadcrumb = 'List';
+
     protected string $view = 'filament.resources.categories.pages.list-categories';
 
     protected function getHeaderActions(): array
