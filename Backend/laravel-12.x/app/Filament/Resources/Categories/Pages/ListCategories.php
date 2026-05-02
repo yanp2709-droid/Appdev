@@ -35,8 +35,13 @@ class ListCategories extends ListRecords
 
     protected function getHeaderActions(): array
     {
+        $academicYearService = app(\App\Services\AcademicYearService::class);
+        $isCurrentYear = $academicYearService->getSelectedAcademicYear() === $academicYearService->getCurrentAcademicYear();
+
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->disabled(! $isCurrentYear)
+                ->tooltip(fn (): ?string => $isCurrentYear ? null : 'New subjects can only be created for the current academic year'),
         ];
     }
 

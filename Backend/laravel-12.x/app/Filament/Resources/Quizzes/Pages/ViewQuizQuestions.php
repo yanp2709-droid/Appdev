@@ -49,12 +49,19 @@ class ViewQuizQuestions extends ViewRecord
 
     protected function getHeaderActions(): array
     {
+        $academicYearService = app(\App\Services\AcademicYearService::class);
+        $isCurrentYear = $academicYearService->getSelectedAcademicYear() === $academicYearService->getCurrentAcademicYear();
+
         return [
             CreateAction::make('newQuestion')
                 ->label('New Question')
-                ->url(fn () => QuestionResource::getUrl('create') . '?quiz_id=' . $this->getRecord()->id),
+                ->url(fn () => QuestionResource::getUrl('create') . '?quiz_id=' . $this->getRecord()->id)
+                ->disabled(! $isCurrentYear)
+                ->tooltip(fn (): ?string => $isCurrentYear ? null : 'New questions can only be created for the current academic year'),
             Action::make('importCsv')
                 ->label('Import CSV')
+                ->disabled(! $isCurrentYear)
+                ->tooltip(fn (): ?string => $isCurrentYear ? null : 'Imports can only be performed for the current academic year')
                 ->form([
                     FileUpload::make('file')
                         ->label('CSV File')
@@ -69,6 +76,8 @@ class ViewQuizQuestions extends ViewRecord
                 }),
             Action::make('importJson')
                 ->label('Import JSON')
+                ->disabled(! $isCurrentYear)
+                ->tooltip(fn (): ?string => $isCurrentYear ? null : 'Imports can only be performed for the current academic year')
                 ->form([
                     FileUpload::make('file')
                         ->label('JSON File')

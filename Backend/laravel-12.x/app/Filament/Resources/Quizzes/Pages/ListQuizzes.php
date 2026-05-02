@@ -30,13 +30,12 @@ class ListQuizzes extends ListRecords
     protected function getHeaderActions(): array
     {
         $academicYearService = app(\App\Services\AcademicYearService::class);
-
-        if ($academicYearService->getSelectedAcademicYear() !== $academicYearService->getCurrentAcademicYear()) {
-            return [];
-        }
+        $isCurrentYear = $academicYearService->getSelectedAcademicYear() === $academicYearService->getCurrentAcademicYear();
 
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->disabled(! $isCurrentYear)
+                ->tooltip(fn (): ?string => $isCurrentYear ? null : 'New quizzes can only be created for the current academic year'),
         ];
     }
 }

@@ -17,6 +17,7 @@ class AcademicYearDataSeeder extends Seeder
 {
     private const STUDENTS_PER_YEAR = 300;
     private const QUIZZES_PER_YEAR = 20;
+    private const QUIZZES_PER_SUBJECT = 20;
     private const QUESTIONS_PER_QUIZ = 10;
     private const ATTEMPTS_PER_YEAR = [
         '2023-2024' => 3,
@@ -112,11 +113,7 @@ class AcademicYearDataSeeder extends Seeder
         $subjectCount = count($subjects);
 
         foreach ($subjects as $index => $subjectData) {
-            $quizCount = intdiv(self::QUIZZES_PER_YEAR, $subjectCount);
-
-            if ($index < (self::QUIZZES_PER_YEAR % $subjectCount)) {
-                $quizCount++;
-            }
+            $quizCount = self::QUIZZES_PER_SUBJECT;
 
             $category = $this->createCategoryAndQuizzes($subjectData, $teacher, $schoolYear, $yearInfo, $quizCount);
             $categories[] = $category;

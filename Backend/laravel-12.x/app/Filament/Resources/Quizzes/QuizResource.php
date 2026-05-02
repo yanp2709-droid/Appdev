@@ -52,11 +52,9 @@ class QuizResource extends Resource
             ->whereBetween('created_at', [$startDate, $endDate]);
     }
 
-    public static function canCreate(): bool
+public static function canCreate(): bool
     {
-        $academicYearService = app(AcademicYearService::class);
-
-        return $academicYearService->getSelectedAcademicYear() === $academicYearService->getCurrentAcademicYear();
+        return true;
     }
 
     public static function getPages(): array

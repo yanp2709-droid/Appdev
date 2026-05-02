@@ -27,8 +27,13 @@ class ListStudents extends ListRecords
 
     protected function getHeaderActions(): array
     {
+        $academicYearService = app(\App\Services\AcademicYearService::class);
+        $isCurrentYear = $academicYearService->getSelectedAcademicYear() === $academicYearService->getCurrentAcademicYear();
+
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->disabled(! $isCurrentYear)
+                ->tooltip(fn (): ?string => $isCurrentYear ? null : 'New students can only be created for the current academic year'),
         ];
     }
 }
