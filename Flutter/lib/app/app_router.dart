@@ -9,6 +9,7 @@ import '../features/auth/presentation/screens/register_screen.dart';
 import '../features/auth/presentation/screens/session_expired_screen.dart';
 import '../features/home/student/student_home_screen.dart';
 import '../features/categories/presentation/screens/categories_screen.dart';
+import '../features/quiz/presentation/screens/quiz_list_screen.dart';
 import '../features/quiz/presentation/screens/quiz_screen.dart';
 import '../features/quiz/presentation/screens/quiz_result_screen.dart';
 import '../features/quiz/presentation/screens/history_screen.dart';
@@ -38,6 +39,19 @@ GoRouter createRouter(BuildContext context) {
       GoRoute(path: '/register',        builder: (_, __) => const RegisterScreen()),
       GoRoute(path: '/student-home',    builder: (_, __) => const StudentHomeScreen()),
       GoRoute(path: '/categories',      builder: (_, __) => const CategoriesScreen()),
+      GoRoute(
+        path: '/categories/:categoryId/quizzes',
+        builder: (_, state) {
+          final categoryIdParam = state.pathParameters['categoryId'] ?? '0';
+          final categoryId = int.tryParse(categoryIdParam) ?? 0;
+          final categoryName =
+              state.uri.queryParameters['categoryName'] ?? 'Category';
+          return QuizListScreen(
+            subjectId: categoryId,
+            subjectName: categoryName,
+          );
+        },
+      ),
       GoRoute(path: '/quiz',            builder: (_, __) => const QuizScreen()),
       GoRoute(path: '/quiz-result',     builder: (_, __) => const QuizResultScreen()),
       GoRoute(path: '/history',         builder: (_, __) => const HistoryScreen()),
@@ -55,4 +69,3 @@ GoRouter createRouter(BuildContext context) {
     ],
   );
 }
-

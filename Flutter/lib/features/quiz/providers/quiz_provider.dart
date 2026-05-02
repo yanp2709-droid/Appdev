@@ -89,13 +89,13 @@ class QuizProvider extends ChangeNotifier {
     return '$m:$s';
   }
 
-  Future<void> refreshAttemptAvailability(int categoryId) async {
+  Future<void> refreshAttemptAvailabilityByQuiz(int quizId) async {
     _isCheckingAttemptAvailability = true;
     notifyListeners();
 
     try {
       _attemptAvailability = await _attemptService.getAttemptAvailability(
-        categoryId: categoryId,
+        quizId: quizId,
       );
     } catch (_) {
       _attemptAvailability = const AttemptAvailability(
@@ -110,20 +110,21 @@ class QuizProvider extends ChangeNotifier {
   }
 
   /// Starts quiz attempt and loads questions
-  Future<void> startQuiz(
-    int categoryId,
-    String categoryName, {
+  Future<void> startQuizWithQuiz({
+    required int quizId,
+    int? categoryId,
+    String? categoryName,
     required String attemptType,
   }) async {
     _status = QuizStatus.loading;
     _errorMessage = null;
-    _categoryId = categoryId;
-    _categoryName = categoryName;
+    _categoryId = categoryId ?? 0;
+    _categoryName = categoryName ?? '';
     notifyListeners();
 
     try {
       final response = await _attemptService.startAttempt(
-        categoryId: categoryId,
+        quizId: quizId,
         attemptType: attemptType,
       );
       _attempt = response.attempt;
@@ -142,7 +143,7 @@ class QuizProvider extends ChangeNotifier {
 
       if (_questions.isEmpty) {
         _status = QuizStatus.error;
-        _errorMessage = 'No questions found for this category';
+        _errorMessage = 'No questions found for this quiz';
       } else {
         _status = QuizStatus.active;
       }
