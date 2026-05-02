@@ -9,6 +9,7 @@ use App\Filament\Widgets\SubmittedAttemptsWidget;
 use App\Filament\Widgets\TotalAttemptsWidget;
 use App\Filament\Widgets\TotalStudentsWidget;
 use App\Models\User;
+use App\Services\AcademicYearService;
 use App\Services\DashboardWidgetService;
 use BackedEnum;
 use Filament\Pages\Dashboard;
@@ -25,8 +26,15 @@ class AdminDashboard extends Dashboard
 
     public bool $widgetDrawerOpen = false;
 
+    public string $selectedAcademicYear = '';
+
     public function mount(): void
     {
+        $academicYearService = app(AcademicYearService::class);
+        $this->selectedAcademicYear = $academicYearService->setSelectedAcademicYear(
+            session('selected_academic_year', $academicYearService->getCurrentAcademicYear()),
+        );
+
         if ($user = auth()->user()) {
             $this->widgetService()->initializeDefaultWidgets($user);
 
@@ -35,6 +43,27 @@ class AdminDashboard extends Dashboard
                 session()->put('dashboard_widget_collection_seeded', true);
             }
         }
+    }
+
+    public function changeAcademicYear(): void
+    {
+        $this->selectedAcademicYear = app(AcademicYearService::class)->setSelectedAcademicYear($this->selectedAcademicYear);
+        $this->dispatch('academicYearChanged');
+    }
+
+    public static function getAcademicYearOptions(): array
+    {
+        return app(AcademicYearService::class)->getOptions();
+    }
+
+    public static function getCurrentAcademicYear(): string
+    {
+        return app(AcademicYearService::class)->getCurrentAcademicYear();
+    }
+
+    public static function getSelectedAcademicYear(): string
+    {
+        return app(AcademicYearService::class)->getSelectedAcademicYear();
     }
 
     public function getDashboardWidgets(): Collection

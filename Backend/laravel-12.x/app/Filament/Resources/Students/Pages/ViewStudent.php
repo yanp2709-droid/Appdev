@@ -38,7 +38,7 @@ class ViewStudent extends ViewRecord
                             ->with('category')
                             ->get()
                             ->mapWithKeys(fn (Quiz $quiz) => [
-                                $quiz->id => trim(($quiz->title ?: 'Quiz') . ' - ' . ($quiz->category->name ?? 'Unknown Category')),
+                                $quiz->id => trim(($quiz->title ?: 'Quiz') . ' - ' . ($quiz->category->name ?? 'Unknown Subject')),
                             ])
                             ->all())
                         ->searchable()

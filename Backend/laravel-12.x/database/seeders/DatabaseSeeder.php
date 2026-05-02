@@ -10,8 +10,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AdminUserSeeder::class,
-            QuizDatasetSeeder::class,
-            StudentId2302Seeder::class,
+            AcademicYearDataSeeder::class,
         ]);
     }
 }

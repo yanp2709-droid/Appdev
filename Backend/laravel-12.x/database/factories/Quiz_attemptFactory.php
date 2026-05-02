@@ -17,6 +17,8 @@ class Quiz_attemptFactory extends Factory
         return [
             'student_id' => User::factory()->student(),
             'quiz_id' => Quiz::factory(),
+            'attempt_type' => 'graded',
+            'school_year' => '2025-2026',
             'score' => $this->faker->numberBetween(0, 100),
             'status' => 'in_progress',
             'started_at' => now(),

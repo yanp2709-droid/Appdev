@@ -6,7 +6,9 @@ use App\Models\Quiz_attempt;
 use App\Models\User;
 use App\Models\Quiz;
 use App\Models\Category;
+use App\Services\AcademicYearService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class QuizStatisticsService
 {
@@ -15,22 +17,57 @@ class QuizStatisticsService
      */
     public function getOverallStatistics(): array
     {
-        $totalStudents = User::where('role', 'student')->count();
-        $totalAttempts = Quiz_attempt::count();
-        $submittedAttempts = Quiz_attempt::where('status', 'submitted')->count();
-        
-        $submittedQuery = Quiz_attempt::where('status', 'submitted')
+        $academicYear = app(AcademicYearService::class)->getSelectedAcademicYear();
+        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
+        $totalStudentsQuery = User::where('role', 'student');
+        if (Schema::hasColumn('users', 'academic_year')) {
+            $totalStudentsQuery->where('academic_year', $academicYear);
+        } else {
+            $totalStudentsQuery->whereBetween('created_at', [$startDate, $endDate]);
+        }
+
+        $totalStudents = $totalStudentsQuery->count();
+
+        $totalAttemptsQuery = Quiz_attempt::query();
+        $submittedAttemptsQuery = Quiz_attempt::query()->where('status', 'submitted');
+        $gradedSubmittedQuery = Quiz_attempt::query()
+            ->where('status', 'submitted')
             ->where('attempt_type', Quiz_attempt::TYPE_GRADED);
-        $averageScore = $submittedQuery->avg('score_percent') ?? 0;
-        $highestScore = $submittedQuery->max('score_percent') ?? 0;
-        $lowestScore = $submittedQuery->min('score_percent') ?? 0;
+
+        if (Schema::hasColumn('quiz_attempts', 'school_year')) {
+            $totalAttemptsQuery->where('school_year', $academicYear);
+            $submittedAttemptsQuery->where('school_year', $academicYear);
+            $gradedSubmittedQuery->where('school_year', $academicYear);
+        } else {
+            $totalAttemptsQuery->whereBetween('submitted_at', [$startDate, $endDate]);
+            $submittedAttemptsQuery->whereBetween('submitted_at', [$startDate, $endDate]);
+            $gradedSubmittedQuery->whereBetween('submitted_at', [$startDate, $endDate]);
+        }
+
+        $inProgressQuery = Quiz_attempt::query()->where('status', 'in_progress');
+        $expiredQuery = Quiz_attempt::query()->where('status', 'expired');
+
+        if (Schema::hasColumn('quiz_attempts', 'school_year')) {
+            $inProgressQuery->where('school_year', $academicYear);
+            $expiredQuery->where('school_year', $academicYear);
+        } else {
+            $inProgressQuery->whereBetween('submitted_at', [$startDate, $endDate]);
+            $expiredQuery->whereBetween('submitted_at', [$startDate, $endDate]);
+        }
+
+        $totalAttempts = $totalAttemptsQuery->count();
+        $submittedAttempts = $submittedAttemptsQuery->count();
+        $averageScore = $gradedSubmittedQuery->avg('score_percent') ?? 0;
+        $highestScore = $gradedSubmittedQuery->max('score_percent') ?? 0;
+        $lowestScore = $gradedSubmittedQuery->min('score_percent') ?? 0;
 
         return [
             'total_students' => $totalStudents,
             'total_attempts' => $totalAttempts,
             'submitted_attempts' => $submittedAttempts,
-            'in_progress_attempts' => Quiz_attempt::where('status', 'in_progress')->count(),
-            'expired_attempts' => Quiz_attempt::where('status', 'expired')->count(),
+            'in_progress_attempts' => $inProgressQuery->count(),
+            'expired_attempts' => $expiredQuery->count(),
             'average_score' => round($averageScore, 2),
             'highest_score' => round($highestScore, 2),
             'lowest_score' => round($lowestScore, 2),
@@ -51,7 +88,16 @@ class QuizStatisticsService
             return [];
         }
 
-        $attempts = $student->quizAttempts();
+        $academicYear = app(AcademicYearService::class)->getSelectedAcademicYear();
+        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
+        $attempts = $student->quizAttempts()
+            ->when(
+                Schema::hasColumn('quiz_attempts', 'school_year'),
+                fn ($query) => $query->where('school_year', $academicYear),
+                fn ($query) => $query->whereBetween('submitted_at', [$startDate, $endDate]),
+            );
+
         $submittedAttempts = (clone $attempts)
             ->where('status', 'submitted')
             ->where('attempt_type', Quiz_attempt::TYPE_GRADED);
@@ -79,10 +125,18 @@ class QuizStatisticsService
      */
     public function getQuizStatistics(): array
     {
+        $academicYear = app(AcademicYearService::class)->getSelectedAcademicYear();
+        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
         $stats = DB::table('quiz_attempts')
             ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
             ->where('quiz_attempts.status', 'submitted')
             ->where('quiz_attempts.attempt_type', Quiz_attempt::TYPE_GRADED)
+            ->when(
+                Schema::hasColumn('quiz_attempts', 'school_year'),
+                fn ($query) => $query->where('quiz_attempts.school_year', $academicYear),
+                fn ($query) => $query->whereBetween('quiz_attempts.submitted_at', [$startDate, $endDate]),
+            )
             ->groupBy('quizzes.id', 'quizzes.title')
             ->select(
                 'quizzes.id',
@@ -114,11 +168,19 @@ class QuizStatisticsService
      */
     public function getCategoryStatistics(): array
     {
+        $academicYear = app(AcademicYearService::class)->getSelectedAcademicYear();
+        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
         $stats = DB::table('quiz_attempts')
             ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
             ->join('categories', 'quizzes.category_id', '=', 'categories.id')
             ->where('quiz_attempts.status', 'submitted')
             ->where('quiz_attempts.attempt_type', Quiz_attempt::TYPE_GRADED)
+            ->when(
+                Schema::hasColumn('quiz_attempts', 'school_year'),
+                fn ($query) => $query->where('quiz_attempts.school_year', $academicYear),
+                fn ($query) => $query->whereBetween('quiz_attempts.submitted_at', [$startDate, $endDate]),
+            )
             ->groupBy('categories.id', 'categories.name')
             ->select(
                 'categories.id',
@@ -148,13 +210,22 @@ class QuizStatisticsService
      */
     public function getCategoryCardStatistics(?string $dateFrom = null, ?string $dateTo = null): array
     {
+        $academicYear = app(AcademicYearService::class)->getSelectedAcademicYear();
+        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
         $query = DB::table('categories')
             ->join('quizzes', 'quizzes.category_id', '=', 'categories.id')
             ->join('quiz_attempts', 'quiz_attempts.quiz_id', '=', 'quizzes.id');
 
+        if (Schema::hasColumn('quiz_attempts', 'school_year')) {
+            $query->where('quiz_attempts.school_year', $academicYear);
+        } else {
+            $query->whereBetween('quiz_attempts.submitted_at', [$startDate, $endDate]);
+        }
+
         // Apply date filtering if provided
         if ($dateFrom && $dateTo) {
-            $query->whereBetween('quiz_attempts.created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
+            $query->whereBetween('quiz_attempts.submitted_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
         }
 
         $stats = $query->select(
@@ -196,6 +267,9 @@ class QuizStatisticsService
      */
     public function getCategoryDetailStatistics(int $categoryId, ?string $dateFrom = null, ?string $dateTo = null): array
     {
+        $academicYear = app(AcademicYearService::class)->getSelectedAcademicYear();
+        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
         $category = Category::find($categoryId);
 
         if (! $category) {
@@ -215,9 +289,15 @@ class QuizStatisticsService
             ->where('quizzes.category_id', $categoryId)
             ->where('users.role', 'student');
 
+        if (Schema::hasColumn('quiz_attempts', 'school_year')) {
+            $query->where('quiz_attempts.school_year', $academicYear);
+        } else {
+            $query->whereBetween('quiz_attempts.submitted_at', [$startDate, $endDate]);
+        }
+
         // Apply date filtering if provided
         if ($dateFrom && $dateTo) {
-            $query->whereBetween('quiz_attempts.created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
+            $query->whereBetween('quiz_attempts.submitted_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
         }
 
         $users = $query->groupBy('users.id', 'users.name', 'users.email')
@@ -295,6 +375,9 @@ class QuizStatisticsService
      */
     public function getPerformanceDistribution(): array
     {
+        $academicYear = app(AcademicYearService::class)->getSelectedAcademicYear();
+        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
         $grades = [
             'A' => ['min' => 90, 'max' => 100, 'count' => 0],
             'B' => ['min' => 80, 'max' => 89, 'count' => 0],
@@ -305,6 +388,11 @@ class QuizStatisticsService
 
         $attempts = Quiz_attempt::where('status', 'submitted')
             ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
+            ->when(
+                Schema::hasColumn('quiz_attempts', 'school_year'),
+                fn ($query) => $query->where('school_year', $academicYear),
+                fn ($query) => $query->whereBetween('submitted_at', [$startDate, $endDate]),
+            )
             ->get();
 
         foreach ($attempts as $attempt) {
@@ -325,7 +413,15 @@ class QuizStatisticsService
      */
     public function getTopStudents(int $limit = 10): array
     {
+        $academicYear = app(AcademicYearService::class)->getSelectedAcademicYear();
+        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
         $students = User::where('role', 'student')
+            ->when(
+                Schema::hasColumn('users', 'academic_year'),
+                fn ($query) => $query->where('academic_year', $academicYear),
+                fn ($query) => $query->whereBetween('created_at', [$startDate, $endDate]),
+            )
             ->orderByDesc('created_at')
             ->get();
 
@@ -334,14 +430,27 @@ class QuizStatisticsService
             $avgScore = $student->quizAttempts()
                 ->where('status', 'submitted')
                 ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
+                ->when(
+                    Schema::hasColumn('quiz_attempts', 'school_year'),
+                    fn ($query) => $query->where('school_year', $academicYear),
+                    fn ($query) => $query->whereBetween('submitted_at', [$startDate, $endDate]),
+                )
                 ->avg('score_percent') ?? 0;
 
-            if ($student->quizAttempts()->count() > 0) {
+            $attemptCount = $student->quizAttempts()
+                ->when(
+                    Schema::hasColumn('quiz_attempts', 'school_year'),
+                    fn ($query) => $query->where('school_year', $academicYear),
+                    fn ($query) => $query->whereBetween('submitted_at', [$startDate, $endDate]),
+                )
+                ->count();
+
+            if ($attemptCount > 0) {
                 $topStudents[] = [
                     'student_id' => $student->id,
                     'student_name' => $student->name,
                     'student_email' => $student->email,
-                    'total_attempts' => $student->quizAttempts()->count(),
+                    'total_attempts' => $attemptCount,
                     'average_score' => round($avgScore, 2),
                 ];
             }
@@ -360,6 +469,9 @@ class QuizStatisticsService
      */
     public function getDifficultyAnalysis(): array
     {
+        $academicYear = app(AcademicYearService::class)->getSelectedAcademicYear();
+        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
         $difficulties = ['easy', 'medium', 'hard'];
         $analysis = [];
 
@@ -369,6 +481,11 @@ class QuizStatisticsService
                 ->where('quiz_attempts.status', 'submitted')
                 ->where('quiz_attempts.attempt_type', Quiz_attempt::TYPE_GRADED)
                 ->where('quizzes.difficulty', $difficulty)
+                ->when(
+                    Schema::hasColumn('quiz_attempts', 'school_year'),
+                    fn ($query) => $query->where('quiz_attempts.school_year', $academicYear),
+                    fn ($query) => $query->whereBetween('quiz_attempts.submitted_at', [$startDate, $endDate]),
+                )
                 ->select(
                     DB::raw('COUNT(*) as attempt_count'),
                     DB::raw('AVG(quiz_attempts.score_percent) as average_score')

@@ -9,6 +9,7 @@ use App\Models\Question;
 use App\Models\Quiz;
 use App\Models\Quiz_attempt;
 use App\Models\QuizRetakeAllowance;
+use App\Services\AcademicYearService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -155,6 +156,7 @@ class QuizAttemptController extends Controller
             'student_id' => $user->id,
             'quiz_id' => $quiz->id,
             'attempt_type' => $attemptType,
+            'school_year' => app(AcademicYearService::class)->getCurrentAcademicYear(),
             'score' => 0,
             'status' => self::STATUS_IN_PROGRESS,
             'started_at' => $startedAt,

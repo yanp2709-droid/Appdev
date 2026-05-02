@@ -2,7 +2,9 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\AdminDashboard;
 use App\Models\User;
+use App\Services\AcademicYearService;
 use Filament\Tables;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -17,15 +19,40 @@ class StudentInformationWidget extends BaseWidget
 
     protected static ?string $heading = 'Recent Registered Students';
 
+    protected $listeners = ['academicYearChanged' => '$refresh'];
+
     public function table(Table $table): Table
     {
+        $academicYear = AdminDashboard::getSelectedAcademicYear();
+
         return $table
             ->query(
                 User::query()
                     ->where('role', 'student')
-                    ->withCount('quizAttempts')
+                    ->when(
+                        \Illuminate\Support\Facades\Schema::hasColumn('users', 'academic_year'),
+                        fn ($query) => $query->where('academic_year', $academicYear),
+                        function ($query) use ($academicYear) {
+                            [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
+                            return $query->whereBetween('created_at', [$startDate, $endDate]);
+                        },
+                    )
+                    ->withCount([
+                        'quizAttempts as quiz_attempts_count' => function ($query) use ($academicYear): void {
+                            $query->when(
+                                \Illuminate\Support\Facades\Schema::hasColumn('quiz_attempts', 'school_year'),
+                                fn ($query) => $query->where('school_year', $academicYear),
+                                function ($query) use ($academicYear) {
+                                    [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
+                                    return $query->whereBetween('submitted_at', [$startDate, $endDate]);
+                                },
+                            );
+                        },
+                    ])
                     ->latest('created_at')
-                    ->limit(10)
+                    ->limit(300)
             )
             ->columns([
                 TextColumn::make('name')
@@ -72,4 +99,3 @@ class StudentInformationWidget extends BaseWidget
             ]);
     }
 }
-

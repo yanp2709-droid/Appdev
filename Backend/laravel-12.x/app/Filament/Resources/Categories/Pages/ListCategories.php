@@ -7,6 +7,8 @@ use App\Models\Category;
 use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use App\Filament\Widgets\AcademicYearSelectorWidget;
+use App\Services\AcademicYearService;
 use Illuminate\Support\Facades\DB;
 
 class ListCategories extends ListRecords
@@ -17,6 +19,20 @@ class ListCategories extends ListRecords
 
     protected string $view = 'filament.resources.categories.pages.list-categories';
 
+    protected $listeners = ['academicYearChanged' => '$refresh'];
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            AcademicYearSelectorWidget::class,
+        ];
+    }
+
+    public function getHeaderWidgetsColumns(): int | array
+    {
+        return 1;
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -26,7 +42,11 @@ class ListCategories extends ListRecords
 
     public function getCategories(): \Illuminate\Support\Collection
     {
+        $academicYearService = app(AcademicYearService::class);
+        [$startDate, $endDate] = $academicYearService->getDateRange($academicYearService->getSelectedAcademicYear());
+
         return Category::query()
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->select('categories.*')
             ->withCount('questions')
             ->selectSub(
