@@ -104,7 +104,7 @@ class _QuizScreenState extends State<QuizScreen> {
               const Text('😕', style: TextStyle(fontSize: 64)),
               const SizedBox(height: 16),
               const Text(
-                'No questions available\nfor this category.',
+                'No questions available\nfor this quiz.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, color: AppColors.gray600),
               ),

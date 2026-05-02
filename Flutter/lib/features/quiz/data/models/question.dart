@@ -23,6 +23,7 @@ class QuestionOptionModel {
 class QuestionModel {
   final int id;
   final int categoryId;
+  final int quizId;
   final String questionType;
   final String questionText;
   final int points;
@@ -31,6 +32,7 @@ class QuestionModel {
   const QuestionModel({
     required this.id,
     required this.categoryId,
+    required this.quizId,
     required this.questionType,
     required this.questionText,
     required this.points,
@@ -45,6 +47,7 @@ class QuestionModel {
     return QuestionModel(
       id: (json['id'] as num?)?.toInt() ?? 0,
       categoryId: (json['category_id'] as num?)?.toInt() ?? 0,
+      quizId: (json['quiz_id'] as num?)?.toInt() ?? 0,
       questionType: json['question_type'] as String? ?? 'mcq',
       questionText: json['question_text'] as String? ?? '',
       points: (json['points'] as num?)?.toInt() ?? 1,
@@ -55,6 +58,7 @@ class QuestionModel {
   Map<String, dynamic> toJson() => {
     'id': id,
     'category_id': categoryId,
+    'quiz_id': quizId,
     'question_type': questionType,
     'question_text': questionText,
     'points': points,

@@ -39,11 +39,17 @@ class ApiClient {
           }
           // For protected endpoints, 401 means token expired
           await TokenStorage.deleteToken();
-          throw ApiException(
-            message: 'Unauthorized - token expired or invalid. Logging out...',
-            statusCode: 401,
-            type: 'unauthorized',
+          final wrapped = DioException(
+            requestOptions: error.requestOptions,
+            response: error.response,
+            type: error.type,
+            error: ApiException(
+              message: 'Unauthorized - token expired or invalid. Logging out...',
+              statusCode: 401,
+              type: 'unauthorized',
+            ),
           );
+          return handler.next(wrapped);
         }
         return handler.next(error);
       },

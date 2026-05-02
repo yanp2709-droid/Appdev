@@ -8,6 +8,7 @@ import 'features/auth/providers/auth_provider.dart';
 import 'features/categories/data/categories_repository.dart';
 import 'features/categories/providers/categories_provider.dart';
 import 'services/quiz_attempt_service.dart';
+import 'features/quiz/providers/quiz_list_provider.dart';
 import 'features/quiz/providers/quiz_provider.dart';
 
 void main() {
@@ -27,6 +28,9 @@ void main() {
         ChangeNotifierProxyProvider<QuizAttemptService, QuizProvider>(
           create: (ctx) => QuizProvider(ctx.read<QuizAttemptService>()),
           update: (_, svc, prev) => prev ?? QuizProvider(svc),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => QuizListProvider(),
         ),
       ],
       child: const TechQuizApp(),
