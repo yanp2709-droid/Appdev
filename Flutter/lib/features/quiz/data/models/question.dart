@@ -28,6 +28,8 @@ class QuestionModel {
   final String questionText;
   final int points;
   final List<QuestionOptionModel> options;
+  final String? academicYear;
+
 
   const QuestionModel({
     required this.id,
@@ -37,7 +39,9 @@ class QuestionModel {
     required this.questionText,
     required this.points,
     required this.options,
+    this.academicYear,
   });
+
 
   factory QuestionModel.fromJson(Map<String, dynamic> json) {
     final optionsList = (json['options'] as List<dynamic>? ?? [])
@@ -52,7 +56,9 @@ class QuestionModel {
       questionText: json['question_text'] as String? ?? '',
       points: (json['points'] as num?)?.toInt() ?? 1,
       options: optionsList,
+      academicYear: json['academic_year'] as String?,
     );
+
   }
 
   Map<String, dynamic> toJson() => {
@@ -63,7 +69,9 @@ class QuestionModel {
     'question_text': questionText,
     'points': points,
     'options': options.map((o) => o.toJson()).toList(),
+    if (academicYear != null) 'academic_year': academicYear,
   };
+
 
   @override
   String toString() => 'QuestionModel(id: $id, type: $questionType)';

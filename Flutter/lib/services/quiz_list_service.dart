@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import '../core/network/api_client.dart';
 import '../core/exceptions/api_exception.dart';
 import '../features/quiz/data/models/quiz.dart';
+import '../../core/config/academic_year_config.dart';
+
 
 /// Service for fetching quiz lists from Laravel API
 class QuizListService {
@@ -20,8 +22,12 @@ class QuizListService {
       try {
         response = await apiClient.dio.get(
           '/subjects/$subjectId/quizzes',
-          queryParameters: activeOnly ? {'is_active': true} : null,
+          queryParameters: {
+            'academic_year': AcademicYearConfig.getAcademicYear(),
+            if (activeOnly) 'is_active': true,
+          },
         );
+
       } on DioException catch (e) {
         if (e.response?.statusCode != 404) {
           rethrow;
@@ -29,8 +35,12 @@ class QuizListService {
         // Backward compatibility for backends that still expose category-based routes.
         response = await apiClient.dio.get(
           '/categories/$subjectId/quizzes',
-          queryParameters: activeOnly ? {'is_active': true} : null,
+          queryParameters: {
+            'academic_year': AcademicYearConfig.getAcademicYear(),
+            if (activeOnly) 'is_active': true,
+          },
         );
+
       }
 
       // Handle both array response and object with data field
@@ -65,7 +75,13 @@ class QuizListService {
   /// Throws: ApiException on failure
   Future<QuizModel> getQuizDetails(int quizId) async {
     try {
-      final response = await apiClient.dio.get('/quizzes/$quizId');
+      final response = await apiClient.dio.get(
+        '/quizzes/$quizId',
+        queryParameters: {
+          'academic_year': AcademicYearConfig.getAcademicYear(),
+        },
+      );
+
 
       Map<String, dynamic> quizData;
 
@@ -94,7 +110,13 @@ class QuizListService {
   /// Throws: ApiException on failure
   Future<bool> isQuizActive(int quizId) async {
     try {
-      final response = await apiClient.dio.get('/quizzes/$quizId/availability');
+      final response = await apiClient.dio.get(
+        '/quizzes/$quizId/availability',
+        queryParameters: {
+          'academic_year': AcademicYearConfig.getAcademicYear(),
+        },
+      );
+
 
       if (response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;

@@ -4,12 +4,16 @@ class CategoryModel {
   final int id;
   final String name;
   final String description;
+  final String? academicYear;
+
 
   const CategoryModel({
     required this.id,
     required this.name,
     required this.description,
+    this.academicYear,
   });
+
 
   /// Subtitle generated from description
   String get subtitle => 'Categories · $description';
@@ -45,14 +49,18 @@ class CategoryModel {
       id: json['id'] as int? ?? 0,
       name: json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
+      academicYear: json['academic_year'] as String?,
     );
   }
+
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
     'description': description,
+    if (academicYear != null) 'academic_year': academicYear,
   };
+
 
   @override
   String toString() => 'CategoryModel(id: $id, name: $name)';

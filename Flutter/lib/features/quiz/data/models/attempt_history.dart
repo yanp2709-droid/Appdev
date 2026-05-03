@@ -14,6 +14,8 @@ class AttemptHistoryModel {
   final int answeredCount;
   final int? correctAnswers;
   final double? scorePercent;
+  final String? schoolYear;
+
 
   const AttemptHistoryModel({
     required this.id,
@@ -31,7 +33,9 @@ class AttemptHistoryModel {
     required this.answeredCount,
     required this.correctAnswers,
     required this.scorePercent,
+    this.schoolYear,
   });
+
 
   factory AttemptHistoryModel.fromJson(Map<String, dynamic> json) {
     return AttemptHistoryModel(
@@ -53,8 +57,10 @@ class AttemptHistoryModel {
       answeredCount: (json['answered_count'] as num?)?.toInt() ?? 0,
       correctAnswers: (json['correct_answers'] as num?)?.toInt(),
       scorePercent: (json['score_percent'] as num?)?.toDouble(),
+      schoolYear: json['school_year'] as String?,
     );
   }
+
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -72,7 +78,9 @@ class AttemptHistoryModel {
         'answered_count': answeredCount,
         'correct_answers': correctAnswers,
         'score_percent': scorePercent,
+        if (schoolYear != null) 'school_year': schoolYear,
       };
+
 
   static DateTime? _parseDate(dynamic value) {
     if (value == null) return null;

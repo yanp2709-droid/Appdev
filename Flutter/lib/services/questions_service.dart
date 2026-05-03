@@ -2,18 +2,20 @@ import 'package:dio/dio.dart';
 import '../core/network/api_client.dart';
 import '../core/exceptions/api_exception.dart';
 import '../features/quiz/data/models/question.dart';
+import '../../core/config/academic_year_config.dart';
+
 
 /// Service for fetching questions from Laravel API
 class QuestionsService {
   final ApiClient apiClient = ApiClient();
 
   /// Fetch questions for a specific category
-  /// 
+  ///
   /// Parameters:
   ///   - categoryId: The ID of the category
   ///   - limit: Maximum number of questions (default: 10)
   ///   - random: Whether to randomize the order (default: false)
-  /// 
+  ///
   /// Returns: List<QuestionModel> for the category
   /// Throws: ApiException on failure
   Future<List<QuestionModel>> getQuestionsByCategory({
@@ -28,8 +30,10 @@ class QuestionsService {
           'category_id': categoryId,
           'limit': limit,
           if (random) 'random': true,
+          'academic_year': AcademicYearConfig.getAcademicYear(),
         },
       );
+
 
       // Handle both array response and object with data field
       List<dynamic> questionsData;

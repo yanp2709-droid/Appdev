@@ -9,6 +9,8 @@ class QuizModel {
   final int timeLimit; // in minutes
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? academicYear;
+
 
   const QuizModel({
     required this.id,
@@ -20,7 +22,9 @@ class QuizModel {
     this.timeLimit = 15,
     this.createdAt,
     this.updatedAt,
+    this.academicYear,
   });
+
 
   /// Create QuizModel from JSON API response
   factory QuizModel.fromJson(Map<String, dynamic> json) {
@@ -36,8 +40,10 @@ class QuizModel {
                 (json['duration_minutes'] as num?)?.toInt() ?? 15,
       createdAt: _parseDate(json['created_at']),
       updatedAt: _parseDate(json['updated_at']),
+      academicYear: json['academic_year'] as String?,
     );
   }
+
 
   /// Convert to JSON
   Map<String, dynamic> toJson() => {
@@ -50,7 +56,9 @@ class QuizModel {
     'time_limit': timeLimit,
     'created_at': createdAt?.toIso8601String(),
     'updated_at': updatedAt?.toIso8601String(),
+    if (academicYear != null) 'academic_year': academicYear,
   };
+
 
   /// Check if quiz is available for taking
   bool get isAvailable => isActive;

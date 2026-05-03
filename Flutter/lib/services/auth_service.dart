@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import '../core/network/api_client.dart';
 import '../core/network/token_storage.dart';
+import '../../core/config/academic_year_config.dart';
+
 
 /// Service for authentication operations
 class AuthService {
@@ -36,7 +38,9 @@ class AuthService {
           'password': password,
           'password_confirmation': passwordConfirmation,
           'privacy_consent': privacyConsent,
+          'academic_year': AcademicYearConfig.getAcademicYear(),
         },
+
       );
 
       return response.data as Map<String, dynamic>;
@@ -121,7 +125,7 @@ class AuthService {
   }
 
   /// Get all users (admin only)
-  /// 
+  ///
   /// Returns: List of users
   /// Throws: ApiException
   Future<List<Map<String, dynamic>>> getAllUsers() async {
