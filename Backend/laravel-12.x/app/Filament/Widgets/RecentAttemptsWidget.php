@@ -2,10 +2,13 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\AdminDashboard;
 use App\Models\Quiz_attempt;
+use App\Services\AcademicYearService;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Support\Facades\Schema;
 
 class RecentAttemptsWidget extends BaseWidget
 {
@@ -17,11 +20,19 @@ class RecentAttemptsWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
+        $academicYear = AdminDashboard::getSelectedAcademicYear();
+        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
         return $table
             ->query(
                 Quiz_attempt::query()
                     ->with(['student:id,name,email', 'quiz.category'])
                     ->where('status', 'submitted')
+                    ->when(
+                        Schema::hasColumn('quiz_attempts', 'school_year'),
+                        fn ($query) => $query->where('school_year', $academicYear),
+                        fn ($query) => $query->whereBetween('submitted_at', [$startDate, $endDate]),
+                    )
                     ->orderByDesc('submitted_at')
                     ->limit(10)
             )
@@ -32,7 +43,11 @@ class RecentAttemptsWidget extends BaseWidget
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('quiz.category.name')
-                    ->label('Category')
+                    ->label('Subject')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('quiz.title')
+                    ->label('Quiz')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('submitted_at')

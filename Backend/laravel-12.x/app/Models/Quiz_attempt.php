@@ -16,6 +16,7 @@ class Quiz_attempt extends Model
         'student_id',
         'quiz_id',
         'attempt_type',
+        'school_year',
         'score',
         'status',
         'started_at',

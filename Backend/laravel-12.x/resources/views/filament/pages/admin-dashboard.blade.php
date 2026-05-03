@@ -341,9 +341,23 @@
         }
     </style>
 
-    <div class="dashboard-shell" data-dashboard-builder data-component-id="{{ $this->getId() }}">
+<div class="dashboard-shell" data-dashboard-builder data-component-id="{{ $this->getId() }}">
         <div class="dashboard-toolbar">
-            <div></div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <label for="academic-year-select" style="font-size: 14px; font-weight: 600; color: #64748b;">Academic Year:</label>
+<select
+                        id="academic-year-select"
+                        wire:model.live="selectedAcademicYear"
+                        wire:change="changeAcademicYear()"
+                        style="min-width: 140px; height: 38px; border: 1px solid #dbe4f0; border-radius: 10px; padding: 0 12px; font-size: 14px; font-weight: 600; color: #1e293b; background: #fff; cursor: pointer; outline: none;"
+                    >
+                        @foreach ($this->getAcademicYearOptions() as $value => $label)
+                            <option value="{{ $value }}" {{ $selectedAcademicYear === $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
 
             <button
                 type="button"

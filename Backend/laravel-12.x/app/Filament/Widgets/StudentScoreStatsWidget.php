@@ -2,10 +2,13 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\AdminDashboard;
 use App\Models\Quiz_attempt;
 use App\Models\User;
+use App\Services\AcademicYearService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Schema;
 
 class StudentScoreStatsWidget extends BaseWidget
 {
@@ -13,15 +16,25 @@ class StudentScoreStatsWidget extends BaseWidget
 
     protected static bool $isLazy = false;
 
+    protected $listeners = ['academicYearChanged' => '$refresh'];
+
     protected function getStats(): array
     {
         if (!$this->record || $this->record->role !== 'student') {
             return [];
         }
 
+        $academicYear = AdminDashboard::getSelectedAcademicYear();
+        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
         $attempts = $this->record->quizAttempts()
             ->where('status', 'submitted')
-            ->where('attempt_type', Quiz_attempt::TYPE_GRADED);
+            ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
+            ->when(
+                Schema::hasColumn('quiz_attempts', 'school_year'),
+                fn ($query) => $query->where('school_year', $academicYear),
+                fn ($query) => $query->whereBetween('submitted_at', [$startDate, $endDate]),
+            );
 
         $attemptCount = $attempts->count();
         $averageScore = $attempts->avg('score_percent') ?? 0;

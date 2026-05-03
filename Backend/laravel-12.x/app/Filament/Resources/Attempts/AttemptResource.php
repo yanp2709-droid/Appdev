@@ -31,7 +31,12 @@ class AttemptResource extends Resource
                     ->sortable(),
 
                 TextColumn::make('quiz.category.name')
-                    ->label('Category')
+                    ->label('Subject')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('quiz.title')
+                    ->label('Quiz')
                     ->searchable()
                     ->sortable(),
 

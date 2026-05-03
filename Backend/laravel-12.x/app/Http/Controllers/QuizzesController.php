@@ -200,7 +200,11 @@ class QuizzesController extends Controller
             ? $request->boolean('is_active')
             : true;
 
+        $academicYear = app(\App\Services\AcademicYearService::class)->getSelectedAcademicYear();
+        [$startDate, $endDate] = app(\App\Services\AcademicYearService::class)->getDateRange($academicYear);
+
         $quizzes = $category->quizzes()
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->when($request->has('is_active'), fn ($query) => $query->where('is_active', $isActive), fn ($query) => $query->where('is_active', true))
             ->with(['category'])
             ->withCount('questions')

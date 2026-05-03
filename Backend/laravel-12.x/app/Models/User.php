@@ -21,6 +21,7 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
         'role',
+        'academic_year',
         'student_id',
         'section',
         'year_level',

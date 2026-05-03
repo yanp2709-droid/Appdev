@@ -40,10 +40,15 @@ class ViewCategoryQuizzes extends ViewRecord
 
     protected function getHeaderActions(): array
     {
+        $academicYearService = app(\App\Services\AcademicYearService::class);
+        $isCurrentYear = $academicYearService->getSelectedAcademicYear() === $academicYearService->getCurrentAcademicYear();
+
         return [
             CreateAction::make('newQuiz')
                 ->label('New Quiz')
-                ->url(fn () => QuizResource::getUrl('create', ['category_id' => $this->getRecord()->id])),
+                ->url(fn () => QuizResource::getUrl('create', ['category_id' => $this->getRecord()->id]))
+                ->disabled(! $isCurrentYear)
+                ->tooltip(fn (): ?string => $isCurrentYear ? null : 'New quizzes can only be created for the current academic year'),
         ];
     }
 

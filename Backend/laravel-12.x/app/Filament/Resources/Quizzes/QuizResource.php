@@ -9,11 +9,13 @@ use App\Filament\Resources\Quizzes\Pages\ViewQuizQuestions;
 use App\Filament\Resources\Quizzes\Schemas\QuizForm;
 use App\Filament\Resources\Quizzes\Tables\QuizzesTable;
 use App\Models\Quiz;
+use App\Services\AcademicYearService;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class QuizResource extends Resource
 {
@@ -39,6 +41,20 @@ class QuizResource extends Resource
     public static function table(Table $table): Table
     {
         return QuizzesTable::configure($table);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $academicYear = app(AcademicYearService::class)->getSelectedAcademicYear();
+        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
+        return parent::getEloquentQuery()
+            ->whereBetween('created_at', [$startDate, $endDate]);
+    }
+
+public static function canCreate(): bool
+    {
+        return true;
     }
 
     public static function getPages(): array

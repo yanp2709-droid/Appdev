@@ -7,6 +7,7 @@ use App\Filament\Resources\Students\Pages\ViewStudent;
 use App\Filament\Resources\Students\Pages\CreateStudent;
 use App\Models\User;
 use App\Models\Quiz_attempt;
+use App\Services\AcademicYearService;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -21,6 +22,7 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema as DatabaseSchema;
 
 class StudentResource extends Resource
 {
@@ -36,7 +38,19 @@ class StudentResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('role', 'student');
+        $academicYear = app(AcademicYearService::class)->getSelectedAcademicYear();
+
+        return parent::getEloquentQuery()
+            ->where('role', 'student')
+            ->when(
+                DatabaseSchema::hasColumn('users', 'academic_year'),
+                fn ($query) => $query->where('academic_year', $academicYear),
+                function ($query) use ($academicYear) {
+                    [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
+                    return $query->whereBetween('created_at', [$startDate, $endDate]);
+                },
+            );
     }
 
     public static function table(Table $table): Table
@@ -60,7 +74,21 @@ class StudentResource extends Resource
 
                 TextColumn::make('quiz_attempts_count')
                     ->label('Total Attempts')
-                    ->counts('quizAttempts')
+                    ->state(function (User $record): int {
+                        $academicYear = app(AcademicYearService::class)->getSelectedAcademicYear();
+
+                        return $record->quizAttempts()
+                            ->when(
+                                DatabaseSchema::hasColumn('quiz_attempts', 'school_year'),
+                                fn ($query) => $query->where('school_year', $academicYear),
+                                function ($query) use ($academicYear) {
+                                    [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
+                                    return $query->whereBetween('submitted_at', [$startDate, $endDate]);
+                                },
+                            )
+                            ->count();
+                    })
                     ->sortable(),
 
 
@@ -143,13 +171,31 @@ class StudentResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->schema([
-            TextInput::make('first_name')->label('First Name')->required(),
-            TextInput::make('last_name')->label('Last Name')->required(),
-            TextInput::make('email')->label('Email Address')->email()->required(),
-            TextInput::make('section')->label('Section')->required(),
-            TextInput::make('student_id')->label('Student ID')->required(),
+            TextInput::make('first_name')->label('First Name')->required()->maxLength(100),
+            TextInput::make('last_name')->label('Last Name')->required()->maxLength(100),
+            TextInput::make('email')
+                ->label('Email Address')
+                ->email()
+                ->required()
+                ->helperText('Will be kept in the form student_id@lnu.edu.ph.'),
+            TextInput::make('section')
+                ->label('Section')
+                ->required()
+                ->maxLength(4)
+                ->helperText('Use the AIxx format, such as AI33.'),
+            TextInput::make('student_id')
+                ->label('Student ID')
+                ->required()
+                ->maxLength(8)
+                ->helperText('Use 8 digits that start with 230, such as 23010001.'),
             TextInput::make('year_level')->label('Year Level')->required(),
-            TextInput::make('course')->label('Course')->required(),
+            TextInput::make('course')
+                ->label('Course')
+                ->required()
+                ->default('BSIT')
+                ->disabled()
+                ->dehydrated()
+                ->helperText('Student records always use BSIT.'),
             TextInput::make('current_password')
                 ->password()
                 ->revealable()

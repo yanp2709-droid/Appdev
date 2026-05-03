@@ -47,31 +47,20 @@ class TeacherResource extends Resource
                     ->maxLength(255)
                     ->unique(ignoreRecord: true),
 
-                TextInput::make('current_password')
-                    ->password()
-                    ->revealable()
-                    ->label('Current Password')
-                    ->helperText('Enter the current password before setting a new one.')
-                    ->required(fn ($get) => filled($get('password')))
-                    ->visible(fn (string $operation): bool => $operation === 'edit')
-                    ->dehydrated(false),
-
                 TextInput::make('password')
                     ->password()
                     ->revealable()
-                    ->label('New Password')
                     ->required(fn (string $operation): bool => $operation === 'create')
                     ->minLength(8)
+                    ->same('passwordConfirmation')
                     ->dehydrated(fn (?string $state): bool => filled($state)),
 
                 TextInput::make('passwordConfirmation')
                     ->label('Confirm Password')
                     ->password()
                     ->revealable()
-                    ->same('password')
                     ->required(fn (string $operation): bool => $operation === 'create')
-                    ->dehydrated(false)
-                    ->visible(fn ($get) => filled($get('password'))),
+                    ->dehydrated(false),
             ])
             ->columns(2);
     }
@@ -103,6 +92,16 @@ class TeacherResource extends Resource
             ->actions([
                 EditAction::make(),
 
+                Action::make('deactivate')
+                    ->label('Deactivate')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Deactivate Teacher')
+                    ->modalDescription('This will prevent the teacher from accessing the admin dashboard. Their quizzes will remain intact.')
+                    ->hidden(fn (User $record): bool => !$record->is_active || $record->isProtected())
+                    ->action(fn (User $record) => $record->update(['is_active' => false])),
+
                 Action::make('activate')
                     ->label('Activate')
                     ->icon('heroicon-o-check-circle')
@@ -112,28 +111,23 @@ class TeacherResource extends Resource
                     ->modalDescription('This will allow the teacher to access the admin dashboard again.')
                     ->hidden(fn (User $record): bool => $record->is_active)
                     ->action(fn (User $record) => $record->update(['is_active' => true])),
-
-                Action::make('resetPassword')
-                    ->label('Reset Password')
-                    ->icon('heroicon-m-key')
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->modalHeading('Reset Teacher Password')
-                    ->modalDescription('The admin cannot see the current password for security reasons. A new temporary password will be generated and shown after confirmation.')
-                    ->action(function (User $record) {
-                        $tempPassword = \Illuminate\Support\Str::random(10);
-                        $record->update([
-                            'password' => bcrypt($tempPassword),
-                        ]);
-                        \Filament\Notifications\Notification::make()
-                            ->title('Password Reset')
-                            ->body("{$record->name}'s temporary password is: {$tempPassword}. Please share this securely and ask them to change it immediately.")
-                            ->success()
-                            ->persistent()
-                            ->send();
-                    }),
             ])
             ->bulkActions([
+                BulkAction::make('deactivate')
+                    ->label('Deactivate Selected')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Deactivate Selected Teachers')
+                    ->modalDescription('This will prevent the selected teachers from accessing the admin dashboard. Their quizzes will remain intact.')
+                    ->action(function ($records) {
+                        foreach ($records as $record) {
+                            if (!$record->isProtected()) {
+                                $record->update(['is_active' => false]);
+                            }
+                        }
+                    }),
+
                 BulkAction::make('activate')
                     ->label('Activate Selected')
                     ->icon('heroicon-o-check-circle')
@@ -198,6 +192,7 @@ class TeacherResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->isAdmin();
+            && $user->isAdmin()
+            && $user->isProtected();
     }
 }

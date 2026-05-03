@@ -17,7 +17,7 @@ class QuizAttemptsRelationManager extends RelationManager
 
     protected static ?string $recordTitleAttribute = 'id';
 
-    protected static ?string $title = 'Attempts by Category';
+    protected static ?string $title = 'Attempts by Subject';
 
     public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
     {
@@ -42,7 +42,12 @@ class QuizAttemptsRelationManager extends RelationManager
             )
             ->columns([
                 TextColumn::make('quiz.category.name')
-                    ->label('Category')
+                    ->label('Subject')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('quiz.title')
+                    ->label('Quiz')
                     ->searchable()
                     ->sortable(),
 
@@ -85,7 +90,7 @@ class QuizAttemptsRelationManager extends RelationManager
                     ->label('View Details')
                     ->icon('heroicon-m-eye')
                     ->modalHeading(function (Quiz_attempt $record) {
-                        return 'Attempt Details - ' . ($record->quiz->category->name ?? 'Unknown Category');
+                        return 'Attempt Details - ' . ($record->quiz->category->name ?? 'Unknown Subject');
                     })
                     ->modalContent(function (Quiz_attempt $record) {
                         return view('filament.resources.students.quiz-attempt-details', [
@@ -118,7 +123,7 @@ class QuizAttemptsRelationManager extends RelationManager
                 $value = $answer->questionOption?->option_text
                     ?? $answer->answer?->answer_text
                     ?? $answer->text_answer
-                    ?? 'No answer';
+                    ?? 'Skipped';
 
                 $label = 'Q' . ($index + 1) . ': ' . $value;
 
@@ -126,7 +131,7 @@ class QuizAttemptsRelationManager extends RelationManager
             });
 
         if ($lines->isEmpty()) {
-            return new HtmlString('<span class="text-gray-500">No answers submitted.</span>');
+            return new HtmlString('<span class="text-gray-500">Skipped</span>');
         }
 
         return new HtmlString($lines->implode('<br>'));

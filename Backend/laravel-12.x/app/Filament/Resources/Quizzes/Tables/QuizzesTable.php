@@ -22,7 +22,7 @@ class QuizzesTable
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('category.name')
-                    ->label('Category')
+                    ->label('Subject')
                     ->sortable(),
                 TextColumn::make('teacher.name')
                     ->label('Teacher')

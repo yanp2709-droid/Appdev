@@ -2,11 +2,14 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\AdminDashboard;
+use App\Services\AcademicYearService;
 use Filament\Forms\Components\DatePicker;
 use Filament\Schemas\Schema;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\ChartWidget\Concerns\HasFiltersSchema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema as DatabaseSchema;
 
 class CategoryPerformanceWidget extends ChartWidget
 {
@@ -24,16 +27,28 @@ class CategoryPerformanceWidget extends ChartWidget
 
     protected bool $hasDeferredFilters = true;
 
+    protected $listeners = ['academicYearChanged' => 'resetAcademicYearFilters'];
+
     public function filtersSchema(Schema $schema): Schema
     {
+        [$defaultFrom, $defaultTo] = app(AcademicYearService::class)->getDateRange(AdminDashboard::getSelectedAcademicYear());
+
         return $schema->components([
             DatePicker::make('date_from')
                 ->label('From')
-                ->default(now()->subDays(30)->toDateString()),
+                ->default($defaultFrom->toDateString()),
             DatePicker::make('date_to')
                 ->label('To')
-                ->default(now()->toDateString()),
+                ->default($defaultTo->toDateString()),
         ]);
+    }
+
+    public function resetAcademicYearFilters(): void
+    {
+        [$dateFrom, $dateTo] = app(AcademicYearService::class)->getDateRange(AdminDashboard::getSelectedAcademicYear());
+
+        $this->filters['date_from'] = $dateFrom->toDateString();
+        $this->filters['date_to'] = $dateTo->toDateString();
     }
 
     protected function getData(): array
@@ -41,11 +56,22 @@ class CategoryPerformanceWidget extends ChartWidget
         $dateFrom = $this->filters['date_from'] ?? null;
         $dateTo = $this->filters['date_to'] ?? null;
 
+        if (! $dateFrom || ! $dateTo) {
+            [$dateFrom, $dateTo] = app(AcademicYearService::class)->getDateRange(AdminDashboard::getSelectedAcademicYear());
+            $dateFrom = $dateFrom->toDateString();
+            $dateTo = $dateTo->toDateString();
+        }
+
+        $academicYear = AdminDashboard::getSelectedAcademicYear();
         $stats = DB::table('quiz_attempts')
             ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')
             ->join('categories', 'quizzes.category_id', '=', 'categories.id')
-            ->when($dateFrom, fn ($query) => $query->whereDate('quiz_attempts.created_at', '>=', $dateFrom))
-            ->when($dateTo, fn ($query) => $query->whereDate('quiz_attempts.created_at', '<=', $dateTo))
+            ->when(
+                DatabaseSchema::hasColumn('quiz_attempts', 'school_year'),
+                fn ($query) => $query->where('quiz_attempts.school_year', $academicYear),
+            )
+            ->when($dateFrom, fn ($query) => $query->whereDate('quiz_attempts.submitted_at', '>=', $dateFrom))
+            ->when($dateTo, fn ($query) => $query->whereDate('quiz_attempts.submitted_at', '<=', $dateTo))
             ->groupBy('categories.id', 'categories.name')
             ->select('categories.name', DB::raw('COUNT(quiz_attempts.id) as total_attempts'))
             ->orderByDesc('total_attempts')
