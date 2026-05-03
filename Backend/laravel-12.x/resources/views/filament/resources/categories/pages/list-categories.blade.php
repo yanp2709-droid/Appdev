@@ -376,9 +376,9 @@
 
                     <div class="category-stat">
                         <div class="category-stat-head">
-                            <span class="category-stat-label">Time Limit</span>
+                            <span class="category-stat-label">Number of Quizzes</span>
                         </div>
-                        <span class="category-stat-value">{{ $category->time_limit_minutes }} min</span>
+                        <span class="category-stat-value">{{ $category->quizzes_count ?? 0 }}</span>
                     </div>
 
                     <div class="category-stat">
@@ -392,7 +392,7 @@
                             <span class="category-stat-label">Highest Score</span>
                         </div>
                         <span class="category-stat-value">
-                            {{ is_null($category->highest_score) ? 'N/A' : number_format((float) $category->highest_score, 2) . '%' }}
+{{ is_null($category->highest_score) ? 'N/A' : round((float) $category->highest_score) . '%' }}
                         </span>
                     </div>
 
@@ -407,7 +407,7 @@
                             <span class="category-stat-label">Lowest Score</span>
                         </div>
                         <span class="category-stat-value">
-                            {{ is_null($category->lowest_score) ? 'N/A' : number_format((float) $category->lowest_score, 2) . '%' }}
+{{ is_null($category->lowest_score) ? 'N/A' : round((float) $category->lowest_score) . '%' }}
                         </span>
                     </div>
                 </div>

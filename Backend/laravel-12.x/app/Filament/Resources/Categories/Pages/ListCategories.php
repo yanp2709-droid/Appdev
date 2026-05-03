@@ -54,6 +54,7 @@ class ListCategories extends ListRecords
             ->whereBetween('created_at', [$startDate, $endDate])
             ->select('categories.*')
             ->withCount('questions')
+            ->withCount('quizzes')
             ->selectSub(
                 DB::table('quiz_attempts')
                     ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')

@@ -35,6 +35,7 @@ class AuthController extends Controller
             'privacy_consent' => (bool) $validated['privacy_consent'],
             'password' => Hash::make($validated['password']),
             'role' => 'student',
+            'academic_year' => '2025-2026',
         ]);
 
         return response()->json([

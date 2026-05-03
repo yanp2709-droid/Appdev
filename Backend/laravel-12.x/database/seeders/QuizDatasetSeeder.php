@@ -222,50 +222,47 @@ class QuizDatasetSeeder extends Seeder
         return [
             [
                 'type' => Question::TYPE_MCQ,
-                'question' => 'Which component manages the user interface and screen lifecycle in Android?',
+                'question' => 'In Android development, which lifecycle method is called when an activity becomes visible to the user?',
                 'options' => [
-                    ['text' => 'Activity', 'correct' => true],
-                    ['text' => 'Manifest', 'correct' => false],
-                    ['text' => 'Gradle', 'correct' => false],
-                    ['text' => 'RecyclerView', 'correct' => false],
-                ],
-            ],
-            [
-                'type' => Question::TYPE_TRUE_FALSE,
-                'question' => 'Flutter uses Dart as its primary programming language.',
-                'options' => [
-                    ['text' => 'True', 'correct' => true],
-                    ['text' => 'False', 'correct' => false],
-                ],
-            ],
-            [
-                'type' => Question::TYPE_SHORT_ANSWER,
-                'question' => 'What command is commonly used to run a Flutter app during development?',
-                'answer_key' => 'flutter run',
-            ],
-            [
-                'type' => Question::TYPE_MCQ,
-                'question' => 'What file is commonly used to define app permissions and activities in Android?',
-                'options' => [
-                    ['text' => 'AndroidManifest.xml', 'correct' => true],
-                    ['text' => 'pubspec.yaml', 'correct' => false],
-                    ['text' => 'main.dart', 'correct' => false],
-                    ['text' => 'index.html', 'correct' => false],
+                    ['text' => 'onResume()', 'correct' => true],
+                    ['text' => 'onCreate()', 'correct' => false],
+                    ['text' => 'onStart()', 'correct' => false],
+                    ['text' => 'onPause()', 'correct' => false],
                 ],
             ],
             [
                 'type' => Question::TYPE_MCQ,
-                'question' => 'Which widget is commonly used for a simple tappable button in Flutter?',
+                'question' => 'Which Flutter widget would you use to create a scrollable list that efficiently handles large datasets?',
                 'options' => [
-                    ['text' => 'ElevatedButton', 'correct' => true],
-                    ['text' => 'ListTile', 'correct' => false],
-                    ['text' => 'TextField', 'correct' => false],
+                    ['text' => 'ListView.builder', 'correct' => true],
+                    ['text' => 'Column', 'correct' => false],
                     ['text' => 'Container', 'correct' => false],
+                    ['text' => 'Stack', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_MULTI_SELECT,
+                'question' => 'Which of the following are valid ways to handle state management in Flutter? (Select all that apply)',
+                'options' => [
+                    ['text' => 'setState() method', 'correct' => true],
+                    ['text' => 'Provider package', 'correct' => true],
+                    ['text' => 'Bloc pattern', 'correct' => true],
+                    ['text' => 'SharedPreferences', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_MCQ,
+                'question' => 'In Android, which permission is required to access the device\'s location?',
+                'options' => [
+                    ['text' => 'ACCESS_FINE_LOCATION', 'correct' => true],
+                    ['text' => 'INTERNET', 'correct' => false],
+                    ['text' => 'READ_EXTERNAL_STORAGE', 'correct' => false],
+                    ['text' => 'CAMERA', 'correct' => false],
                 ],
             ],
             [
                 'type' => Question::TYPE_TRUE_FALSE,
-                'question' => 'Hot reload lets you see UI changes quickly without restarting the app.',
+                'question' => 'In Flutter, hot reload preserves the app state while updating the UI.',
                 'options' => [
                     ['text' => 'True', 'correct' => true],
                     ['text' => 'False', 'correct' => false],
@@ -273,22 +270,32 @@ class QuizDatasetSeeder extends Seeder
             ],
             [
                 'type' => Question::TYPE_SHORT_ANSWER,
-                'question' => 'What is the name of the package manager file used by Flutter?',
-                'answer_key' => 'pubspec.yaml',
+                'question' => 'What is the primary purpose of the AndroidManifest.xml file?',
+                'answer_key' => 'define app components and permissions',
             ],
             [
                 'type' => Question::TYPE_MCQ,
-                'question' => 'Which layout widget places children in a vertical line?',
+                'question' => 'Which of the following is NOT a valid Flutter layout widget?',
                 'options' => [
-                    ['text' => 'Column', 'correct' => true],
+                    ['text' => 'LinearLayout', 'correct' => true],
                     ['text' => 'Row', 'correct' => false],
-                    ['text' => 'Stack', 'correct' => false],
+                    ['text' => 'Column', 'correct' => false],
                     ['text' => 'Wrap', 'correct' => false],
                 ],
             ],
             [
+                'type' => Question::TYPE_MCQ,
+                'question' => 'In Android development, what does the term "Activity" represent?',
+                'options' => [
+                    ['text' => 'A single screen with a user interface', 'correct' => true],
+                    ['text' => 'A background service', 'correct' => false],
+                    ['text' => 'A database table', 'correct' => false],
+                    ['text' => 'A network request', 'correct' => false],
+                ],
+            ],
+            [
                 'type' => Question::TYPE_TRUE_FALSE,
-                'question' => 'Stateful widgets are useful when a screen needs to update over time.',
+                'question' => 'Flutter widgets are immutable by default.',
                 'options' => [
                     ['text' => 'True', 'correct' => true],
                     ['text' => 'False', 'correct' => false],
@@ -296,8 +303,28 @@ class QuizDatasetSeeder extends Seeder
             ],
             [
                 'type' => Question::TYPE_SHORT_ANSWER,
-                'question' => 'What keyword is used to define an immutable Flutter widget?',
-                'answer_key' => 'const',
+                'question' => 'What Flutter command creates a new project?',
+                'answer_key' => 'flutter create',
+            ],
+            [
+                'type' => Question::TYPE_MCQ,
+                'question' => 'Which Android component is used for long-running operations in the background?',
+                'options' => [
+                    ['text' => 'Service', 'correct' => true],
+                    ['text' => 'Activity', 'correct' => false],
+                    ['text' => 'Fragment', 'correct' => false],
+                    ['text' => 'BroadcastReceiver', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_MULTI_SELECT,
+                'question' => 'Which of the following are benefits of using Flutter for cross-platform development? (Select all that apply)',
+                'options' => [
+                    ['text' => 'Single codebase for multiple platforms', 'correct' => true],
+                    ['text' => 'Native performance', 'correct' => true],
+                    ['text' => 'Hot reload for faster development', 'correct' => true],
+                    ['text' => 'Direct access to platform-specific APIs without plugins', 'correct' => false],
+                ],
             ],
         ];
     }
@@ -307,81 +334,106 @@ class QuizDatasetSeeder extends Seeder
         return [
             [
                 'type' => Question::TYPE_MCQ,
-                'question' => 'What symbol is commonly used to start a single-line comment in many languages?',
+                'question' => 'What will be the output of: print(2 + 3 * 4)?',
                 'options' => [
-                    ['text' => '//', 'correct' => true],
-                    ['text' => '<!--', 'correct' => false],
-                    ['text' => '/* */', 'correct' => false],
-                    ['text' => '#include', 'correct' => false],
+                    ['text' => '20', 'correct' => false],
+                    ['text' => '14', 'correct' => true],
+                    ['text' => '24', 'correct' => false],
+                    ['text' => '11', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_MCQ,
+                'question' => 'Which data structure follows Last In, First Out (LIFO) principle?',
+                'options' => [
+                    ['text' => 'Stack', 'correct' => true],
+                    ['text' => 'Queue', 'correct' => false],
+                    ['text' => 'Array', 'correct' => false],
+                    ['text' => 'Linked List', 'correct' => false],
                 ],
             ],
             [
                 'type' => Question::TYPE_TRUE_FALSE,
-                'question' => 'A variable is a named storage location that can hold data.',
+                'question' => 'In most programming languages, array indices start from 1.',
                 'options' => [
-                    ['text' => 'True', 'correct' => true],
-                    ['text' => 'False', 'correct' => false],
+                    ['text' => 'True', 'correct' => false],
+                    ['text' => 'False', 'correct' => true],
                 ],
             ],
             [
                 'type' => Question::TYPE_SHORT_ANSWER,
-                'question' => 'What statement is used to repeat code a fixed number of times?',
-                'answer_key' => 'for loop',
+                'question' => 'What is the time complexity of binary search algorithm?',
+                'answer_key' => 'O(log n)',
             ],
             [
                 'type' => Question::TYPE_MCQ,
-                'question' => 'Which of the following is a valid data type in most programming languages?',
+                'question' => 'Which of the following is NOT a primitive data type in Java?',
                 'options' => [
-                    ['text' => 'Integer', 'correct' => true],
-                    ['text' => 'Folder', 'correct' => false],
-                    ['text' => 'Window', 'correct' => false],
-                    ['text' => 'Picture', 'correct' => false],
+                    ['text' => 'String', 'correct' => true],
+                    ['text' => 'int', 'correct' => false],
+                    ['text' => 'boolean', 'correct' => false],
+                    ['text' => 'char', 'correct' => false],
                 ],
             ],
             [
-                'type' => Question::TYPE_TRUE_FALSE,
-                'question' => 'An if statement is used for decision making in code.',
+                'type' => Question::TYPE_MULTI_SELECT,
+                'question' => 'Which of the following are object-oriented programming principles? (Select all that apply)',
                 'options' => [
-                    ['text' => 'True', 'correct' => true],
-                    ['text' => 'False', 'correct' => false],
-                ],
-            ],
-            [
-                'type' => Question::TYPE_SHORT_ANSWER,
-                'question' => 'What do we call the output of a function when it sends a value back to the caller?',
-                'answer_key' => 'return value',
-            ],
-            [
-                'type' => Question::TYPE_MCQ,
-                'question' => 'Which symbol is often used to assign a value to a variable?',
-                'options' => [
-                    ['text' => '=', 'correct' => true],
-                    ['text' => '==', 'correct' => false],
-                    ['text' => '=>', 'correct' => false],
-                    ['text' => '!=', 'correct' => false],
-                ],
-            ],
-            [
-                'type' => Question::TYPE_TRUE_FALSE,
-                'question' => 'A function can help reduce repeated code.',
-                'options' => [
-                    ['text' => 'True', 'correct' => true],
-                    ['text' => 'False', 'correct' => false],
-                ],
-            ],
-            [
-                'type' => Question::TYPE_SHORT_ANSWER,
-                'question' => 'What term describes a set of instructions that solves a problem step by step?',
-                'answer_key' => 'algorithm',
-            ],
-            [
-                'type' => Question::TYPE_MCQ,
-                'question' => 'Which structure is used to make choices based on conditions?',
-                'options' => [
-                    ['text' => 'Selection', 'correct' => true],
-                    ['text' => 'Iteration', 'correct' => false],
+                    ['text' => 'Encapsulation', 'correct' => true],
+                    ['text' => 'Inheritance', 'correct' => true],
+                    ['text' => 'Polymorphism', 'correct' => true],
                     ['text' => 'Compilation', 'correct' => false],
-                    ['text' => 'Storage', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_MCQ,
+                'question' => 'What does the acronym SQL stand for?',
+                'options' => [
+                    ['text' => 'Structured Query Language', 'correct' => true],
+                    ['text' => 'Simple Query Language', 'correct' => false],
+                    ['text' => 'Standard Query Language', 'correct' => false],
+                    ['text' => 'System Query Language', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_TRUE_FALSE,
+                'question' => 'A recursive function must have a base case to prevent infinite recursion.',
+                'options' => [
+                    ['text' => 'True', 'correct' => true],
+                    ['text' => 'False', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_SHORT_ANSWER,
+                'question' => 'What programming paradigm focuses on "what to solve" rather than "how to solve"?',
+                'answer_key' => 'declarative',
+            ],
+            [
+                'type' => Question::TYPE_MCQ,
+                'question' => 'Which sorting algorithm has the best average case time complexity?',
+                'options' => [
+                    ['text' => 'Quick Sort', 'correct' => true],
+                    ['text' => 'Bubble Sort', 'correct' => false],
+                    ['text' => 'Insertion Sort', 'correct' => false],
+                    ['text' => 'Selection Sort', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_MCQ,
+                'question' => 'In Python, what does the "len()" function return?',
+                'options' => [
+                    ['text' => 'The length of a sequence', 'correct' => true],
+                    ['text' => 'The last element of a list', 'correct' => false],
+                    ['text' => 'The sum of all elements', 'correct' => false],
+                    ['text' => 'The maximum value', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_TRUE_FALSE,
+                'question' => 'Exception handling allows a program to continue executing even when errors occur.',
+                'options' => [
+                    ['text' => 'True', 'correct' => true],
+                    ['text' => 'False', 'correct' => false],
                 ],
             ],
         ];
@@ -477,81 +529,106 @@ class QuizDatasetSeeder extends Seeder
         return [
             [
                 'type' => Question::TYPE_MCQ,
-                'question' => 'Which of the following best describes a primary key?',
+                'question' => 'Which normal form eliminates transitive dependencies?',
                 'options' => [
-                    ['text' => 'A field that uniquely identifies a record', 'correct' => true],
-                    ['text' => 'A field that stores duplicate values only', 'correct' => false],
-                    ['text' => 'A field used only for sorting', 'correct' => false],
-                    ['text' => 'A field that cannot be searched', 'correct' => false],
+                    ['text' => 'Third Normal Form (3NF)', 'correct' => true],
+                    ['text' => 'First Normal Form (1NF)', 'correct' => false],
+                    ['text' => 'Second Normal Form (2NF)', 'correct' => false],
+                    ['text' => 'Boyce-Codd Normal Form (BCNF)', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_MCQ,
+                'question' => 'What type of relationship exists between a Customer and Orders tables where one customer can have many orders?',
+                'options' => [
+                    ['text' => 'One-to-Many', 'correct' => true],
+                    ['text' => 'Many-to-Many', 'correct' => false],
+                    ['text' => 'One-to-One', 'correct' => false],
+                    ['text' => 'Many-to-One', 'correct' => false],
                 ],
             ],
             [
                 'type' => Question::TYPE_TRUE_FALSE,
-                'question' => 'A foreign key links one table to another table.',
+                'question' => 'A primary key can contain NULL values.',
                 'options' => [
-                    ['text' => 'True', 'correct' => true],
-                    ['text' => 'False', 'correct' => false],
+                    ['text' => 'True', 'correct' => false],
+                    ['text' => 'False', 'correct' => true],
                 ],
             ],
             [
                 'type' => Question::TYPE_SHORT_ANSWER,
-                'question' => 'What language is commonly used to manage relational databases?',
-                'answer_key' => 'SQL',
+                'question' => 'What SQL clause is used to filter records before grouping?',
+                'answer_key' => 'WHERE',
             ],
             [
                 'type' => Question::TYPE_MCQ,
-                'question' => 'What is the purpose of a table in a relational database?',
+                'question' => 'Which of the following is NOT a valid SQL JOIN type?',
                 'options' => [
-                    ['text' => 'Store related records in rows and columns', 'correct' => true],
-                    ['text' => 'Run program code automatically', 'correct' => false],
-                    ['text' => 'Hold image files only', 'correct' => false],
-                    ['text' => 'Replace all application logic', 'correct' => false],
+                    ['text' => 'CROSS JOIN', 'correct' => false],
+                    ['text' => 'INNER JOIN', 'correct' => false],
+                    ['text' => 'OUTER JOIN', 'correct' => false],
+                    ['text' => 'STRAIGHT JOIN', 'correct' => true],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_MULTI_SELECT,
+                'question' => 'Which of the following are ACID properties of database transactions? (Select all that apply)',
+                'options' => [
+                    ['text' => 'Atomicity', 'correct' => true],
+                    ['text' => 'Consistency', 'correct' => true],
+                    ['text' => 'Isolation', 'correct' => true],
+                    ['text' => 'Durability', 'correct' => true],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_MCQ,
+                'question' => 'What does the GROUP BY clause do in SQL?',
+                'options' => [
+                    ['text' => 'Groups rows that have the same values in specified columns', 'correct' => true],
+                    ['text' => 'Sorts the result set in ascending order', 'correct' => false],
+                    ['text' => 'Limits the number of rows returned', 'correct' => false],
+                    ['text' => 'Joins tables based on a condition', 'correct' => false],
                 ],
             ],
             [
                 'type' => Question::TYPE_TRUE_FALSE,
-                'question' => 'Normalization helps reduce redundancy in databases.',
+                'question' => 'In a relational database, each table must have a primary key.',
                 'options' => [
-                    ['text' => 'True', 'correct' => true],
-                    ['text' => 'False', 'correct' => false],
+                    ['text' => 'True', 'correct' => false],
+                    ['text' => 'False', 'correct' => true],
                 ],
             ],
             [
                 'type' => Question::TYPE_SHORT_ANSWER,
-                'question' => 'What term describes retrieving data from a database?',
-                'answer_key' => 'query',
+                'question' => 'What is the purpose of a foreign key in a database?',
+                'answer_key' => 'establish relationship between tables',
             ],
             [
                 'type' => Question::TYPE_MCQ,
-                'question' => 'Which of the following is a relational database management system?',
+                'question' => 'Which SQL statement is used to modify existing records in a table?',
                 'options' => [
-                    ['text' => 'MySQL', 'correct' => true],
-                    ['text' => 'Photoshop', 'correct' => false],
-                    ['text' => 'Chrome', 'correct' => false],
-                    ['text' => 'PowerPoint', 'correct' => false],
-                ],
-            ],
-            [
-                'type' => Question::TYPE_TRUE_FALSE,
-                'question' => 'An index can improve search performance in a database table.',
-                'options' => [
-                    ['text' => 'True', 'correct' => true],
-                    ['text' => 'False', 'correct' => false],
-                ],
-            ],
-            [
-                'type' => Question::TYPE_SHORT_ANSWER,
-                'question' => 'What do we call a collection of related tables, views, and objects?',
-                'answer_key' => 'database',
-            ],
-            [
-                'type' => Question::TYPE_MCQ,
-                'question' => 'Which SQL command is used to retrieve data?',
-                'options' => [
-                    ['text' => 'SELECT', 'correct' => true],
+                    ['text' => 'UPDATE', 'correct' => true],
                     ['text' => 'INSERT', 'correct' => false],
+                    ['text' => 'SELECT', 'correct' => false],
                     ['text' => 'DELETE', 'correct' => false],
-                    ['text' => 'UPDATE', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_MCQ,
+                'question' => 'What is a stored procedure?',
+                'options' => [
+                    ['text' => 'A prepared SQL code that can be saved and reused', 'correct' => true],
+                    ['text' => 'A temporary table created during query execution', 'correct' => false],
+                    ['text' => 'A type of database index', 'correct' => false],
+                    ['text' => 'A database backup file', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_TRUE_FALSE,
+                'question' => 'Views in SQL are virtual tables that can be queried like regular tables.',
+                'options' => [
+                    ['text' => 'True', 'correct' => true],
+                    ['text' => 'False', 'correct' => false],
                 ],
             ],
         ];
@@ -562,63 +639,70 @@ class QuizDatasetSeeder extends Seeder
         return [
             [
                 'type' => Question::TYPE_MCQ,
-                'question' => 'Which language is primarily used to structure web pages?',
+                'question' => 'Which HTTP status code indicates a successful response?',
                 'options' => [
-                    ['text' => 'HTML', 'correct' => true],
-                    ['text' => 'SQL', 'correct' => false],
-                    ['text' => 'Python', 'correct' => false],
-                    ['text' => 'C++', 'correct' => false],
+                    ['text' => '200 OK', 'correct' => true],
+                    ['text' => '404 Not Found', 'correct' => false],
+                    ['text' => '500 Internal Server Error', 'correct' => false],
+                    ['text' => '301 Moved Permanently', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_MCQ,
+                'question' => 'What does the CSS property "display: flex" do?',
+                'options' => [
+                    ['text' => 'Creates a flexible layout container', 'correct' => true],
+                    ['text' => 'Hides the element', 'correct' => false],
+                    ['text' => 'Makes text bold', 'correct' => false],
+                    ['text' => 'Centers the element horizontally', 'correct' => false],
                 ],
             ],
             [
                 'type' => Question::TYPE_TRUE_FALSE,
-                'question' => 'CSS is used to style the appearance of web pages.',
+                'question' => 'JavaScript is a server-side programming language.',
                 'options' => [
-                    ['text' => 'True', 'correct' => true],
-                    ['text' => 'False', 'correct' => false],
+                    ['text' => 'True', 'correct' => false],
+                    ['text' => 'False', 'correct' => true],
                 ],
             ],
             [
                 'type' => Question::TYPE_SHORT_ANSWER,
-                'question' => 'What does JavaScript add to web pages besides structure and style?',
-                'answer_key' => 'interactivity',
+                'question' => 'What is the purpose of the alt attribute in an img tag?',
+                'answer_key' => 'provide alternative text for accessibility',
             ],
             [
                 'type' => Question::TYPE_MCQ,
-                'question' => 'Which protocol is used to transfer web pages?',
+                'question' => 'Which of the following is NOT a valid CSS position value?',
                 'options' => [
-                    ['text' => 'HTTP', 'correct' => true],
-                    ['text' => 'FTP', 'correct' => false],
-                    ['text' => 'SMTP', 'correct' => false],
-                    ['text' => 'SSH', 'correct' => false],
+                    ['text' => 'center', 'correct' => true],
+                    ['text' => 'relative', 'correct' => false],
+                    ['text' => 'absolute', 'correct' => false],
+                    ['text' => 'fixed', 'correct' => false],
                 ],
             ],
             [
-                'type' => Question::TYPE_TRUE_FALSE,
-                'question' => 'Responsive design helps a site adapt to different screen sizes.',
+                'type' => Question::TYPE_MULTI_SELECT,
+                'question' => 'Which HTML5 semantic elements help with SEO and accessibility? (Select all that apply)',
                 'options' => [
-                    ['text' => 'True', 'correct' => true],
-                    ['text' => 'False', 'correct' => false],
-                ],
-            ],
-            [
-                'type' => Question::TYPE_SHORT_ANSWER,
-                'question' => 'What is the browser feature used to inspect HTML and CSS?',
-                'answer_key' => 'developer tools',
-            ],
-            [
-                'type' => Question::TYPE_MCQ,
-                'question' => 'Which tag is commonly used for the largest heading?',
-                'options' => [
-                    ['text' => '<h1>', 'correct' => true],
-                    ['text' => '<p>', 'correct' => false],
+                    ['text' => '<header>', 'correct' => true],
+                    ['text' => '<nav>', 'correct' => true],
+                    ['text' => '<article>', 'correct' => true],
                     ['text' => '<div>', 'correct' => false],
-                    ['text' => '<span>', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_MCQ,
+                'question' => 'What does the JavaScript method "addEventListener" do?',
+                'options' => [
+                    ['text' => 'Attaches an event handler to an element', 'correct' => true],
+                    ['text' => 'Creates a new HTML element', 'correct' => false],
+                    ['text' => 'Changes CSS styles', 'correct' => false],
+                    ['text' => 'Makes an HTTP request', 'correct' => false],
                 ],
             ],
             [
                 'type' => Question::TYPE_TRUE_FALSE,
-                'question' => 'A CSS class selector begins with a dot.',
+                'question' => 'The "defer" attribute on a script tag delays execution until the document is parsed.',
                 'options' => [
                     ['text' => 'True', 'correct' => true],
                     ['text' => 'False', 'correct' => false],
@@ -626,17 +710,35 @@ class QuizDatasetSeeder extends Seeder
             ],
             [
                 'type' => Question::TYPE_SHORT_ANSWER,
-                'question' => 'What file commonly contains the homepage of a website?',
-                'answer_key' => 'index.html',
+                'question' => 'What CSS property is used to create rounded corners?',
+                'answer_key' => 'border-radius',
             ],
             [
                 'type' => Question::TYPE_MCQ,
-                'question' => 'Which HTML element is used to create a link?',
+                'question' => 'Which HTTP method is used to update existing resources?',
                 'options' => [
-                    ['text' => '<a>', 'correct' => true],
-                    ['text' => '<img>', 'correct' => false],
-                    ['text' => '<ul>', 'correct' => false],
-                    ['text' => '<table>', 'correct' => false],
+                    ['text' => 'PUT', 'correct' => true],
+                    ['text' => 'GET', 'correct' => false],
+                    ['text' => 'POST', 'correct' => false],
+                    ['text' => 'DELETE', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_MCQ,
+                'question' => 'What is the purpose of a CSS media query?',
+                'options' => [
+                    ['text' => 'Apply styles based on device characteristics', 'correct' => true],
+                    ['text' => 'Query a database', 'correct' => false],
+                    ['text' => 'Make HTTP requests', 'correct' => false],
+                    ['text' => 'Validate HTML', 'correct' => false],
+                ],
+            ],
+            [
+                'type' => Question::TYPE_TRUE_FALSE,
+                'question' => 'Local storage persists data even after the browser is closed.',
+                'options' => [
+                    ['text' => 'True', 'correct' => true],
+                    ['text' => 'False', 'correct' => false],
                 ],
             ],
         ];
