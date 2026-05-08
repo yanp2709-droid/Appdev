@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../core/network/api_client.dart';
 import '../core/network/token_storage.dart';
+import '../../core/config/academic_year_config.dart';
 
 /// Service for authentication operations
 class AuthService {
@@ -20,7 +21,7 @@ class AuthService {
     required String course,
     required String password,
     required String passwordConfirmation,
-    required bool privacyConsent,
+    required bool termsAccepted,
   }) async {
     try {
       final response = await apiClient.dio.post(
@@ -35,7 +36,8 @@ class AuthService {
           'course': course,
           'password': password,
           'password_confirmation': passwordConfirmation,
-          'privacy_consent': privacyConsent,
+          'privacy_consent': termsAccepted,
+          'academic_year': AcademicYearConfig.getAcademicYear(),
         },
       );
 
@@ -121,7 +123,7 @@ class AuthService {
   }
 
   /// Get all users (admin only)
-  /// 
+  ///
   /// Returns: List of users
   /// Throws: ApiException
   Future<List<Map<String, dynamic>>> getAllUsers() async {
@@ -153,7 +155,8 @@ class AuthService {
   /// Throws: ApiException on failure
   Future<Map<String, dynamic>> deactivateUser(int userId) async {
     try {
-      final response = await apiClient.dio.patch('/admin/users/$userId/deactivate');
+      final response =
+          await apiClient.dio.patch('/admin/users/$userId/deactivate');
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw apiClient.handleException(e);
@@ -166,12 +169,11 @@ class AuthService {
   /// Throws: ApiException on failure
   Future<Map<String, dynamic>> activateUser(int userId) async {
     try {
-      final response = await apiClient.dio.patch('/admin/users/$userId/activate');
+      final response =
+          await apiClient.dio.patch('/admin/users/$userId/activate');
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw apiClient.handleException(e);
     }
   }
 }
-
-

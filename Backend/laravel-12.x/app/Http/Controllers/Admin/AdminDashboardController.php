@@ -13,6 +13,11 @@ class AdminDashboardController extends Controller
 {
     use ApiResponse;
 
+    private function displayScore(mixed $value): int
+    {
+        return round((float) ($value ?? 0));
+    }
+
     /**
      * Get dashboard statistics overview
      */
@@ -31,7 +36,7 @@ class AdminDashboardController extends Controller
                 'total_attempts' => $totalAttempts,
                 'submitted_attempts' => $submittedAttempts,
                 'official_graded_attempts' => $gradedSubmittedAttempts->count(),
-                'average_score' => round($avgScore, 2),
+                'average_score' => $this->displayScore($avgScore),
             ],
         ], 'Dashboard statistics retrieved.');
     }
@@ -70,7 +75,7 @@ class AdminDashboardController extends Controller
                 'submitted_attempts' => $submittedAttempts->count(),
                 'official_graded_attempts' => $gradedAttempts->count(),
                 'practice_attempts' => $practiceAttempts->count(),
-                'average_score' => round($gradedAttempts->avg('score_percent') ?? 0, 2),
+                'average_score' => $this->displayScore($gradedAttempts->avg('score_percent')),
             ];
         });
 
@@ -114,9 +119,9 @@ class AdminDashboardController extends Controller
             'practice_attempts' => $practiceAttempts->count(),
             'in_progress_attempts' => (clone $attempts)->where('status', 'in_progress')->count(),
             'expired_attempts' => (clone $attempts)->where('status', 'expired')->count(),
-            'average_score' => round($gradedAttempts->avg('score_percent') ?? 0, 2),
-            'highest_score' => round($gradedAttempts->max('score_percent') ?? 0, 2),
-            'lowest_score' => round($gradedAttempts->min('score_percent') ?? 0, 2),
+            'average_score' => $this->displayScore($gradedAttempts->avg('score_percent')),
+            'highest_score' => $this->displayScore($gradedAttempts->max('score_percent')),
+            'lowest_score' => $this->displayScore($gradedAttempts->min('score_percent')),
         ];
 
         return $this->success([
@@ -168,7 +173,7 @@ class AdminDashboardController extends Controller
                 'total_items' => $attempt->total_items,
                 'answered_count' => $attempt->answered_count,
                 'correct_answers' => $attempt->correct_answers,
-                'score_percent' => $attempt->score_percent,
+                'score_percent' => $this->displayScore($attempt->score_percent),
             ];
         });
 
@@ -206,7 +211,7 @@ class AdminDashboardController extends Controller
                     'id' => $attempt->id,
                     'category' => $attempt->quiz->category->name ?? 'Unknown',
                     'attempt_type' => $attempt->attempt_type ?? Quiz_attempt::TYPE_GRADED,
-                    'score' => $attempt->score_percent,
+                    'score' => $this->displayScore($attempt->score_percent),
                     'submitted_at' => $attempt->submitted_at,
                 ];
             });
@@ -260,9 +265,9 @@ class AdminDashboardController extends Controller
                 'category_id' => $stat->id,
                 'category_name' => $stat->name,
                 'total_attempts' => $stat->attempt_count,
-                'average_score' => round($stat->average_score, 2),
-                'highest_score' => round($stat->highest_score, 2),
-                'lowest_score' => round($stat->lowest_score, 2),
+                'average_score' => $this->displayScore($stat->average_score),
+                'highest_score' => $this->displayScore($stat->highest_score),
+                'lowest_score' => $this->displayScore($stat->lowest_score),
             ];
         });
 

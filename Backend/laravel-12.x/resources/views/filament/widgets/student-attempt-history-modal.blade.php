@@ -29,7 +29,7 @@
                             {{ optional($attempt->submitted_at ?? $attempt->started_at)->format('M d, Y H:i') ?? 'N/A' }}
                         </td>
                         <td class="px-4 py-3 text-gray-700">
-                            {{ $attempt->score_percent !== null ? number_format($attempt->score_percent, 1) . '%' : 'N/A' }}
+                            {{ $attempt->score_percent !== null ? round($attempt->score_percent) . '%' : 'N/A' }}
                         </td>
                         <td class="px-4 py-3">
                             @php

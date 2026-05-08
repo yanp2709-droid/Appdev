@@ -1,6 +1,7 @@
 class AttemptHistoryModel {
   final int id;
   final int quizId;
+  final String quizTitle;
   final int categoryId;
   final String categoryName;
   final String attemptType;
@@ -14,10 +15,13 @@ class AttemptHistoryModel {
   final int answeredCount;
   final int? correctAnswers;
   final double? scorePercent;
+  final String? schoolYear;
+
 
   const AttemptHistoryModel({
     required this.id,
     required this.quizId,
+    required this.quizTitle,
     required this.categoryId,
     required this.categoryName,
     required this.attemptType,
@@ -31,12 +35,15 @@ class AttemptHistoryModel {
     required this.answeredCount,
     required this.correctAnswers,
     required this.scorePercent,
+    this.schoolYear,
   });
+
 
   factory AttemptHistoryModel.fromJson(Map<String, dynamic> json) {
     return AttemptHistoryModel(
       id: (json['id'] as num?)?.toInt() ?? 0,
       quizId: (json['quiz_id'] as num?)?.toInt() ?? 0,
+      quizTitle: json['quiz_title'] as String? ?? 'Quiz',
       categoryId: (json['category_id'] as num?)?.toInt() ?? 0,
       categoryName: json['category_name'] as String? ?? '',
       attemptType: json['attempt_type'] as String? ?? 'graded',
@@ -53,12 +60,15 @@ class AttemptHistoryModel {
       answeredCount: (json['answered_count'] as num?)?.toInt() ?? 0,
       correctAnswers: (json['correct_answers'] as num?)?.toInt(),
       scorePercent: (json['score_percent'] as num?)?.toDouble(),
+      schoolYear: json['school_year'] as String?,
     );
   }
+
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'quiz_id': quizId,
+        'quiz_title': quizTitle,
         'category_id': categoryId,
         'category_name': categoryName,
         'attempt_type': attemptType,
@@ -72,7 +82,9 @@ class AttemptHistoryModel {
         'answered_count': answeredCount,
         'correct_answers': correctAnswers,
         'score_percent': scorePercent,
+        if (schoolYear != null) 'school_year': schoolYear,
       };
+
 
   static DateTime? _parseDate(dynamic value) {
     if (value == null) return null;

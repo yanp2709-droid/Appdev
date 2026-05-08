@@ -41,6 +41,8 @@ class QuizAttempt {
   final int durationMinutes;
   final int remainingSeconds;
   final bool allowReviewBeforeSubmit;
+  final String? schoolYear;
+
 
   const QuizAttempt({
     required this.id,
@@ -52,7 +54,9 @@ class QuizAttempt {
     required this.durationMinutes,
     required this.remainingSeconds,
     required this.allowReviewBeforeSubmit,
+    this.schoolYear,
   });
+
 
   factory QuizAttempt.fromJson(Map<String, dynamic> json) {
     return QuizAttempt(
@@ -66,8 +70,10 @@ class QuizAttempt {
       remainingSeconds: (json['remaining_seconds'] as num?)?.toInt() ?? 0,
       allowReviewBeforeSubmit:
           (json['allow_review_before_submit'] as bool?) ?? true,
+      schoolYear: json['school_year'] as String?,
     );
   }
+
 
   bool get isGradedAttempt => attemptType == 'graded';
   bool get isPracticeAttempt => attemptType == 'practice';

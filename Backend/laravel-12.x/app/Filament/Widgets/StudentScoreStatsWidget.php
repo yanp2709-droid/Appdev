@@ -2,9 +2,10 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\AdminDashboard;
 use App\Models\Quiz_attempt;
 use App\Models\User;
-use App\Support\SchoolYears;
+use App\Services\AcademicYearService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Schema;
@@ -15,12 +16,7 @@ class StudentScoreStatsWidget extends BaseWidget
 
     protected static bool $isLazy = false;
 
-    public string $selectedSchoolYear = '';
-
-    public function mount(): void
-    {
-        $this->selectedSchoolYear = $this->record?->school_year ?: SchoolYears::current();
-    }
+    protected $listeners = ['academicYearChanged' => '$refresh'];
 
     protected function getStats(): array
     {
@@ -28,13 +24,17 @@ class StudentScoreStatsWidget extends BaseWidget
             return [];
         }
 
+        $academicYear = AdminDashboard::getSelectedAcademicYear();
+        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
         $attempts = $this->record->quizAttempts()
             ->where('status', 'submitted')
-            ->where('attempt_type', Quiz_attempt::TYPE_GRADED);
-
-        if (Schema::hasColumn('quiz_attempts', 'school_year') && ! blank($this->selectedSchoolYear)) {
-            $attempts = $attempts->where('school_year', $this->selectedSchoolYear);
-        }
+            ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
+            ->when(
+                Schema::hasColumn('quiz_attempts', 'school_year'),
+                fn ($query) => $query->where('school_year', $academicYear),
+                fn ($query) => $query->whereBetween('submitted_at', [$startDate, $endDate]),
+            );
 
         $attemptCount = $attempts->count();
         $averageScore = $attempts->avg('score_percent') ?? 0;
@@ -43,57 +43,26 @@ class StudentScoreStatsWidget extends BaseWidget
 
         $performanceColor = $averageScore >= 80 ? 'success' : ($averageScore >= 60 ? 'warning' : 'danger');
 
-        $schoolYearLabel = $this->selectedSchoolYear
-            ? 'A.Y. ' . SchoolYears::format($this->selectedSchoolYear)
-            : 'All Years';
-
         return [
             Stat::make('Total Submitted', $attemptCount)
                 ->description('Quiz attempts completed')
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('info'),
 
-            Stat::make('Average Score', round($averageScore, 2) . '%')
-                ->description($schoolYearLabel)
+            Stat::make('Average Score', round($averageScore) . '%')
+                ->description('Overall performance')
                 ->descriptionIcon('heroicon-m-chart-bar')
                 ->color($performanceColor),
 
-            Stat::make('Highest Score', round($highestScore, 2) . '%')
+            Stat::make('Highest Score', round($highestScore) . '%')
                 ->description('Best attempt')
                 ->descriptionIcon('heroicon-m-arrow-trending-up')
                 ->color('success'),
 
-            Stat::make('Lowest Score', round($lowestScore, 2) . '%')
+            Stat::make('Lowest Score', round($lowestScore) . '%')
                 ->description('Lowest attempt')
                 ->descriptionIcon('heroicon-m-arrow-trending-down')
                 ->color('warning'),
         ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    protected function getSchoolYearOptions(): array
-    {
-        if (! Schema::hasColumn('quiz_attempts', 'school_year')) {
-            return SchoolYears::options($this->record?->school_year ? [$this->record->school_year] : []);
-        }
-
-        $schoolYears = $this->record->quizAttempts()
-            ->select('school_year')
-            ->whereNotNull('school_year')
-            ->where('school_year', '!=', '')
-            ->distinct()
-            ->orderBy('school_year', 'desc')
-            ->pluck('school_year')
-            ->filter()
-            ->values()
-            ->all();
-
-        if ($this->record?->school_year) {
-            $schoolYears[] = $this->record->school_year;
-        }
-
-        return SchoolYears::options($schoolYears);
     }
 }

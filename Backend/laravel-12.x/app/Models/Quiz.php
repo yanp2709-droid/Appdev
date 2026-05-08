@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Schema;
 
 class Quiz extends Model
 {
@@ -25,6 +26,7 @@ class Quiz extends Model
         'show_score_immediately',
         'show_answers_after_submit',
         'show_correct_answers_after_submit',
+        'is_active',
     ];
 
     protected $casts = [
@@ -37,6 +39,7 @@ class Quiz extends Model
         'show_score_immediately' => 'boolean',
         'show_answers_after_submit' => 'boolean',
         'show_correct_answers_after_submit' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     public static function normalizePayload(array $payload): array
@@ -57,6 +60,7 @@ class Quiz extends Model
             'show_score_immediately',
             'show_answers_after_submit',
             'show_correct_answers_after_submit',
+            'is_active',
         ] as $booleanField) {
             if (array_key_exists($booleanField, $payload)) {
                 $payload[$booleanField] = (bool) $payload[$booleanField];
@@ -81,6 +85,10 @@ class Quiz extends Model
             } else {
                 $payload['duration_minutes'] = (int) $payload['duration_minutes'];
             }
+        }
+
+        if (!Schema::hasColumn('quizzes', 'is_active')) {
+            unset($payload['is_active']);
         }
 
         return $payload;
@@ -140,6 +148,11 @@ class Quiz extends Model
     public function questions()
     {
         return $this->hasMany(Question::class);
+    }
+
+    public function questionCount()
+    {
+        return $this->questions()->count();
     }
 
     public function attempts()

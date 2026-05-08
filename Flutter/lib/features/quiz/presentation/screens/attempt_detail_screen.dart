@@ -27,26 +27,33 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
   Future<_AttemptReviewData> _loadReviewData() async {
     final detail =
         await _historyService.getAttemptDetail(attemptId: widget.attemptId);
-    final attemptCount = await _getCategoryAttemptCount(detail.categoryId);
-    return _AttemptReviewData(
-        detail: detail, categoryAttemptCount: attemptCount);
+    final attemptCount = await _getQuizAttemptCount(detail.quizId);
+    return _AttemptReviewData(detail: detail, quizAttemptCount: attemptCount);
   }
 
-  Future<int?> _getCategoryAttemptCount(int categoryId) async {
+  Future<int?> _getQuizAttemptCount(int quizId) async {
     const perPage = 50;
     const maxPages = 20;
-    var page = 1;
     var totalCount = 0;
 
     try {
-      while (page <= maxPages) {
-        final pageItems =
-            await _historyService.getHistory(page: page, perPage: perPage);
-        if (pageItems.isEmpty) break;
-        totalCount += pageItems.where((a) => a.categoryId == categoryId).length;
-        if (pageItems.length < perPage) break;
-        page++;
+      for (var page = 1; page <= maxPages; page++) {
+        final pageItems = await _historyService.getHistory(
+          page: page,
+          perPage: perPage,
+          quizId: quizId,
+        );
+        if (pageItems.isEmpty) {
+          break;
+        }
+
+        totalCount += pageItems.length;
+
+        if (pageItems.length < perPage) {
+          break;
+        }
       }
+
       return totalCount;
     } catch (_) {
       return null;
@@ -111,11 +118,11 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
             // Success state
             if (snapshot.hasData) {
               final detail = snapshot.data!.detail;
-              final categoryAttemptCount = snapshot.data!.categoryAttemptCount;
+              final quizAttemptCount = snapshot.data!.quizAttemptCount;
               return SingleChildScrollView(
                 child: Column(
                   children: [
-                    _buildScoreSummary(detail, categoryAttemptCount),
+                    _buildScoreSummary(detail, quizAttemptCount),
                     const SizedBox(height: 20),
                     ...detail.questions.asMap().entries.map((entry) {
                       final idx = entry.key + 1;
@@ -137,7 +144,7 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
   }
 
   Widget _buildScoreSummary(
-      AttemptDetailModel detail, int? categoryAttemptCount) {
+      AttemptDetailModel detail, int? quizAttemptCount) {
     final scorePercent = detail.scorePercent;
     final scoreColor = (scorePercent ?? 0) >= 70
         ? AppColors.accent
@@ -152,11 +159,20 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
       child: Column(
         children: [
           Text(
-            detail.categoryName,
+            detail.quizTitle,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            detail.categoryName,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 8),
@@ -183,7 +199,7 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Attempts in this category: ${categoryAttemptCount?.toString() ?? 'Unknown'}',
+            'Attempts in this quiz: ${quizAttemptCount?.toString() ?? 'Unknown'}',
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 12,
@@ -198,7 +214,7 @@ class _AttemptDetailScreenState extends State<AttemptDetailScreen> {
                 label: 'Score',
                 value: scorePercent == null
                     ? 'Hidden'
-                    : '${scorePercent.toStringAsFixed(1)}%',
+                    : '${scorePercent.round()}%',
                 color: scoreColor,
               ),
               _SummaryItem(
@@ -673,10 +689,10 @@ class _QuestionReview extends StatelessWidget {
 
 class _AttemptReviewData {
   final AttemptDetailModel detail;
-  final int? categoryAttemptCount;
+  final int? quizAttemptCount;
 
   const _AttemptReviewData({
     required this.detail,
-    required this.categoryAttemptCount,
+    required this.quizAttemptCount,
   });
 }

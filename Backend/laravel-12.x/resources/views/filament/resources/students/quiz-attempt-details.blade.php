@@ -7,7 +7,7 @@
         <p class="text-sm text-gray-600">Category</p>
         <p class="text-base font-semibold text-gray-900">{{ $attempt->quiz->category->name ?? 'Unknown Category' }}</p>
         <p class="mt-3 text-sm text-gray-600">Score</p>
-        <p class="text-xl font-bold text-gray-900">{{ is_numeric($attempt->score_percent) ? round($attempt->score_percent, 2) : 'N/A' }}%</p>
+        <p class="text-xl font-bold text-gray-900">{{ is_numeric($attempt->score_percent) ? round($attempt->score_percent) : 'N/A' }}%</p>
     </div>
 
     <div class="rounded-lg border border-gray-200 p-4">

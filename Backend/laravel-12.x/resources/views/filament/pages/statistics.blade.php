@@ -261,6 +261,10 @@
             </p>
         </div>
 
+        <div>
+            @livewire(\App\Filament\Widgets\AcademicYearSelectorWidget::class)
+        </div>
+
         <div class="quiz-metric-grid">
             <div class="quiz-metric">
                 <span class="quiz-metric-label">Total Quizzes</span>

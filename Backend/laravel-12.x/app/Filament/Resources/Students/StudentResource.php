@@ -2,25 +2,24 @@
 
 namespace App\Filament\Resources\Students;
 
+use App\Filament\Resources\Students\Pages\CreateStudent;
 use App\Filament\Resources\Students\Pages\ListStudents;
 use App\Filament\Resources\Students\Pages\ViewStudent;
-use App\Filament\Resources\Students\Pages\CreateStudent;
 use App\Models\User;
-use App\Support\SchoolYears;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Schema;
-use Filament\Actions\EditAction;
+use App\Services\AcademicYearService;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema as DatabaseSchema;
 
 class StudentResource extends Resource
 {
@@ -36,7 +35,19 @@ class StudentResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('role', 'student');
+        $academicYear = app(AcademicYearService::class)->getSelectedAcademicYear();
+
+        return parent::getEloquentQuery()
+            ->where('role', 'student')
+            ->when(
+                DatabaseSchema::hasColumn('users', 'academic_year'),
+                fn ($query) => $query->where('academic_year', $academicYear),
+                function ($query) use ($academicYear) {
+                    [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
+                    return $query->whereBetween('created_at', [$startDate, $endDate]);
+                },
+            );
     }
 
     public static function table(Table $table): Table
@@ -58,17 +69,31 @@ class StudentResource extends Resource
                     ->dateTime()
                     ->sortable(),
 
-                TextColumn::make('school_year')
-                    ->label('School Year')
-                    ->getStateUsing(fn (User $record): string => $record->school_year ? SchoolYears::format($record->school_year) : 'N/A')
+                TextColumn::make('academic_year')
+                    ->label('Academic Year')
+                    ->getStateUsing(fn (User $record): string => $record->academic_year
+                        ? app(AcademicYearService::class)->formatAcademicYear($record->academic_year)
+                        : 'N/A')
                     ->sortable(),
 
                 TextColumn::make('quiz_attempts_count')
                     ->label('Total Attempts')
-                    ->counts('quizAttempts')
+                    ->state(function (User $record): int {
+                        $academicYear = app(AcademicYearService::class)->getSelectedAcademicYear();
+
+                        return $record->quizAttempts()
+                            ->when(
+                                DatabaseSchema::hasColumn('quiz_attempts', 'school_year'),
+                                fn ($query) => $query->where('school_year', $academicYear),
+                                function ($query) use ($academicYear) {
+                                    [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
+                                    return $query->whereBetween('submitted_at', [$startDate, $endDate]);
+                                },
+                            )
+                            ->count();
+                    })
                     ->sortable(),
-
-
             ])
             ->filters([
                 //
@@ -76,15 +101,6 @@ class StudentResource extends Resource
             ->actions([
                 ViewAction::make(),
                 EditAction::make(),
-                Action::make('deactivate')
-                    ->label('Deactivate')
-                    ->icon('heroicon-m-lock-closed')
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->modalHeading('Deactivate Student Account')
-                    ->modalDescription('This will deactivate the student account. They will no longer be able to log in, but all quiz records will be preserved.')
-                    ->visible(fn (User $record): bool => $record->is_active)
-                    ->action(fn (User $record) => $record->update(['is_active' => false])),
                 Action::make('activate')
                     ->label('Activate')
                     ->icon('heroicon-m-lock-open')
@@ -157,19 +173,31 @@ class StudentResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->schema([
-            TextInput::make('first_name')->label('First Name')->required(),
-            TextInput::make('last_name')->label('Last Name')->required(),
-            TextInput::make('email')->label('Email Address')->email()->required(),
-            TextInput::make('section')->label('Section')->required(),
-            TextInput::make('student_id')->label('Student ID')->required(),
-            TextInput::make('year_level')->label('Year Level')->required(),
-            TextInput::make('course')->label('Course')->required(),
-            Select::make('school_year')
-                ->label('School Year')
-                ->options(SchoolYears::options())
-                ->searchable()
+            TextInput::make('first_name')->label('First Name')->required()->maxLength(100),
+            TextInput::make('last_name')->label('Last Name')->required()->maxLength(100),
+            TextInput::make('email')
+                ->label('Email Address')
+                ->email()
                 ->required()
-                ->default(SchoolYears::current()),
+                ->helperText('Will be kept in the form student_id@lnu.edu.ph.'),
+            TextInput::make('section')
+                ->label('Section')
+                ->required()
+                ->maxLength(4)
+                ->helperText('Use the AIxx format, such as AI33.'),
+            TextInput::make('student_id')
+                ->label('Student ID')
+                ->required()
+                ->maxLength(8)
+                ->helperText('Use 8 digits that start with 230, such as 23010001.'),
+            TextInput::make('year_level')->label('Year Level')->required(),
+            TextInput::make('course')
+                ->label('Course')
+                ->required()
+                ->default('BSIT')
+                ->disabled()
+                ->dehydrated()
+                ->helperText('Student records always use BSIT.'),
             TextInput::make('current_password')
                 ->password()
                 ->revealable()

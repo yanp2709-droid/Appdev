@@ -2,7 +2,10 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\AdminDashboard;
 use App\Models\User;
+use App\Services\AcademicYearService;
+use Illuminate\Support\Facades\Schema;
 
 class TotalStudentsWidget extends MetricCardWidget
 {
@@ -10,14 +13,33 @@ class TotalStudentsWidget extends MetricCardWidget
 
     protected static ?int $sort = 1;
 
+    protected $listeners = ['academicYearChanged' => '$refresh'];
+
     protected function getMetricTitle(): string
     {
-        return 'Total Students';
+        return 'Registered Students';
     }
 
     protected function getMetricValue(): string
     {
-        return (string) User::where('role', 'student')->count();
+        return (string) $this->getStudentsInAcademicYear()->count();
+    }
+
+    private function getStudentsInAcademicYear()
+    {
+        $academicYear = AdminDashboard::getSelectedAcademicYear();
+
+        return User::query()
+            ->where('role', 'student')
+            ->when(
+                Schema::hasColumn('users', 'academic_year'),
+                fn ($query) => $query->where('academic_year', $academicYear),
+                function ($query) use ($academicYear) {
+                    [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
+                    return $query->whereBetween('created_at', [$startDate, $endDate]);
+                },
+            );
     }
 
     protected function getMetricDescription(): string

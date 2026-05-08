@@ -44,7 +44,7 @@
 
                     $score = $attempt->score ?? 0;
                     $totalItems = $attempt->total_items ?? 0;
-                    $scorePercent = is_numeric($attempt->score_percent) ? number_format((float) $attempt->score_percent, 2) . '%' : 'N/A';
+                    $scorePercent = is_numeric($attempt->score_percent) ? round((float) $attempt->score_percent) . '%' : 'N/A';
                 @endphp
 
                 <tr class="align-top">

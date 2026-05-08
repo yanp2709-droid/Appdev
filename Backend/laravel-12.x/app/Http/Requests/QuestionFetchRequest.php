@@ -22,7 +22,8 @@ class QuestionFetchRequest extends FormRequest
     public function rules(): array
     {
         return [
-        'category_id' => 'required|exists:categories,id',
+        'quiz_id' => 'nullable|exists:quizzes,id|required_without:category_id',
+        'category_id' => 'nullable|exists:categories,id|required_without:quiz_id',
         'limit' => 'nullable|integer|min:1|max:50',
         'random' => 'nullable|boolean',
         ];

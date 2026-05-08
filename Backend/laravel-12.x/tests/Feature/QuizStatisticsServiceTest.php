@@ -42,24 +42,21 @@ class QuizStatisticsServiceTest extends TestCase
         $quiz = Quiz::factory()->create(['category_id' => $category->id]);
 
         // Create quiz attempts with various scores
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $students[0]->id,
             'quiz_id' => $quiz->id,
-            'status' => 'submitted',
             'score_percent' => 80.00,
         ]);
 
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $students[1]->id,
             'quiz_id' => $quiz->id,
-            'status' => 'submitted',
             'score_percent' => 90.00,
         ]);
 
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $students[2]->id,
             'quiz_id' => $quiz->id,
-            'status' => 'submitted',
             'score_percent' => 70.00,
         ]);
 
@@ -91,17 +88,15 @@ class QuizStatisticsServiceTest extends TestCase
         $quiz = Quiz::factory()->create(['category_id' => $category->id]);
 
         // Create attempts for the student
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $quiz->id,
-            'status' => 'submitted',
             'score_percent' => 85.00,
         ]);
 
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $quiz->id,
-            'status' => 'submitted',
             'score_percent' => 95.00,
         ]);
 
@@ -154,25 +149,22 @@ class QuizStatisticsServiceTest extends TestCase
         $student = User::factory()->create(['role' => 'student']);
 
         // Programming category attempts
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $quiz1->id,
-            'status' => 'submitted',
             'score_percent' => 80.00,
         ]);
 
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $quiz1->id,
-            'status' => 'submitted',
             'score_percent' => 90.00,
         ]);
 
         // Database category attempts
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $quiz2->id,
-            'status' => 'submitted',
             'score_percent' => 75.00,
         ]);
 
@@ -201,38 +193,33 @@ class QuizStatisticsServiceTest extends TestCase
         $student = User::factory()->create(['role' => 'student']);
 
         // Create attempts in different grade ranges
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $quiz->id,
-            'status' => 'submitted',
             'score_percent' => 95.00, // A
         ]);
 
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $quiz->id,
-            'status' => 'submitted',
             'score_percent' => 85.00, // B
         ]);
 
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $quiz->id,
-            'status' => 'submitted',
             'score_percent' => 72.00, // C
         ]);
 
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $quiz->id,
-            'status' => 'submitted',
             'score_percent' => 65.00, // D
         ]);
 
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $quiz->id,
-            'status' => 'submitted',
             'score_percent' => 45.00, // F
         ]);
 
@@ -263,18 +250,16 @@ class QuizStatisticsServiceTest extends TestCase
         $student = User::factory()->create(['role' => 'student']);
 
         // Easy quiz attempts
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $easyQuiz->id,
-            'status' => 'submitted',
             'score_percent' => 95.00,
         ]);
 
         // Hard quiz attempts
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $hardQuiz->id,
-            'status' => 'submitted',
             'score_percent' => 60.00,
         ]);
 
@@ -318,20 +303,18 @@ class QuizStatisticsServiceTest extends TestCase
         $student = User::factory()->create(['role' => 'student']);
 
         // Create attempts on different dates
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $quiz->id,
-            'status' => 'submitted',
             'score_percent' => 80.00,
-            'created_at' => '2024-01-15 10:00:00', // Within range
+            'submitted_at' => '2024-01-15 10:00:00', // Within range
         ]);
 
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $quiz->id,
-            'status' => 'submitted',
             'score_percent' => 90.00,
-            'created_at' => '2024-02-15 10:00:00', // Outside range
+            'submitted_at' => '2024-02-15 10:00:00', // Outside range
         ]);
 
         // Test with date range that includes only the first attempt
@@ -350,20 +333,18 @@ class QuizStatisticsServiceTest extends TestCase
         $student = User::factory()->create(['role' => 'student']);
 
         // Create attempts on different dates
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $quiz->id,
-            'status' => 'submitted',
             'score_percent' => 80.00,
-            'created_at' => '2024-01-15 10:00:00', // Within range
+            'submitted_at' => '2024-01-15 10:00:00', // Within range
         ]);
 
-        Quiz_attempt::factory()->create([
+        Quiz_attempt::factory()->submitted()->create([
             'student_id' => $student->id,
             'quiz_id' => $quiz->id,
-            'status' => 'submitted',
             'score_percent' => 90.00,
-            'created_at' => '2024-02-15 10:00:00', // Outside range
+            'submitted_at' => '2024-02-15 10:00:00', // Outside range
         ]);
 
         // Test with date range that includes only the first attempt

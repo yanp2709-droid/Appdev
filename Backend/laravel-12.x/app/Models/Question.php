@@ -33,6 +33,7 @@ class Question extends Model
 
     protected $fillable = [
         'category_id',
+        'quiz_id',
         'question_type',
         'question_text',
         'points',
@@ -47,6 +48,11 @@ class Question extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function quiz()
+    {
+        return $this->belongsTo(Quiz::class);
     }
 
     // Relation to options (for MCQ, TF, Ordering)

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Categories\Tables;
 
+use App\Filament\Resources\Categories\CategoryResource;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BooleanColumn;
@@ -46,6 +48,9 @@ class CategoriesTable
             ])
             ->defaultSort('created_at', 'desc')
             ->recordActions([
+                Action::make('quizzes')
+                    ->label('Open')
+                    ->url(fn ($record) => CategoryResource::getUrl('quizzes', ['record' => $record])),
                 EditAction::make(),
             ]);
     }

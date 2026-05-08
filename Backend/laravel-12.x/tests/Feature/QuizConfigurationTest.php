@@ -149,4 +149,26 @@ class QuizConfigurationTest extends TestCase
             ->assertJsonPath('data.attempt.correct_answers', 0)
             ->assertJsonPath('data.questions.0.correct_option_id', $correctOption->id);
     }
+
+    public function test_public_can_view_quiz_details_without_authentication(): void
+    {
+        $teacher = User::factory()->teacher()->create();
+        $category = Category::factory()->create();
+        $quiz = Quiz::factory()->create([
+            'category_id' => $category->id,
+            'teacher_id' => $teacher->id,
+            'difficulty' => 'Easy',
+            'duration_minutes' => 10,
+            'timer_enabled' => true,
+            'shuffle_questions' => false,
+            'shuffle_options' => false,
+        ]);
+
+        $response = $this->getJson("/api/quiz/{$quiz->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.quiz.id', $quiz->id)
+            ->assertJsonPath('data.quiz.category_id', $category->id)
+            ->assertJsonPath('data.quiz.title', $quiz->title);
+    }
 }

@@ -4,6 +4,8 @@ import '../core/exceptions/api_exception.dart';
 import '../features/quiz/data/models/question.dart';
 import '../features/quiz/data/models/quiz_attempt.dart';
 import '../features/quiz/data/models/attempt_resume.dart';
+import '../../core/config/academic_year_config.dart';
+
 
 class AttemptStartResponse {
   final QuizAttempt attempt;
@@ -39,9 +41,11 @@ class QuizAttemptService {
           if (quizId != null) 'quiz_id': quizId,
           if (categoryId != null) 'category_id': categoryId,
           'attempt_type': attemptType,
+          'school_year': AcademicYearConfig.getSchoolYear(),
           if (limit != null) 'limit': limit,
           if (random) 'random': true,
         },
+
       );
 
       final data = response.data as Map<String, dynamic>;
@@ -119,9 +123,11 @@ class QuizAttemptService {
       final response = await apiClient.dio.get(
         '/quiz/availability',
         queryParameters: {
+          'academic_year': AcademicYearConfig.getAcademicYear(),
           if (quizId != null) 'quiz_id': quizId,
           if (categoryId != null) 'category_id': categoryId,
         },
+
       );
 
       final data = response.data as Map<String, dynamic>;
@@ -148,12 +154,14 @@ class QuizAttemptService {
         '/quiz/attempts/$attemptId/answer',
         data: {
           'question_id': questionId,
+          'school_year': AcademicYearConfig.getSchoolYear(),
           if (optionId != null) 'option_id': optionId,
           if (optionIds != null) 'option_ids': optionIds,
           if (textAnswer != null && textAnswer.trim().isNotEmpty)
             'text_answer': textAnswer.trim(),
           if (isBookmarked != null) 'is_bookmarked': isBookmarked,
         },
+
       );
     } on DioException catch (e) {
       throw apiClient.handleException(e);

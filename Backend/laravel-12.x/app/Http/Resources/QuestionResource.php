@@ -19,6 +19,7 @@ class QuestionResource extends JsonResource
             'id' => $this->id,
             'question_text' => $this->question_text,
             'category_id' => $this->category_id,
+            'quiz_id' => $this->quiz_id,
             'question_type' => Question::toApiQuestionType($this->question_type),
             'stored_question_type' => $this->question_type,
             'points' => $this->points,

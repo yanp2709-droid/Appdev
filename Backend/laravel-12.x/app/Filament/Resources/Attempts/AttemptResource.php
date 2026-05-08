@@ -31,7 +31,12 @@ class AttemptResource extends Resource
                     ->sortable(),
 
                 TextColumn::make('quiz.category.name')
-                    ->label('Category')
+                    ->label('Subject')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('quiz.title')
+                    ->label('Quiz')
                     ->searchable()
                     ->sortable(),
 
@@ -68,7 +73,7 @@ class AttemptResource extends Resource
 
                 TextColumn::make('score_percent')
                     ->label('Score (%)')
-                    ->formatStateUsing(fn ($state) => round($state, 2) . '%')
+                    ->formatStateUsing(fn ($state) => round((float) $state) . '%')
                     ->sortable()
                     ->color(fn ($state) => $state >= 70 ? 'success' : ($state >= 50 ? 'warning' : 'danger')),
             ])

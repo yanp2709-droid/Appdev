@@ -27,7 +27,8 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  bool _privacyConsent = false;
+  bool _termsAccepted = false;
+  bool _termsDialogAgreed = false;
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -112,9 +113,10 @@ class _RegisterScreenState extends State<RegisterScreen>
 
     if (!_formKey.currentState!.validate()) return;
 
-    if (!_privacyConsent) {
+    if (!_termsAccepted) {
       setState(() {
-        _errorMessage = 'You must agree to the Privacy Notice to continue.';
+        _errorMessage =
+            'You must agree to the Terms and Conditions before registering.';
       });
       return;
     }
@@ -132,7 +134,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         course: _courseController.text.trim(),
         password: _passwordController.text,
         passwordConfirmation: _confirmPasswordController.text,
-        privacyConsent: _privacyConsent,
+        termsAccepted: _termsAccepted,
       );
 
       // On success: show message then redirect to login
@@ -151,7 +153,8 @@ class _RegisterScreenState extends State<RegisterScreen>
         if (e.fieldErrors.isNotEmpty) {
           e.fieldErrors.forEach((key, value) {
             if (key == 'privacy_consent') {
-              _errorMessage = value.first;
+              _errorMessage =
+                  'You must agree to the Terms and Conditions before registering.';
               return;
             }
             final message = value.isNotEmpty ? value.first : 'Invalid value';
@@ -384,33 +387,60 @@ class _RegisterScreenState extends State<RegisterScreen>
                           ),
                           const SizedBox(height: 16),
 
-                          // Privacy consent
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               SizedBox(
                                 width: 24,
                                 height: 24,
                                 child: Checkbox(
-                                  value: _privacyConsent,
+                                  value: _termsAccepted,
                                   onChanged: (v) => setState(
-                                      () => _privacyConsent = v ?? false),
-                                  activeColor: AppColors.danger,
+                                      () => _termsAccepted = v ?? false),
+                                  activeColor: AppColors.primary,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                 ),
                               ),
                               const SizedBox(width: 10),
-                              Flexible(
-                                child: GestureDetector(
-                                  onTap: () => setState(
-                                      () => _privacyConsent = !_privacyConsent),
-                                  child: const Text(
-                                    'I agree to the Privacy Notice',
-                                    style: TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 13,
-                                    ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: Wrap(
+                                    children: [
+                                      const Text(
+                                        'I agree to the ',
+                                        style: TextStyle(
+                                          color: Colors.black87,
+                                          fontSize: 13,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: _showTermsAndConditions,
+                                        child: const Text(
+                                          'Terms and Conditions',
+                                          style: TextStyle(
+                                            color: AppColors.primary,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                            decoration:
+                                                TextDecoration.underline,
+                                            decorationColor: AppColors.primary,
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                      ),
+                                      const Text(
+                                        '.',
+                                        style: TextStyle(
+                                          color: Colors.black87,
+                                          fontSize: 13,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -467,6 +497,204 @@ class _RegisterScreenState extends State<RegisterScreen>
     if (_fieldErrors.containsKey(key)) {
       setState(() => _fieldErrors.remove(key));
     }
+  }
+
+  Future<void> _showTermsAndConditions() {
+    _termsDialogAgreed = _termsAccepted;
+
+    return showDialog<void>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              insetPadding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: ConstrainedBox(
+                constraints:
+                    const BoxConstraints(maxWidth: 560, maxHeight: 700),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Terms and Conditions',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.close),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Please read the full agreement before creating your TechQuiz account.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.gray600,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.gray100,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.gray200),
+                          ),
+                          child: const SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _TermsSection(
+                                  title: '1. Acceptance of Terms',
+                                  body:
+                                      'By registering for TechQuiz, you acknowledge that you have read, understood, and agreed to these Terms and Conditions. If you do not agree, you must not create an account or use the system.',
+                                ),
+                                _TermsSection(
+                                  title: '2. Educational Use Only',
+                                  body:
+                                      'TechQuiz is provided for academic and learning-related activities. Your account, quiz history, scores, and records are intended to support participation in school-related assessments and progress tracking.',
+                                ),
+                                _TermsSection(
+                                  title: '3. Accurate Registration Information',
+                                  body:
+                                      'You agree to provide complete and accurate information during registration, including your student details, section, and school email. False or misleading information may lead to account restrictions or removal.',
+                                ),
+                                _TermsSection(
+                                  title: '4. Account Responsibility',
+                                  body:
+                                      'You are responsible for maintaining the confidentiality of your login credentials. Any activity performed using your account will be treated as your own unless reported through proper channels.',
+                                ),
+                                _TermsSection(
+                                  title: '5. Proper Platform Conduct',
+                                  body:
+                                      'You must not misuse the application, disrupt quizzes, attempt unauthorized access, manipulate scores, or interfere with the experience of other users, instructors, or administrators.',
+                                ),
+                                _TermsSection(
+                                  title: '6. Quiz Attempts and Records',
+                                  body:
+                                      'The system stores quiz attempts, results, completion times, and related academic activity to provide performance tracking, history viewing, analytics, and reporting features for authorized educational purposes.',
+                                ),
+                                _TermsSection(
+                                  title: '7. Data and Privacy Awareness',
+                                  body:
+                                      'Your registration details and quiz activity may be processed within the system to manage your account, identify your academic records, and support the features required by the platform.',
+                                ),
+                                _TermsSection(
+                                  title: '8. Service Updates and Availability',
+                                  body:
+                                      'TechQuiz may be updated, improved, or temporarily unavailable because of maintenance, bug fixes, feature releases, or school administration needs. Reasonable effort will be made to keep the service accessible.',
+                                ),
+                                _TermsSection(
+                                  title: '9. Limitation of Use',
+                                  body:
+                                      'You agree to use the application only for its intended educational purpose and in accordance with school rules, classroom expectations, and any instructions provided by your instructors or administrators.',
+                                ),
+                                _TermsSection(
+                                  title: '10. Final Agreement',
+                                  body:
+                                      'Selecting the agreement option confirms that you voluntarily accept these Terms and Conditions and understand that registration cannot continue unless this agreement is provided.',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.gray200),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Checkbox(
+                              value: _termsDialogAgreed,
+                              onChanged: (value) {
+                                setDialogState(() {
+                                  _termsDialogAgreed = value ?? false;
+                                });
+                              },
+                              activeColor: AppColors.primary,
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  setDialogState(() {
+                                    _termsDialogAgreed = !_termsDialogAgreed;
+                                  });
+                                },
+                                child: const Padding(
+                                  padding: EdgeInsets.only(top: 12),
+                                  child: Text(
+                                    'I have read and agree to the Terms and Conditions.',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      height: 1.4,
+                                      color: AppColors.textDark,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _termsDialogAgreed
+                              ? () {
+                                  setState(() => _termsAccepted = true);
+                                  Navigator.of(context).pop();
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: AppColors.gray400,
+                            disabledForegroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Agree and Continue'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Widget _buildField({
@@ -527,6 +755,42 @@ class _StatusBanner extends StatelessWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TermsSection extends StatelessWidget {
+  final String title;
+  final String body;
+
+  const _TermsSection({required this.title, required this.body});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textDark,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            body,
+            style: const TextStyle(
+              fontSize: 13,
+              height: 1.5,
+              color: AppColors.gray600,
             ),
           ),
         ],

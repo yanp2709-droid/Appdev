@@ -17,7 +17,13 @@ class QuestionsTable
         return $table
             ->columns([
                 TextColumn::make('category.name')
-                    ->label('Category')
+                    ->label('Subject')
+                    ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('quiz.title')
+                    ->label('Quiz')
+                    ->placeholder('Legacy subject question')
                     ->searchable()
                     ->sortable(),
 
@@ -57,8 +63,12 @@ class QuestionsTable
             ])
             ->filters([
                 SelectFilter::make('category_id')
-                    ->label('Category')
+                    ->label('Subject')
                     ->relationship('category', 'name'),
+
+                SelectFilter::make('quiz_id')
+                    ->label('Quiz')
+                    ->relationship('quiz', 'title'),
 
                 SelectFilter::make('question_type')
                     ->label('Question Type')

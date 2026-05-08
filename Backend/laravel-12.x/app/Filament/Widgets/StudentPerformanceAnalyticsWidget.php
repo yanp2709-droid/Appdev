@@ -2,14 +2,16 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\AdminDashboard;
 use App\Models\Quiz_attempt;
 use App\Models\User;
-use App\Support\SchoolYears;
+use App\Services\AcademicYearService;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema;
 
 class StudentPerformanceAnalyticsWidget extends BaseWidget
 {
@@ -21,14 +23,31 @@ class StudentPerformanceAnalyticsWidget extends BaseWidget
 
     protected int | string | array $columnSpan = 'full';
 
+    protected $listeners = ['academicYearChanged' => '$refresh'];
+
     public function table(Table $table): Table
     {
+        $academicYear = AdminDashboard::getSelectedAcademicYear();
+        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
         return $table
             ->query(
                 User::query()
                     ->where('role', 'student')
-                    ->withCount('quizAttempts')
-                    ->with(['quizAttempts'])
+                    ->when(
+                        Schema::hasColumn('users', 'academic_year'),
+                        fn ($query) => $query->where('academic_year', $academicYear),
+                        fn ($query) => $query->whereBetween('created_at', [$startDate, $endDate]),
+                    )
+                    ->withCount([
+                        'quizAttempts as quiz_attempts_count' => function (Builder $query) use ($academicYear, $startDate, $endDate): void {
+                            $query->when(
+                                Schema::hasColumn('quiz_attempts', 'school_year'),
+                                fn ($query) => $query->where('school_year', $academicYear),
+                                fn ($query) => $query->whereBetween('submitted_at', [$startDate, $endDate]),
+                            );
+                        },
+                    ])
                     ->latest('created_at')
             )
             ->columns([
@@ -47,22 +66,26 @@ class StudentPerformanceAnalyticsWidget extends BaseWidget
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('school_year')
-                    ->label('School Year')
-                    ->formatStateUsing(fn (?string $state): string => $state ? SchoolYears::format($state) : 'N/A')
-                    ->sortable(),
+                // If needed, add school_year column logic here, otherwise rely on AcademicYearService for filtering
 
                 TextColumn::make('quiz_attempts_count')
                     ->label('Total Attempts')
-                    ->counts('quizAttempts')
                     ->sortable(),
 
                 TextColumn::make('avg_score')
                     ->label('Average Score')
                     ->formatStateUsing(function (User $record): string {
+                        $academicYear = AdminDashboard::getSelectedAcademicYear();
+                        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
                         $attempts = $record->quizAttempts()
                             ->where('status', 'submitted')
                             ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
+                            ->when(
+                                Schema::hasColumn('quiz_attempts', 'school_year'),
+                                fn ($query) => $query->where('school_year', $academicYear),
+                                fn ($query) => $query->whereBetween('submitted_at', [$startDate, $endDate]),
+                            )
                             ->get();
 
                         if ($attempts->isEmpty()) {
@@ -70,16 +93,25 @@ class StudentPerformanceAnalyticsWidget extends BaseWidget
                         }
 
                         $avgScore = $attempts->avg('score_percent') ?? 0;
-                        return round($avgScore, 2) . '%';
+
+                        return round($avgScore) . '%';
                     })
                     ->sortable(),
 
                 TextColumn::make('highest_score')
                     ->label('Highest Score')
                     ->formatStateUsing(function (User $record): string {
+                        $academicYear = AdminDashboard::getSelectedAcademicYear();
+                        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
                         $attempts = $record->quizAttempts()
                             ->where('status', 'submitted')
                             ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
+                            ->when(
+                                Schema::hasColumn('quiz_attempts', 'school_year'),
+                                fn ($query) => $query->where('school_year', $academicYear),
+                                fn ($query) => $query->whereBetween('submitted_at', [$startDate, $endDate]),
+                            )
                             ->get();
 
                         if ($attempts->isEmpty()) {
@@ -87,14 +119,22 @@ class StudentPerformanceAnalyticsWidget extends BaseWidget
                         }
 
                         $highest = $attempts->max('score_percent') ?? 0;
-                        return round($highest, 2) . '%';
+                        return round($highest) . '%';
                     })
                     ->color('success'),
 
                 TextColumn::make('last_attempt')
                     ->label('Last Attempt')
                     ->formatStateUsing(function (User $record): string {
+                        $academicYear = AdminDashboard::getSelectedAcademicYear();
+                        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
                         $lastAttempt = $record->quizAttempts()
+                            ->when(
+                                Schema::hasColumn('quiz_attempts', 'school_year'),
+                                fn ($query) => $query->where('school_year', $academicYear),
+                                fn ($query) => $query->whereBetween('submitted_at', [$startDate, $endDate]),
+                            )
                             ->orderByDesc('started_at')
                             ->first();
 

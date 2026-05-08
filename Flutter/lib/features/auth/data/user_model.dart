@@ -6,6 +6,9 @@ class UserModel {
   final String role; // 'student' | 'admin'
   final int latestScore;
   final int subjectsCovered;
+  final String? academicYear;
+
+
 
   const UserModel({
     required this.name,
@@ -13,7 +16,9 @@ class UserModel {
     required this.role,
     this.latestScore = 0,
     this.subjectsCovered = 0,
+    this.academicYear,
   });
+
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
@@ -22,8 +27,10 @@ class UserModel {
       role: (map['role'] as String?) ?? 'student',
       latestScore: (map['latest_score'] as int?) ?? 0,
       subjectsCovered: (map['subjects_covered'] as int?) ?? 0,
+      academicYear: map['academic_year'] as String?,
     );
   }
+
 
   Map<String, dynamic> toMap() => {
         'name': name,
@@ -31,7 +38,9 @@ class UserModel {
         'role': role,
         'latest_score': latestScore,
         'subjects_covered': subjectsCovered,
+        if (academicYear != null) 'academic_year': academicYear,
       };
+
 
   // For SharedPreferences storage
   String toJson() => jsonEncode(toMap());

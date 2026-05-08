@@ -2,8 +2,10 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\AdminDashboard;
 use App\Models\Quiz_attempt;
 use App\Models\User;
+use App\Services\AcademicYearService;
 use App\Support\SchoolYears;
 use Filament\Tables;
 use Filament\Tables\Columns\BadgeColumn;
@@ -11,6 +13,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema;
 
 class StudentAttemptHistoryWidget extends BaseWidget
 {
@@ -20,13 +23,35 @@ class StudentAttemptHistoryWidget extends BaseWidget
 
     protected int | string | array $columnSpan = 2;
 
+    protected $listeners = ['academicYearChanged' => '$refresh'];
+
     public function table(Table $table): Table
     {
+        $academicYear = AdminDashboard::getSelectedAcademicYear();
+        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
         return $table
             ->query(
                 User::query()
                     ->where('role', 'student')
-                    ->withCount('quizAttempts')
+                    ->when(
+                        Schema::hasColumn('users', 'academic_year'),
+                        fn ($query) => $query->where('academic_year', $academicYear),
+                        function ($query) use ($academicYear) {
+                            [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
+                            return $query->whereBetween('created_at', [$startDate, $endDate]);
+                        },
+                    )
+                    ->withCount([
+                        'quizAttempts as quiz_attempts_count' => function (Builder $query) use ($academicYear, $startDate, $endDate): void {
+                            $query->when(
+                                Schema::hasColumn('quiz_attempts', 'school_year'),
+                                fn ($query) => $query->where('school_year', $academicYear),
+                                fn ($query) => $query->whereBetween('submitted_at', [$startDate, $endDate]),
+                            );
+                        },
+                    ])
                     ->latest('created_at')
             )
             ->columns([
@@ -37,6 +62,7 @@ class StudentAttemptHistoryWidget extends BaseWidget
                         if ($name !== '') {
                             return $name;
                         }
+
                         return trim((string) $record->first_name . ' ' . (string) $record->last_name);
                     })
                     ->searchable()
@@ -82,9 +108,17 @@ class StudentAttemptHistoryWidget extends BaseWidget
                     ->modalHeading('Quiz Attempt History')
                     ->icon('heroicon-m-rectangle-stack')
                     ->modalContent(function (User $record) {
+                        $academicYear = AdminDashboard::getSelectedAcademicYear();
+                        [$startDate, $endDate] = app(AcademicYearService::class)->getDateRange($academicYear);
+
                         $attempts = Quiz_attempt::query()
                             ->with(['quiz.category'])
                             ->where('student_id', $record->id)
+                            ->when(
+                                Schema::hasColumn('quiz_attempts', 'school_year'),
+                                fn ($query) => $query->where('school_year', $academicYear),
+                                fn ($query) => $query->whereBetween('submitted_at', [$startDate, $endDate]),
+                            )
                             ->orderByDesc('started_at')
                             ->get();
 

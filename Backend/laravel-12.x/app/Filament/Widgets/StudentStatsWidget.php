@@ -55,7 +55,7 @@ class StudentStatsWidget extends BaseWidget
                             ->where('status', 'submitted')
                             ->where('attempt_type', Quiz_attempt::TYPE_GRADED)
                             ->avg('score_percent') ?? 0;
-                        return round($avg, 2) . '%';
+                        return round($avg) . '%';
                     })
                     ->color(function ($record) {
                         $avg = Quiz_attempt::where('student_id', $record->id)

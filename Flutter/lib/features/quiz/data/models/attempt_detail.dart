@@ -97,6 +97,7 @@ class AttemptQuestionDetail {
 class AttemptDetailModel {
   final int id;
   final int quizId;
+  final String quizTitle;
   final int categoryId;
   final String categoryName;
   final String attemptType;
@@ -114,6 +115,7 @@ class AttemptDetailModel {
   const AttemptDetailModel({
     required this.id,
     required this.quizId,
+    required this.quizTitle,
     required this.categoryId,
     required this.categoryName,
     required this.attemptType,
@@ -138,6 +140,7 @@ class AttemptDetailModel {
     return AttemptDetailModel(
       id: (attemptData['id'] as num?)?.toInt() ?? 0,
       quizId: (attemptData['quiz_id'] as num?)?.toInt() ?? 0,
+      quizTitle: attemptData['quiz_title'] as String? ?? 'Quiz',
       categoryId: (attemptData['category_id'] as num?)?.toInt() ?? 0,
       categoryName: attemptData['category_name'] as String? ?? '',
       attemptType: attemptData['attempt_type'] as String? ?? 'graded',
@@ -161,6 +164,7 @@ class AttemptDetailModel {
         'attempt': {
           'id': id,
           'quiz_id': quizId,
+          'quiz_title': quizTitle,
           'category_id': categoryId,
           'category_name': categoryName,
           'attempt_type': attemptType,

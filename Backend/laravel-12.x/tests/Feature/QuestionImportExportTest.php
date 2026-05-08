@@ -58,7 +58,7 @@ class QuestionImportExportTest extends TestCase
                              'id',
                              'question_text',
                              'question_type',
-                             'category',
+                             'subject',
                              'options',
                              'correct_answer',
                              'points',

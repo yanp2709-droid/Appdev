@@ -7,26 +7,54 @@ use App\Models\Category;
 use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use App\Filament\Widgets\AcademicYearSelectorWidget;
+use App\Services\AcademicYearService;
 use Illuminate\Support\Facades\DB;
 
 class ListCategories extends ListRecords
 {
     protected static string $resource = CategoryResource::class;
 
+    protected static ?string $breadcrumb = 'List';
+
     protected string $view = 'filament.resources.categories.pages.list-categories';
+
+    protected $listeners = ['academicYearChanged' => '$refresh'];
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            AcademicYearSelectorWidget::class,
+        ];
+    }
+
+    public function getHeaderWidgetsColumns(): int | array
+    {
+        return 1;
+    }
 
     protected function getHeaderActions(): array
     {
+        $academicYearService = app(\App\Services\AcademicYearService::class);
+        $isCurrentYear = $academicYearService->getSelectedAcademicYear() === $academicYearService->getCurrentAcademicYear();
+
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->disabled(! $isCurrentYear)
+                ->tooltip(fn (): ?string => $isCurrentYear ? null : 'New subjects can only be created for the current academic year'),
         ];
     }
 
     public function getCategories(): \Illuminate\Support\Collection
     {
+        $academicYearService = app(AcademicYearService::class);
+        [$startDate, $endDate] = $academicYearService->getDateRange($academicYearService->getSelectedAcademicYear());
+
         return Category::query()
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->select('categories.*')
             ->withCount('questions')
+            ->withCount('quizzes')
             ->selectSub(
                 DB::table('quiz_attempts')
                     ->join('quizzes', 'quiz_attempts.quiz_id', '=', 'quizzes.id')

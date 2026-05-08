@@ -11,14 +11,17 @@ class ApiConfig {
     'API_BASE_URL',
     defaultValue: 'http://10.0.2.2:8001/api',
   );
-  
+
   // Timeout durations
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 90);
-  
+
   // Common headers
   static const Map<String, String> defaultHeaders = {
     "Accept": "application/json",
     "Content-Type": "application/json",
+    "X-Academic-Year": "2025-2026",
   };
+
+
 }

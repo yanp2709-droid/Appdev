@@ -18,6 +18,8 @@ class Statistics extends Page
 
     protected string $view = 'filament.pages.statistics';
 
+    protected $listeners = ['academicYearChanged' => '$refresh'];
+
     public function getQuizCards(): array
     {
         return app(QuizStatisticsService::class)->getCategoryCardStatistics();

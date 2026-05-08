@@ -8,13 +8,14 @@ class AttemptHistoryService {
 
   /// Get all completed attempts for the student (with pagination)
   Future<List<AttemptHistoryModel>> getHistory(
-      {int page = 1, int perPage = 15}) async {
+      {int page = 1, int perPage = 15, int? quizId}) async {
     try {
       final response = await apiClient.dio.get(
         '/quiz/attempts',
         queryParameters: {
           'page': page,
           'per_page': perPage,
+          if (quizId != null) 'quiz_id': quizId,
         },
       );
       final data = response.data as Map<String, dynamic>;

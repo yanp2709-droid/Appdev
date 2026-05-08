@@ -34,10 +34,15 @@ class Category extends Model
         'time_limit_minutes' => 'integer',
     ];
 
-    // A category has many questions
+    // A subject/category can own many quizzes
     public function questions()
     {
         return $this->hasMany(Question::class);
+    }
+
+    public function quizzes()
+    {
+        return $this->hasMany(Quiz::class);
     }
 
     public function quiz()

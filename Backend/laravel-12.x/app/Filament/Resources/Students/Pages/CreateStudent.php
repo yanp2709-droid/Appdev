@@ -3,13 +3,11 @@
 namespace App\Filament\Resources\Students\Pages;
 
 use App\Filament\Resources\Students\StudentResource;
-use App\Models\User;
-use Filament\Forms;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
+use App\Services\AcademicYearService;
 use Illuminate\Support\Facades\Hash;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Notifications\Notification;
+use Illuminate\Validation\ValidationException;
 
 class CreateStudent extends CreateRecord
 {
@@ -17,18 +15,34 @@ class CreateStudent extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Set role to student
+        $studentId = preg_replace('/\D+/', '', (string) ($data['student_id'] ?? ''));
+        $section = trim((string) ($data['section'] ?? ''));
+
+        if (! preg_match('/^230\d{5}$/', $studentId)) {
+            throw ValidationException::withMessages([
+                'student_id' => 'Student ID must be exactly 8 digits and start with 230.',
+            ]);
+        }
+
+        if (! preg_match('/^AI\d{2}$/', $section)) {
+            throw ValidationException::withMessages([
+                'section' => 'Section must follow the AIxx pattern, such as AI33.',
+            ]);
+        }
+
         $data['role'] = 'student';
-        // Set the required 'name' field
         $data['name'] = trim(($data['first_name'] ?? '') . ' ' . ($data['last_name'] ?? ''));
-        // Use admin-provided password or default to 'password'
         $data['password'] = Hash::make($data['password'] ?? 'password');
+        $data['student_id'] = $studentId;
+        $data['email'] = $studentId . '@lnu.edu.ph';
+        $data['course'] = 'BSIT';
+        $data['academic_year'] = app(AcademicYearService::class)->getSelectedAcademicYear();
+
         return $data;
     }
 
     protected function getRedirectUrl(): string
     {
-        // Redirect to the students table after creation
         return StudentResource::getUrl('index');
     }
 

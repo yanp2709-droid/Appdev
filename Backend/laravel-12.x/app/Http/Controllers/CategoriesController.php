@@ -16,9 +16,25 @@ class CategoriesController extends Controller
             // Test database connection and timeout
             set_time_limit(60);
 
+            $academicYear = app(\App\Services\AcademicYearService::class)->getSelectedAcademicYear();
+            [$startDate, $endDate] = app(\App\Services\AcademicYearService::class)->getDateRange($academicYear);
+
             $categories = Category::where('is_published', true)
-                ->select('id', 'name', 'description', 'time_limit_minutes')
-                ->get();
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->withCount(['quizzes' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('created_at', [$startDate, $endDate])
+                          ->where('is_active', true);
+                }])
+                ->select('id', 'name', 'description')
+                ->get()
+                ->map(function ($category) {
+                    return [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'description' => $category->description,
+                        'quiz_count' => $category->quizzes_count,
+                    ];
+                });
 
             return response()->json([
                 'data' => $categories,
