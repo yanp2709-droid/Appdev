@@ -28,7 +28,6 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->brandName('TechQuiz Admin')
             ->login()
-            ->profile(false)
             ->colors([
                 'primary' => Color::Amber,
             ])

@@ -17,8 +17,6 @@ class EditProfile extends Page
 {
     use InteractsWithForms;
 
-    protected static bool $shouldRegisterNavigation = false;
-
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user';
 
     protected static ?string $navigationLabel = 'Profile';
