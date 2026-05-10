@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         bootstrap="tests/bootstrap.php"
          colors="true"
 >
     <testsuites>
@@ -18,22 +18,32 @@
         </include>
     </source>
     <php>
-        <env name="APP_ENV" value="testing"/>
+        <env name="APP_ENV" value="testing" force="true"/>
         <env name="APP_CONFIG_CACHE" value="/tmp/phpunit-config.php"/>
         <env name="APP_EVENTS_CACHE" value="/tmp/phpunit-events.php"/>
         <env name="APP_PACKAGES_CACHE" value="/tmp/phpunit-packages.php"/>
         <env name="APP_ROUTES_CACHE" value="/tmp/phpunit-routes.php"/>
         <env name="APP_SERVICES_CACHE" value="/tmp/phpunit-services.php"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+
+        <!-- isolate caches/files/sessions from dev environment -->
+        <env name="APP_URL" value="http://localhost/phpunit" force="true"/>
+        <env name="CACHE_DRIVER" value="array" force="true"/>
+        <env name="FILESYSTEM_DISK" value="testing" force="true"/>
+        <env name="SESSION_COOKIE" value="phpunit_session" force="true"/>
+        <env name="SESSION_DOMAIN" value="" force="true"/>
+        <env name="SESSION_LIFETIME" value="10" force="true"/>
+        <env name="SESSION_SECURE_COOKIE" value="false" force="true"/>
+
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
-        <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <env name="CACHE_STORE" value="array" force="true"/>
+        <env name="DB_CONNECTION" value="sqlite" force="true"/>
+        <env name="DB_DATABASE" value=":memory:" force="true"/>
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
-        <env name="SESSION_DRIVER" value="array"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
