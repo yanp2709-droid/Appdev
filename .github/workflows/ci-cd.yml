@@ -74,8 +74,8 @@ jobs:
           npm ci
           npm run build
 
-      - name: Run Laravel test suite
-        run: php artisan test
+      - name: Run Laravel PHPUnit suite
+        run: php vendor/bin/phpunit
 
   flutter-ci:
     name: Flutter CI
