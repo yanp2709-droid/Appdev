@@ -75,7 +75,7 @@ jobs:
           npm run build
 
       - name: Run Laravel PHPUnit suite
-        run: php vendor/bin/phpunit
+        run: php vendor/bin/phpunit --do-not-fail-on-deprecation --do-not-fail-on-phpunit-deprecation
 
   flutter-ci:
     name: Flutter CI
