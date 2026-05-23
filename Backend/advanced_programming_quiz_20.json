@@ -1,0 +1,184 @@
+{
+  "questions": [
+    {
+      "question_text": "Which data structure uses First-In, First-Out (FIFO)?",
+      "category": "Advanced Programming",
+      "question_type": "mcq",
+      "options": ["Stack", "Queue", "Tree", "Graph"],
+      "correct_answer": "Queue",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "What is the average time complexity of binary search on a sorted array?",
+      "category": "Advanced Programming",
+      "question_type": "mcq",
+      "options": ["O(n)", "O(log n)", "O(n log n)", "O(1)"],
+      "correct_answer": "O(log n)",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "True or False: A linked list allows efficient insertion at the head compared to an array.",
+      "category": "Advanced Programming",
+      "question_type": "true_false",
+      "options": ["True", "False"],
+      "correct_answer": "True",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "Which keyword in Java is used to inherit a class?",
+      "category": "Advanced Programming",
+      "question_type": "mcq",
+      "options": ["implements", "extends", "inherits", "super"],
+      "correct_answer": "extends",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "Which principle of OOP allows a class to provide different implementations of the same method signature?",
+      "category": "Advanced Programming",
+      "question_type": "mcq",
+      "options": ["Encapsulation", "Abstraction", "Polymorphism", "Aggregation"],
+      "correct_answer": "Polymorphism",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "True or False: In recursion, every recursive function must have a base case.",
+      "category": "Advanced Programming",
+      "question_type": "true_false",
+      "options": ["True", "False"],
+      "correct_answer": "True",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "What does Big-O notation describe?",
+      "category": "Advanced Programming",
+      "question_type": "mcq",
+      "options": ["Memory address of variables", "Worst-case growth rate", "Exact runtime in seconds", "Compiler optimization level"],
+      "correct_answer": "Worst-case growth rate",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "Which sorting algorithm is generally fastest on average for large random datasets?",
+      "category": "Advanced Programming",
+      "question_type": "mcq",
+      "options": ["Bubble Sort", "Insertion Sort", "Quick Sort", "Selection Sort"],
+      "correct_answer": "Quick Sort",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "True or False: A hash table always guarantees O(1) worst-case search time.",
+      "category": "Advanced Programming",
+      "question_type": "true_false",
+      "options": ["True", "False"],
+      "correct_answer": "False",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "Which traversal visits nodes in the order Left, Root, Right?",
+      "category": "Advanced Programming",
+      "question_type": "mcq",
+      "options": ["Preorder", "Inorder", "Postorder", "Level-order"],
+      "correct_answer": "Inorder",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "Which concept hides internal implementation details and exposes only essential features?",
+      "category": "Advanced Programming",
+      "question_type": "mcq",
+      "options": ["Inheritance", "Encapsulation", "Abstraction", "Composition"],
+      "correct_answer": "Abstraction",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "True or False: Method overloading and method overriding are the same concept.",
+      "category": "Advanced Programming",
+      "question_type": "true_false",
+      "options": ["True", "False"],
+      "correct_answer": "False",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "In SQL, which clause is used to filter grouped results?",
+      "category": "Advanced Programming",
+      "question_type": "mcq",
+      "options": ["WHERE", "HAVING", "ORDER BY", "JOIN"],
+      "correct_answer": "HAVING",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "Which of the following is NOT a pillar of object-oriented programming?",
+      "category": "Advanced Programming",
+      "question_type": "mcq",
+      "options": ["Encapsulation", "Polymorphism", "Normalization", "Inheritance"],
+      "correct_answer": "Normalization",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "True or False: A min-heap always stores the smallest element at the root.",
+      "category": "Advanced Programming",
+      "question_type": "true_false",
+      "options": ["True", "False"],
+      "correct_answer": "True",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "Which graph algorithm is commonly used to find the shortest path in a weighted graph with non-negative edges?",
+      "category": "Advanced Programming",
+      "question_type": "mcq",
+      "options": ["Depth-First Search", "Breadth-First Search", "Dijkstra's Algorithm", "Kruskal's Algorithm"],
+      "correct_answer": "Dijkstra's Algorithm",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "What is the primary purpose of an interface in OOP?",
+      "category": "Advanced Programming",
+      "question_type": "mcq",
+      "options": ["Store object state", "Define a contract of methods", "Replace constructors", "Manage memory allocation"],
+      "correct_answer": "Define a contract of methods",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "True or False: Dynamic programming often stores intermediate results to avoid repeated computation.",
+      "category": "Advanced Programming",
+      "question_type": "true_false",
+      "options": ["True", "False"],
+      "correct_answer": "True",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "Which operation has O(1) average time in a stack?",
+      "category": "Advanced Programming",
+      "question_type": "mcq",
+      "options": ["Insert at arbitrary index", "Push", "Search by value", "Sort"],
+      "correct_answer": "Push",
+      "points": 5,
+      "answer_key": ""
+    },
+    {
+      "question_text": "Which statement best describes encapsulation?",
+      "category": "Advanced Programming",
+      "question_type": "mcq",
+      "options": ["Combining multiple classes into one file", "Binding data and methods with access control", "Creating many subclasses", "Converting code to machine language"],
+      "correct_answer": "Binding data and methods with access control",
+      "points": 5,
+      "answer_key": ""
+    }
+  ]
+}

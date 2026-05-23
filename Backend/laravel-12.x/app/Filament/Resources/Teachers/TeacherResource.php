@@ -98,7 +98,7 @@ class TeacherResource extends Resource
                     ->color('danger')
                     ->requiresConfirmation()
                     ->modalHeading('Deactivate Teacher')
-                    ->modalDescription('This will prevent the teacher from accessing the admin dashboard. Their quizzes will remain intact.')
+                ->modalDescription('This will prevent the teacher from accessing the teachers dashboard. Their quizzes will remain intact.')
                     ->hidden(fn (User $record): bool => !$record->is_active || $record->isProtected())
                     ->action(fn (User $record) => $record->update(['is_active' => false])),
 
@@ -192,7 +192,7 @@ class TeacherResource extends Resource
         $user = auth()->user();
 
         return $user instanceof User
-            && $user->isAdmin()
-            && $user->isProtected();
+            && $user->isTeacher()
+            && $user->is_active;
     }
 }

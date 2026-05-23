@@ -11,6 +11,7 @@ use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\HtmlString;
 
 class StudentQuizAttemptsTableWidget extends BaseWidget
 {
@@ -39,7 +40,8 @@ class StudentQuizAttemptsTableWidget extends BaseWidget
 
                 TextColumn::make('answers_summary')
                     ->label('Answers')
-                    ->state(fn (Quiz_attempt $record): string => $this->formatAnswers($record))
+                    ->state(fn (Quiz_attempt $record): HtmlString => $this->formatAnswers($record))
+                    ->html()
                     ->wrap(),
 
                 TextColumn::make('attempt_number')
@@ -76,9 +78,9 @@ class StudentQuizAttemptsTableWidget extends BaseWidget
             ->orderByDesc('id');
     }
 
-    protected function formatAnswers(Quiz_attempt $record): string
+    protected function formatAnswers(Quiz_attempt $record): HtmlString
     {
-        $answers = $record->answers
+        $lines = $record->answers
             ->sortBy('question_id')
             ->values()
             ->map(function ($answer, $index) {
@@ -87,11 +89,16 @@ class StudentQuizAttemptsTableWidget extends BaseWidget
                     ?? $answer->text_answer
                     ?? 'Skipped';
 
-                return 'Q' . ($index + 1) . ': ' . $value;
-            })
-            ->implode(', ');
+                return e('Q' . ($index + 1) . ': ' . $value);
+            });
 
-        return $answers !== '' ? $answers : 'Skipped';
+        if ($lines->isEmpty()) {
+            return new HtmlString('<span class="text-gray-500">Skipped</span>');
+        }
+
+        $items = $lines->map(fn (string $line): string => '&bull; ' . $line)->implode('<br>');
+
+        return new HtmlString($items);
     }
 
     protected function getAttemptNumber(Quiz_attempt $record): int
