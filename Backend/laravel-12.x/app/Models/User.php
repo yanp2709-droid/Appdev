@@ -30,6 +30,27 @@ class User extends Authenticatable implements FilamentUser
         'privacy_consent',
         'is_protected',
         'is_active',
+        // Teacher profile fields
+        'profile_picture',
+        'position',
+        'subjects_teaching',
+        'it_specialization',
+        'educational_background',
+        'skills_technologies',
+        'certifications',
+        'years_experience',
+        'professional_summary',
+        'contact_info',
+        'office_schedule',
+        'department',
+        'programming_languages',
+        'frameworks_tools',
+        'database_experience',
+        'software_expertise',
+        'research_interests',
+        'current_projects',
+        'achievements',
+        'portfolio_links',
     ];
 
     protected $hidden = [
@@ -45,6 +66,16 @@ class User extends Authenticatable implements FilamentUser
             'privacy_consent' => 'boolean',
             'is_protected' => 'boolean',
             'is_active' => 'boolean',
+            // Teacher profile fields
+            'subjects_teaching' => 'array',
+            'skills_technologies' => 'array',
+            'certifications' => 'array',
+            'programming_languages' => 'array',
+            'frameworks_tools' => 'array',
+            'database_experience' => 'array',
+            'software_expertise' => 'array',
+            'achievements' => 'array',
+            'portfolio_links' => 'array',
         ];
     }
 

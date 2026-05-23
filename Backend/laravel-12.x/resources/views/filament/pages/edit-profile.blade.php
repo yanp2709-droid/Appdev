@@ -641,7 +641,50 @@
                                     </div>
                                 </div>
                             @endif
+                            @if ($selectedUser->role === 'teacher')
+                                <div class="profile-editor-meta-cell">
+                                    <div class="profile-editor-meta-key">Position</div>
+                                    <div class="profile-editor-meta-val">{{ $selectedUser->position ?: 'N/A' }}</div>
+                                </div>
+                                <div class="profile-editor-meta-cell">
+                                    <div class="profile-editor-meta-key">Department</div>
+                                    <div class="profile-editor-meta-val">{{ $selectedUser->department ?: 'N/A' }}</div>
+                                </div>
+                                <div class="profile-editor-meta-cell">
+                                    <div class="profile-editor-meta-key">Experience</div>
+                                    <div class="profile-editor-meta-val">{{ $selectedUser->years_experience !== null ? $selectedUser->years_experience . ' years' : 'N/A' }}</div>
+                                </div>
+                            @endif
                         </div>
+
+                        @if ($selectedUser->role === 'teacher')
+                            <div class="profile-editor-meta-grid" style="grid-template-columns: repeat(2, 1fr); margin-top: 12px;">
+                                <div class="profile-editor-meta-cell">
+                                    <div class="profile-editor-meta-key">Subjects Teaching</div>
+                                    <div class="profile-editor-meta-val" style="word-break: normal;">
+                                        {{ collect($selectedUser->subjects_teaching ?? [])->join(', ') ?: 'N/A' }}
+                                    </div>
+                                </div>
+                                <div class="profile-editor-meta-cell">
+                                    <div class="profile-editor-meta-key">IT Specialization</div>
+                                    <div class="profile-editor-meta-val" style="word-break: normal;">
+                                        {{ $selectedUser->it_specialization ?: 'N/A' }}
+                                    </div>
+                                </div>
+                                <div class="profile-editor-meta-cell">
+                                    <div class="profile-editor-meta-key">Technologies</div>
+                                    <div class="profile-editor-meta-val" style="word-break: normal;">
+                                        {{ collect($selectedUser->skills_technologies ?? [])->join(', ') ?: 'N/A' }}
+                                    </div>
+                                </div>
+                                <div class="profile-editor-meta-cell">
+                                    <div class="profile-editor-meta-key">Summary</div>
+                                    <div class="profile-editor-meta-val" style="word-break: normal;">
+                                        {{ $selectedUser->professional_summary ?: 'N/A' }}
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 @endif
 
@@ -684,6 +727,35 @@
             <p class="profile-editor-personal-desc">
                 Update your information and password from separate sections designed for quick, safe edits.
             </p>
+
+            @if (auth()->user()?->role === 'teacher')
+                <div class="profile-editor-summary" style="margin-top: 20px;">
+                    <div class="profile-editor-summary-sublabel">Teacher Profile Snapshot</div>
+                    <div class="profile-editor-summary-name" style="font-size: 18px;">
+                        {{ auth()->user()->position ?: 'Information Technology Instructor' }}
+                    </div>
+                    <div class="profile-editor-summary-email" style="margin-top: 8px;">
+                        {{ collect(auth()->user()->subjects_teaching ?? [])->join(', ') }}
+                    </div>
+
+                    <div class="profile-editor-meta-grid" style="margin-top: 16px;">
+                        <div class="profile-editor-meta-cell">
+                            <div class="profile-editor-meta-key">Department</div>
+                            <div class="profile-editor-meta-val">{{ auth()->user()->department ?: 'N/A' }}</div>
+                        </div>
+                        <div class="profile-editor-meta-cell">
+                            <div class="profile-editor-meta-key">Specialization</div>
+                            <div class="profile-editor-meta-val">{{ auth()->user()->it_specialization ?: 'N/A' }}</div>
+                        </div>
+                        <div class="profile-editor-meta-cell">
+                            <div class="profile-editor-meta-key">Experience</div>
+                            <div class="profile-editor-meta-val">
+                                {{ auth()->user()->years_experience !== null ? auth()->user()->years_experience . ' years' : 'N/A' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <form wire:submit.prevent="save">
                 {{ $this->form }}

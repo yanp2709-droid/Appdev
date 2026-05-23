@@ -97,6 +97,13 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('/statistics/categories', [AdminDashboardController::class, 'categoryStats']);
 });
 
+
+// Teacher Profile Management
+Route::middleware(['auth:sanctum'])->prefix('teacher-profile')->group(function () {
+    Route::get('/{id}', [\App\Http\Controllers\Api\TeacherProfileController::class, 'show']);
+    Route::patch('/{id}', [\App\Http\Controllers\Api\TeacherProfileController::class, 'update']);
+});
+
 // Admin User Management routes
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin/users')->group(function () {
     Route::get('/', [AdminUserController::class, 'index']);

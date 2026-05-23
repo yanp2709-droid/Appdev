@@ -19,9 +19,89 @@
 - [ ] Test edge cases (e.g., .4, .5, .9, 0%, 100%)
 - [ ] Acceptance: No decimals shown, rounding is consistent, % symbol present
 
-## Task 4: Display Quiz History in Flutter Per Quiz Instead of General History
-- [ ] Update the Flutter app so quiz history is shown per quiz, not as a general mixed list. Users should be able to view history for a selected quiz only. If the backend/API does not yet support quiz-specific history, update it to allow filtering/grouping by quiz.
-- [ ] Review current Flutter history screen and data fetching
+# Task 4: Display Quiz History in Flutter Per Quiz Instead of General History
+...existing code...
+
+# Task: Implement Teacher Profile Management with IT-Focused Professional Information
+
+## Description
+Add a teacher profile feature in the system that allows displaying detailed professional information related to the subjects and expertise of each teacher. The profile should present relevant academic and IT-related details in a structured and visually organized way to make profiles more informative and professional.
+
+This feature will help users easily identify teacher qualifications, areas of specialization, and teaching responsibilities while improving the overall presentation of faculty information.
+
+## Objective
+To create a more informative and presentable teacher profile section that highlights teaching roles, IT expertise, and professional details.
+
+## Scope / Functional Requirements
+- Create a dedicated teacher profile section/page.
+- Allow the profile to display:
+	- Full name
+	- Profile picture
+	- Position/role
+	- Subjects currently teaching
+	- Area of IT specialization
+	- Educational background
+	- Skills and technologies
+	- Certifications
+	- Years of teaching experience
+	- Professional summary/about section
+	- Contact information (if applicable)
+	- Office schedule/consultation hours
+	- Department or program affiliation
+- Add IT-related information such as:
+	- Programming languages known
+	- Frameworks/tools used
+	- Database experience
+	- Software expertise
+	- Research interests
+	- Current projects (optional)
+	- Achievements or awards
+	- Portfolio/GitHub/LinkedIn links (if available)
+- Improve profile presentation through:
+	- organized sections/cards
+	- profile banner/header
+	- icons for skills and technologies
+	- responsive design for different screen sizes
+- Allow profile information updates through an admin or authorized teacher account.
+- Provide validation for required profile fields.
+- Ensure profiles load correctly without affecting existing system performance.
+
+## Suggested Profile Sections
+- Basic Information
+- Teaching Information
+- IT Skills & Technologies
+- Academic Background
+- Professional Experience
+- Certifications & Achievements
+- Projects and Research
+- Contact Details
+
+## Technical Notes / Steps
+1. Review existing user and teacher database structure.
+2. Create additional database fields for teacher professional information if needed.
+3. Design profile UI layout with a clean and modern structure.
+4. Implement profile image upload functionality.
+5. Create backend APIs for:
+		- retrieving teacher profiles
+		- updating profile information
+		- managing profile details
+6. Add frontend components for:
+		- profile cards
+		- skills/tags display
+		- teacher information sections
+7. Implement form validation for profile updates.
+8. Ensure responsive behavior for desktop, tablet, and mobile devices.
+9. Test profile loading and display performance.
+
+## Acceptance Criteria
+- Teacher profiles display complete professional and teaching information.
+- Subjects being taught are clearly shown.
+- IT-related skills and expertise are properly presented.
+- Profile layout is organized and visually appealing.
+- Profile information can be updated successfully by authorized users.
+- Profile images and links load correctly.
+- Responsive design works across different screen sizes.
+- Existing system functionality remains stable after implementation.
 - [ ] Ensure backend/API supports quiz-based history (quiz_id, quiz title, etc.)
 - [ ] Update Flutter UI to group/filter history by quiz
 - [ ] Display quiz title, date, score, status, etc. per record

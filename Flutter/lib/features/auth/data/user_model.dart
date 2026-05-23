@@ -48,3 +48,4 @@ class UserModel {
   factory UserModel.fromJson(String source) =>
       UserModel.fromMap(jsonDecode(source) as Map<String, dynamic>);
 }
+
