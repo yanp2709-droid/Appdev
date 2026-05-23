@@ -134,6 +134,8 @@ class QuizAttemptsRelationManager extends RelationManager
             return new HtmlString('<span class="text-gray-500">Skipped</span>');
         }
 
-        return new HtmlString($lines->implode('<br>'));
+        $items = $lines->map(fn (string $line): string => '&bull; ' . $line)->implode('<br>');
+
+        return new HtmlString($items);
     }
 }

@@ -32,7 +32,7 @@ return [
     'auth' => [
         'guard' => 'web',
         'user_model' => \App\Models\User::class,
-        'login_url' => '/admin/login', // Filament login page
+'login_url' => '/teachers/login', // Filament login page
     ],
 
 ];

@@ -1,0 +1,545 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 1300 1750] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+6 0 obj
+<< /Length 4959 >>
+stream
+q 0.93 0.93 0.93 rg 0 0 1300 1750 re f Q
+BT
+/F1 20 Tf
+60 1690 Td
+(Data Dictionary) Tj
+ET
+60 1640 m 1160 1640 l S
+BT
+/F1 14 Tf
+70 1612 Td
+(Table Name) Tj
+ET
+BT
+/F1 14 Tf
+390 1612 Td
+(Column Name) Tj
+ET
+BT
+/F1 14 Tf
+740 1612 Td
+(Data Type) Tj
+ET
+60 1604 m 1160 1604 l S
+BT
+/F1 13 Tf
+70 1570 Td
+(users) Tj
+ET
+BT
+/F1 12 Tf
+390 1570 Td
+(id) Tj
+ET
+BT
+/F1 12 Tf
+740 1570 Td
+(BIGINT PK) Tj
+ET
+BT
+/F1 12 Tf
+390 1538 Td
+(name) Tj
+ET
+BT
+/F1 12 Tf
+740 1538 Td
+(VARCHAR) Tj
+ET
+BT
+/F1 12 Tf
+390 1506 Td
+(email) Tj
+ET
+BT
+/F1 12 Tf
+740 1506 Td
+(VARCHAR UNIQUE) Tj
+ET
+BT
+/F1 12 Tf
+390 1474 Td
+(role) Tj
+ET
+BT
+/F1 12 Tf
+740 1474 Td
+(ENUM\(admin, teacher, student\)) Tj
+ET
+BT
+/F1 12 Tf
+390 1442 Td
+(student_id) Tj
+ET
+BT
+/F1 12 Tf
+740 1442 Td
+(VARCHAR UNIQUE NULL) Tj
+ET
+BT
+/F1 12 Tf
+390 1410 Td
+(academic_year) Tj
+ET
+BT
+/F1 12 Tf
+740 1410 Td
+(VARCHAR NULL) Tj
+ET
+BT
+/F1 12 Tf
+390 1378 Td
+(created_at) Tj
+ET
+BT
+/F1 12 Tf
+740 1378 Td
+(TIMESTAMP) Tj
+ET
+BT
+/F1 12 Tf
+390 1346 Td
+(updated_at) Tj
+ET
+BT
+/F1 12 Tf
+740 1346 Td
+(TIMESTAMP) Tj
+ET
+60 1322 m 1160 1322 l S
+BT
+/F1 13 Tf
+70 1314 Td
+(categories) Tj
+ET
+BT
+/F1 12 Tf
+390 1314 Td
+(id) Tj
+ET
+BT
+/F1 12 Tf
+740 1314 Td
+(BIGINT PK) Tj
+ET
+BT
+/F1 12 Tf
+390 1282 Td
+(name) Tj
+ET
+BT
+/F1 12 Tf
+740 1282 Td
+(VARCHAR UNIQUE) Tj
+ET
+BT
+/F1 12 Tf
+390 1250 Td
+(description) Tj
+ET
+BT
+/F1 12 Tf
+740 1250 Td
+(TEXT NULL) Tj
+ET
+BT
+/F1 12 Tf
+390 1218 Td
+(is_published) Tj
+ET
+BT
+/F1 12 Tf
+740 1218 Td
+(BOOLEAN) Tj
+ET
+BT
+/F1 12 Tf
+390 1186 Td
+(time_limit_minutes) Tj
+ET
+BT
+/F1 12 Tf
+740 1186 Td
+(UNSIGNED INT) Tj
+ET
+60 1162 m 1160 1162 l S
+BT
+/F1 13 Tf
+70 1154 Td
+(quizzes) Tj
+ET
+BT
+/F1 12 Tf
+390 1154 Td
+(id) Tj
+ET
+BT
+/F1 12 Tf
+740 1154 Td
+(BIGINT PK) Tj
+ET
+BT
+/F1 12 Tf
+390 1122 Td
+(title) Tj
+ET
+BT
+/F1 12 Tf
+740 1122 Td
+(VARCHAR) Tj
+ET
+BT
+/F1 12 Tf
+390 1090 Td
+(category_id) Tj
+ET
+BT
+/F1 12 Tf
+740 1090 Td
+(BIGINT FK) Tj
+ET
+BT
+/F1 12 Tf
+390 1058 Td
+(teacher_id) Tj
+ET
+BT
+/F1 12 Tf
+740 1058 Td
+(BIGINT FK NULL) Tj
+ET
+BT
+/F1 12 Tf
+390 1026 Td
+(difficulty) Tj
+ET
+BT
+/F1 12 Tf
+740 1026 Td
+(ENUM\(Easy, Medium, Hard\)) Tj
+ET
+BT
+/F1 12 Tf
+390 994 Td
+(duration_minutes) Tj
+ET
+BT
+/F1 12 Tf
+740 994 Td
+(UNSIGNED INT) Tj
+ET
+BT
+/F1 12 Tf
+390 962 Td
+(is_active) Tj
+ET
+BT
+/F1 12 Tf
+740 962 Td
+(BOOLEAN) Tj
+ET
+60 938 m 1160 938 l S
+BT
+/F1 13 Tf
+70 930 Td
+(questions) Tj
+ET
+BT
+/F1 12 Tf
+390 930 Td
+(id) Tj
+ET
+BT
+/F1 12 Tf
+740 930 Td
+(BIGINT PK) Tj
+ET
+BT
+/F1 12 Tf
+390 898 Td
+(quiz_id) Tj
+ET
+BT
+/F1 12 Tf
+740 898 Td
+(BIGINT FK NULL) Tj
+ET
+BT
+/F1 12 Tf
+390 866 Td
+(category_id) Tj
+ET
+BT
+/F1 12 Tf
+740 866 Td
+(BIGINT FK) Tj
+ET
+BT
+/F1 12 Tf
+390 834 Td
+(question_text) Tj
+ET
+BT
+/F1 12 Tf
+740 834 Td
+(TEXT/LONGTEXT) Tj
+ET
+BT
+/F1 12 Tf
+390 802 Td
+(question_type) Tj
+ET
+BT
+/F1 12 Tf
+740 802 Td
+(ENUM\(mcq, tf, multi_select, ordering, short_answer\)) Tj
+ET
+BT
+/F1 12 Tf
+390 770 Td
+(points) Tj
+ET
+BT
+/F1 12 Tf
+740 770 Td
+(INT) Tj
+ET
+60 746 m 1160 746 l S
+BT
+/F1 13 Tf
+70 738 Td
+(question_options) Tj
+ET
+BT
+/F1 12 Tf
+390 738 Td
+(id) Tj
+ET
+BT
+/F1 12 Tf
+740 738 Td
+(BIGINT PK) Tj
+ET
+BT
+/F1 12 Tf
+390 706 Td
+(question_id) Tj
+ET
+BT
+/F1 12 Tf
+740 706 Td
+(BIGINT FK) Tj
+ET
+BT
+/F1 12 Tf
+390 674 Td
+(option_text) Tj
+ET
+BT
+/F1 12 Tf
+740 674 Td
+(VARCHAR) Tj
+ET
+BT
+/F1 12 Tf
+390 642 Td
+(is_correct) Tj
+ET
+BT
+/F1 12 Tf
+740 642 Td
+(BOOLEAN) Tj
+ET
+BT
+/F1 12 Tf
+390 610 Td
+(order_index) Tj
+ET
+BT
+/F1 12 Tf
+740 610 Td
+(INT NULL) Tj
+ET
+60 586 m 1160 586 l S
+BT
+/F1 13 Tf
+70 578 Td
+(answers) Tj
+ET
+BT
+/F1 12 Tf
+390 578 Td
+(id) Tj
+ET
+BT
+/F1 12 Tf
+740 578 Td
+(BIGINT PK) Tj
+ET
+BT
+/F1 12 Tf
+390 546 Td
+(question_id) Tj
+ET
+BT
+/F1 12 Tf
+740 546 Td
+(BIGINT FK) Tj
+ET
+BT
+/F1 12 Tf
+390 514 Td
+(answer_text) Tj
+ET
+BT
+/F1 12 Tf
+740 514 Td
+(VARCHAR) Tj
+ET
+BT
+/F1 12 Tf
+390 482 Td
+(is_correct) Tj
+ET
+BT
+/F1 12 Tf
+740 482 Td
+(BOOLEAN) Tj
+ET
+60 458 m 1160 458 l S
+BT
+/F1 13 Tf
+70 450 Td
+(quiz_attempts) Tj
+ET
+BT
+/F1 12 Tf
+390 450 Td
+(id) Tj
+ET
+BT
+/F1 12 Tf
+740 450 Td
+(BIGINT PK) Tj
+ET
+BT
+/F1 12 Tf
+390 418 Td
+(student_id) Tj
+ET
+BT
+/F1 12 Tf
+740 418 Td
+(BIGINT FK) Tj
+ET
+BT
+/F1 12 Tf
+390 386 Td
+(quiz_id) Tj
+ET
+BT
+/F1 12 Tf
+740 386 Td
+(BIGINT FK) Tj
+ET
+BT
+/F1 12 Tf
+390 354 Td
+(status) Tj
+ET
+BT
+/F1 12 Tf
+740 354 Td
+(VARCHAR) Tj
+ET
+BT
+/F1 12 Tf
+390 322 Td
+(score_percent) Tj
+ET
+BT
+/F1 12 Tf
+740 322 Td
+(DECIMAL\(5,2\)) Tj
+ET
+BT
+/F1 12 Tf
+390 290 Td
+(attempt_type) Tj
+ET
+BT
+/F1 12 Tf
+740 290 Td
+(VARCHAR) Tj
+ET
+60 266 m 1160 266 l S
+BT
+/F2 16 Tf
+60 218 Td
+(Normalization \(1NF, 2NF, 3NF\)) Tj
+ET
+BT
+/F1 12 Tf
+70 188 Td
+(1NF: Core columns are atomic; JSON is limited to flexible payloads.) Tj
+ET
+BT
+/F1 12 Tf
+70 164 Td
+(2NF: Composite business facts are in bridge tables \(attempt_answers, retake allowances\).) Tj
+ET
+BT
+/F1 12 Tf
+70 140 Td
+(3NF: Main entities are separated; quiz_attempt aggregates are deliberate performance fields.) Tj
+ET
+BT
+/F2 16 Tf
+60 100 Td
+(Notes) Tj
+ET
+BT
+/F1 12 Tf
+70 76 Td
+(- questions has both category_id and quiz_id; keep them synchronized in logic.) Tj
+ET
+BT
+/F1 12 Tf
+70 54 Td
+(- answers and question_options overlap in correctness modeling; keep one clear write path.) Tj
+ET
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000253 00000 n 
+0000000323 00000 n 
+0000000398 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+5408
+%%EOF
