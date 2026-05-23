@@ -10,6 +10,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Throwable;
 
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -37,16 +38,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
             $requestId = $request->attributes->get('request_id');
 
-            if (file_exists(base_path('routes/api.php'))) {
-                Route::middleware('api')
-                ->prefix('api')
-                ->group(base_path('routes/api.php'));
-            }
-
             if ($e instanceof ValidationException) {
                 return response()->json([
+                    'success' => false,
                     'error' => [
-                        'code' => 422,
+                        'code' => 'validation_error',
                         'message' => 'Validation failed',
                         'details' => $e->errors(),
                     ],
@@ -56,8 +52,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
             if ($e instanceof AuthenticationException) {
                 return response()->json([
+                    'success' => false,
                     'error' => [
-                        'code' => 401,
+                        'code' => 'unauthorized',
                         'message' => 'Unauthenticated',
                     ],
                     'request_id' => $requestId,
@@ -66,8 +63,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
             if ($e instanceof AuthorizationException) {
                 return response()->json([
+                    'success' => false,
                     'error' => [
-                        'code' => 403,
+                        'code' => 'forbidden',
                         'message' => 'Forbidden',
                     ],
                     'request_id' => $requestId,
@@ -76,8 +74,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
             if ($e instanceof ModelNotFoundException) {
                 return response()->json([
+                    'success' => false,
                     'error' => [
-                        'code' => 404,
+                        'code' => 'not_found',
                         'message' => 'Resource not found',
                     ],
                     'request_id' => $requestId,
@@ -85,19 +84,22 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             if ($e instanceof HttpExceptionInterface) {
+                $status = $e->getStatusCode();
                 return response()->json([
+                    'success' => false,
                     'error' => [
-                        'code' => $e->getStatusCode(),
+                        'code' => $status === 404 ? 'not_found' : 'http_error',
                         'message' => $e->getMessage() ?: 'HTTP Error',
                     ],
                     'request_id' => $requestId,
-                ], $e->getStatusCode());
+                ], $status);
             }
 
             // Fallback 500
             return response()->json([
+                'success' => false,
                 'error' => [
-                    'code' => 500,
+                    'code' => 'server_error',
                     'message' => app()->environment('local') ? $e->getMessage() : 'Internal Server Error',
                 ],
                 'request_id' => $requestId,
